@@ -26,3 +26,12 @@ def generate_spatial_measurements(num_measure,
     sensors[:, 0] = xmin + (xmax - xmin) * sensors[:, 0]  # x_0 location
     sensors[:, 1] = ymin + (ymax - ymin) * sensors[:, 1]  # x_1 location
     return sensors
+
+
+def generate_rotation_map(qnum=10, orth=True):
+    if orth:
+        return np.array([[np.sin(theta), np.cos(theta)] for theta in
+                         np.linspace(0, np.pi, qnum + 1)[0:-1]]).reshape(qnum, 2)
+    else:
+        return np.array([[np.sin(theta), np.cos(theta)] for theta in
+                         np.linspace(0, np.pi, qnum)]).reshape(qnum, 2)
