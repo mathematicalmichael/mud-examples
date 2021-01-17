@@ -127,8 +127,8 @@ select =
 # enable-extensions =
 
 per-file-ignores =
-    src/problems.py:E221
-    src/plotting.py:E501
+    src/mud_examples/problems.py:E221
+    src/mud_examples/plotting.py:E501
 
 ########## DOCSTRING ##########
 

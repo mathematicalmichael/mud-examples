@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def ExponentialDecayModel(t, lam_true):
+def generate_decay_model(t, lam_true):
     def model(lam=np.array([[lam_true]])):
         if isinstance(lam, float) or isinstance(lam, int):
             lam = np.array([[lam]])
