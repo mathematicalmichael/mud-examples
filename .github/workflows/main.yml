@@ -46,6 +46,7 @@ jobs:
           pip install .
 
       - name: CodeCov.io Report
+        if: ${{ matrix.python-version }} == 3.8
         run: |
           # coverage run --source=. -m py.test
           coverage report -m
