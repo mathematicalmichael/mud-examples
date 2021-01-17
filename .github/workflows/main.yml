@@ -1,6 +1,4 @@
-# This is a basic workflow to help you get started with Actions
-
-name: Testing
+name: Test MUD Examples
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
@@ -37,18 +35,14 @@ jobs:
           pip install --upgrade pip
           pip install .
 
-      - name: Run tests
+      - name: Run unit tests
         run: |
           pip install .[test]
           pytest
 
-      - name: Code Coverage
-        if: ${{ matrix.python-version }} == 3.8
+      - name: CodeCov.io Report
         run: |
           # coverage run --source=. -m py.test
           coverage report -m
-
-      - name: Publish to CodeCov
-        run: |
           export CODECOV_VERSION=${{ secrets.codecov_token }}
           bash <(curl -s https://codecov.io/bash) 
