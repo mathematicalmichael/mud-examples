@@ -34,11 +34,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
+          pip install --upgrade pip
           pip install .[test]
-          pip install .
-          # install black if available (Python 3.6 and above)
-          pip install black || true
 
       - name: Run tests
         run: pytest
