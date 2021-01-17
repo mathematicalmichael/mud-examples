@@ -168,4 +168,73 @@ def plot_2d_contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C
         plt.savefig(figname, dpi=300)
 
 #     plt.title('Predicted Covariance: {}'.format((A@initial_cov@A.T).ravel() ))
-    plt.show()
+    # plt.show()
+
+
+def plot_decay_solution(solutions, model_generator, sigma, prefix,
+                        time_vector, lam_true, qoi_true, end_time=3, fsize=32, test=False):
+    alpha_signal = 0.2
+    alpha_points = 0.6
+#     num_meas_plot_list = [25, 50, 400]
+
+    print("Plotting decay solution.")
+    for num_meas_plot in solutions:
+        filename = f'{prefix}_{num_meas_plot}_reference_solution.png'
+        plt.rcParams['figure.figsize'] = 25, 10
+        _ = plt.figure()  # TODO: proper figure handling with `fig`
+
+        plotting_mesh = np.linspace(0, end_time, 1000 * end_time)
+        plot_model = model_generator(plotting_mesh, lam_true)
+        true_response = plot_model()  # no args evaluates true param
+
+        # true signal
+        plt.plot(plotting_mesh, true_response, lw=5, c='k', alpha=1, label="True Signal, $\\xi \\sim N(0, \\sigma^2)$")
+
+        # observations
+        np.random.seed(11)
+        annotate_height = 0.82
+        u = qoi_true + np.random.randn(len(qoi_true)) * sigma
+        plot_num_measure = num_meas_plot
+        plt.scatter(time_vector[:plot_num_measure], u[:plot_num_measure], color='k', marker='.', s=250, alpha=alpha_points, label=f'{num_meas_plot} Sample Measurements')
+        plt.annotate("$ \\downarrow$ Observations begin", (0.95, annotate_height), fontsize=fsize)
+    #     plt.annotate("$\\downarrow$ Possible Signals", (0,annotate_height), fontsize=fsize)
+
+        # sample signals
+        num_sample_signals  = 100
+        alpha_signal_sample = 0.15
+        alpha_signal_mudpts = 0.45
+        _true_response = plot_model(np.random.rand())  # uniform(0,1) draws from parameter space
+        plt.plot(plotting_mesh, _true_response, lw=2, c='k', alpha=alpha_signal_sample, label='Predictions from Initial Density')
+        for i in range(1, num_sample_signals):
+            _true_response = plot_model(np.random.rand())  # uniform(0,1) draws from parameter space
+            plt.plot(plotting_mesh, _true_response, lw=1, c='k', alpha=alpha_signal_sample)
+
+        # error bars
+        sigma_label = f"$\\pm3\\sigma \\qquad\\qquad \\sigma^2={sigma**2:1.3E}$"
+        plt.plot(plotting_mesh[1000:], true_response[1000:] + 3 * sigma, ls='--', lw=3, c='xkcd:black', alpha=1)
+        plt.plot(plotting_mesh[1000:], true_response[1000:] - 3 * sigma, ls='--', lw=3, c='xkcd:black', alpha=1, label=sigma_label)
+        plt.plot(plotting_mesh[:1000], true_response[:1000] + 3 * sigma, ls='--', lw=3, c='xkcd:black', alpha=alpha_signal)
+        plt.plot(plotting_mesh[:1000], true_response[:1000] - 3 * sigma, ls='--', lw=3, c='xkcd:black', alpha=alpha_signal)
+
+        # solutions / samples
+        mud_solutions = solutions[num_meas_plot]
+        plt.plot(plotting_mesh, plot_model(mud_solutions[0][0]), lw=3, c='xkcd:bright red', alpha=alpha_signal_mudpts, label=f'{len(mud_solutions)} Updated Solutions for N={num_meas_plot}')
+        for _lam in mud_solutions[1:]:
+            _true_response = plot_model(_lam[0])
+            plt.plot(plotting_mesh, _true_response, lw=3, c='xkcd:bright red', alpha=alpha_signal_mudpts)
+
+        plt.ylim([0, 0.9])
+        plt.xlim([0, end_time + .05])
+        plt.ylabel('Response', fontsize=60)
+        plt.xlabel('Time', fontsize=60)
+        plt.xticks(fontsize=fsize)
+        plt.yticks(fontsize=fsize)
+        # legend ordering has a mind of its own, so we format it to our will
+        # plt.legend(fontsize=fsize, loc='upper right')
+        handles, labels = plt.gca().get_legend_handles_labels()
+        order = [4, 0, 2, 1, 3]
+        plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order], fontsize=fsize, loc='upper right')
+        plt.tight_layout()
+        if not test:
+            plt.savefig(filename, bbox_inches='tight')
+        # plt.show()
