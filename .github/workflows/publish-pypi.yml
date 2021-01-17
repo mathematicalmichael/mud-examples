@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: Publish
+name: Publish MUD Examples
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
@@ -30,15 +30,13 @@ jobs:
       - name: Upgrade pip
         run: pip install --upgrade pip
 
-      - name: Install dependencies
-        run: |
-          pip install .[test]
-
-      - name: Run tests
-        run: pytest
-
       - name: Install build tools
         run: pip install .[pub]
+
+      - name: Testing
+        run: |
+          pip install .[test]
+          pytest
 
       - name: Build dist
         run: |
