@@ -33,7 +33,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install .
+          # pip install wheel  # may be able to remove / test with and without
 
       - name: Run unit tests
         run: |
@@ -44,5 +44,5 @@ jobs:
         run: |
           # coverage run --source=. -m py.test
           coverage report -m
-          export CODECOV_VERSION=${{ secrets.codecov_token }}
+          # export CODECOV_VERSION=${{ secrets.codecov_token }}
           bash <(curl -s https://codecov.io/bash) 
