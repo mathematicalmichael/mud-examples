@@ -29,6 +29,24 @@ def experiment_measurements(fun, num_measurements, sd, num_trials, seed=21):
     return experiments, solutions
 
 
+def experiment_equipment(fun, num_measure, sd_vals, num_trials, reference_value):
+    """
+    Fixed number of sensors, varying the quality of equipment.
+    """
+    sd_err = []
+    sd_var = []
+    for sd in sd_vals:
+        temp_err = []
+        for t in range(num_trials):
+            d = fun(sd=sd, num_obs=num_measure)
+            mud_point = d.mud_point()
+            temp_err.append(np.linalg.norm(mud_point - reference_value))
+        sd_err.append(np.mean(temp_err))
+        sd_var.append(np.var(temp_err))
+
+    return sd_err, sd_var
+
+
 def extract_statistics(solutions, reference_value):
     num_sensors_plot_conv = solutions.keys()
     means = []
