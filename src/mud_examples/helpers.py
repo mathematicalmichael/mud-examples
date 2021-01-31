@@ -1,5 +1,5 @@
 import numpy as np
-
+from mud.funs import mud_sol, map_sol
 
 def fit_log_linear_regression(input_values, output_values):
     x, y = np.log10(input_values), np.log10(output_values)
@@ -62,3 +62,83 @@ def extract_statistics(solutions, reference_value):
         variances.append(var_mud_sol)
 
     return means, variances
+
+
+def compare_mud_map_pin(A, b, d, mean, cov):
+    mud_pt = mud_sol(A, b, d, mean, cov)
+    map_pt = map_sol(A, b, d, mean, cov)
+    pin_pt = (np.linalg.pinv(A)@(d-b)).reshape(-1,1)
+    return mud_pt, map_pt, pin_pt
+
+
+def transform_rank_list(lam_ref, A, b, rank):
+    """
+    A is a list here. We sum the first `rank` elements of it
+    to return a matrix with the desired rank.
+    """
+    _A = sum(A[0:rank])
+    _b = b
+    _d = _A@lam_ref + _b
+    assert np.linalg.matrix_rank(_A) == rank, "Unexpected rank mismatch"
+    return _A, _b, _d
+
+
+def transform_dim_out(lam_ref, A, b, dim):
+    if isinstance(A, list) or isinstance(A, tuple):
+        raise AttributeError("A must be a matrix, not a list or tuple.")
+
+    _A = A[:dim, :]
+    _b = b[:dim, :]
+    _d = _A@lam_ref + _b
+    return _A, _b, _d
+
+
+def compare_linear_sols_rank_list(lam_ref, A, b,
+                             alpha=1, mean=None, cov=None):
+    """
+    Input and output dimensions fixed, varying rank 1..dim_output.
+    """
+    
+    return compare_linear_sols(transform_rank_list, lam_ref, A, b, alpha, mean, cov)
+
+
+def compare_linear_sols_dim(lam_ref, A, b,
+                            alpha=1, mean=None, cov=None):
+    """
+    Input dimension fixed, varying output dimension.
+    """
+    return compare_linear_sols(transform_dim_out, lam_ref, A, b, alpha, mean, cov)
+
+
+def compare_linear_sols(transform, lam_ref, A, b,
+                            alpha=1, mean=None, cov=None):
+    """
+    Input dimension fixed, varying according to the output
+    of the anonymous function `transform`'s return.
+    """
+    sols = {}
+    if isinstance(alpha, list) or isinstance(alpha, tuple):
+        alpha_list = alpha
+    else:
+        alpha_list = [alpha]
+
+    if mean is None:
+        mean = np.zeros(A.shape[1])
+    
+    if cov is None:
+        cov = np.eye(A.shape[1])
+
+    print("alpha = {}".format(alpha_list))
+    if isinstance(A, list):  # svd approach returns list
+        dim_output = A[0].shape[0]
+    else:
+        dim_output = A.shape[0]
+
+    for alpha in alpha_list:
+        sols[alpha] = []
+        for _out in range(1, dim_output+1, 1):
+            _A, _b, _d = transform(lam_ref, A, b, _out)
+            _mud, _map, _pin = compare_mud_map_pin(_A, _b, _d, mean, alpha*cov)
+            sols[alpha].append((_mud, _map, _pin))
+
+    return sols
