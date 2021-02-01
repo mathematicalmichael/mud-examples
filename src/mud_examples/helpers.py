@@ -64,6 +64,40 @@ def extract_statistics(solutions, reference_value):
     return means, variances
 
 
+def experiment_measurements_index(fun, num_measurements, sd, num_trials, seed=21):
+    """
+    Fixed sensors, varying how much data is incorporated into the solution.
+    """
+    experiments = {}
+    solutions = {}
+    for ns in num_measurements:
+        ratios = []
+        mud_solutions = []
+        for t in range(num_trials):
+            np.random.seed(seed+t)
+            _r = fun(sd=sd, num_obs=ns)
+            ratios.append(_r)
+            mud_solutions.append(np.argmax(_r))
+        experiments[ns] = ratios
+        solutions[ns] = mud_solutions
+    
+    return experiments, solutions
+
+
+def extract_statistics_index(x, solutions, reference_value):
+    num_sensors_plot_conv = solutions.keys()
+    means = []
+    variances = []
+    for ns in num_sensors_plot_conv:
+        mud_solutions = [ x[_index] for _index in solutions[ns] ]
+        err = np.linalg.norm(np.array(mud_solutions) - reference_value, axis=1)/np.sqrt(len(reference_value))
+        mean_mud_sol = np.mean(err)
+        var_mud_sol = np.var(err)
+        means.append(mean_mud_sol)
+        variances.append(var_mud_sol)
+    return means, variances
+
+
 def compare_mud_map_pin(A, b, d, mean, cov):
     mud_pt = mud_sol(A, b, d, mean, cov)
     map_pt = map_sol(A, b, d, mean, cov)
