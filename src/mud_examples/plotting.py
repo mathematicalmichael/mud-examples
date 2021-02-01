@@ -1,5 +1,13 @@
 from matplotlib import pyplot as plt
 from matplotlib import cm
+import matplotlib.gridspec as gridspec
+plt.rcParams['figure.figsize'] = 10,10
+plt.rcParams['font.size'] = 16
+# import matplotlib
+# matplotlib.rcParams['mathtext.fontset'] = 'stix'
+# matplotlib.rcParams['font.family'] = 'STIXGeneral'
+# matplotlib.backend = 'Agg'
+
 import numpy as np
 from mud.util import null_space
 from mud.funs import mud_sol, map_sol
@@ -172,7 +180,7 @@ def plot_2d_contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C
 
 
 def plot_decay_solution(solutions, model_generator, sigma, prefix,
-                        time_vector, lam_true, qoi_true, end_time=3, fsize=32, test=False):
+                        time_vector, lam_true, qoi_true, end_time=3, fsize=32, save=True):
     alpha_signal = 0.2
     alpha_points = 0.6
 #     num_meas_plot_list = [25, 50, 400]
@@ -235,13 +243,13 @@ def plot_decay_solution(solutions, model_generator, sigma, prefix,
         order = [4, 0, 2, 1, 3]
         plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order], fontsize=fsize, loc='upper right')
         plt.tight_layout()
-        if not test:
+        if save:
             plt.savefig(filename, bbox_inches='tight')
         # plt.show()
 
 
 def plot_experiment_equipment(tolerances, res, prefix, fsize=32, linewidth=5,
-                              title="Variance of MUD Error", test=False):
+                              title="Variance of MUD Error", save=True):
     print("Plotting equipment differences...")
     plt.figure(figsize=(10, 10))
     for _res in res:
@@ -258,7 +266,7 @@ def plot_experiment_equipment(tolerances, res, prefix, fsize=32, linewidth=5,
     plt.xlabel('Tolerance', fontsize=fsize)
     plt.legend()
     plt.title(f"Mean of MUD Error for N={num_sensors}", fontsize=1.25 * fsize)
-    if not test:
+    if save:
         plt.savefig(f'{prefix}_convergence_mud_std_mean.png', bbox_inches='tight')
     # plt.show()
 
@@ -276,12 +284,12 @@ def plot_experiment_equipment(tolerances, res, prefix, fsize=32, linewidth=5,
     plt.xlabel('Tolerance', fontsize=fsize)
     plt.legend()
     plt.title(title, fontsize=1.25 * fsize)
-    if not test:
+    if save:
         plt.savefig(f'{prefix}_convergence_mud_std_var.png', bbox_inches='tight')
     # plt.show()
 
 
-def plot_experiment_measurements(measurements, res, prefix, fsize=32, linewidth=5, xlabel='Number of Measurements', test=False, legend=False):
+def plot_experiment_measurements(measurements, res, prefix, fsize=32, linewidth=5, xlabel='Number of Measurements', save=True, legend=False):
     print("Plotting measurement experiments.")
     plt.figure(figsize=(10, 10))
     for _res in res:
@@ -299,7 +307,7 @@ def plot_experiment_measurements(measurements, res, prefix, fsize=32, linewidth=
         plt.legend(fontsize=fsize * 0.8)
     # plt.ylabel('Absolute Error in MUD', fontsize=fsize)
     plt.title("$\\mathrm{\\mathbb{E}}(|\\lambda^\\mathrm{MUD} - \\lambda^\\dagger|)$", fontsize=1.25 * fsize)
-    if not test:
+    if save:
         plt.savefig(f'{prefix}_convergence_mud_obs_mean.png', bbox_inches='tight')
     # plt.show()
 
@@ -319,6 +327,85 @@ def plot_experiment_measurements(measurements, res, prefix, fsize=32, linewidth=
         plt.legend(fontsize=fsize * 0.8)
     # plt.ylabel('Absolute Error in MUD', fontsize=fsize)
     plt.title("$\\mathrm{Var}(|\\lambda^\\mathrm{MUD} - \\lambda^\\dagger|)$", fontsize=1.25 * fsize)
-    if not test:
+    if save:
         plt.savefig(f'{prefix}_convergence_mud_obs_var.png', bbox_inches='tight')
     # plt.show()
+
+
+def plot_poisson_solution(res, measurements, prefix, lam_true, fsize=32, save=False):
+    from fenics import plot as _plot
+    from poisson import poissonModel # function evaluation (full response surface)
+
+    print("Plotting surface...")
+    for _res in res:
+        _prefix, _in, _rm, _re = _res
+        lam, qoi, sensors, qoi_true, experiments, solutions = _in
+        gamma = lam
+        plot_num_measure = min(100, max(measurements))
+        raveled_input = np.repeat(gamma, qoi.shape[1])
+        raveled_output = qoi.reshape(-1)
+        x = raveled_input
+        y = raveled_output
+
+        fig = plt.figure(figsize=(10,8))
+        gs = gridspec.GridSpec(3, 3)
+        ax_main = plt.subplot(gs[1:3, :2])
+        # ax_xDist = plt.subplot(gs[0, :2],sharex=ax_main)
+        ax_yDist = plt.subplot(gs[1:3, 2],sharey=ax_main)
+
+        a = np.argsort(gamma)
+        slopes = []
+
+        # ax_main.plot(x,y,marker='.')
+        for idx in range(plot_num_measure):
+            ax_main.plot(gamma[a], qoi[a,idx], c='k',
+                     label=f'sensor {idx}: (%.2f, %.2f)'%(sensors[idx,0], sensors[idx,1]),
+                     lw=1, alpha=0.1)
+            slopes.append(qoi[a[-1],idx] - qoi[a[0],idx])
+        sa = np.argsort(slopes)
+        slopes = np.array(slopes)
+        ranked_slopes = slopes[sa]
+
+        xlabel_text = "$\lambda$"
+        # ylabel_text = "$u(x_i, \lambda)$"
+        ylabel_text = "Measurement\nResponse"
+        ax_main.axes.set_xlabel(xlabel_text, fontsize=fsize)
+        ax_main.axes.set_ylabel(ylabel_text, fontsize=fsize)
+        ax_main.axes.set_ylim((-1.25,0.5))
+        # ax_main.axes.set_title('Sensitivity of Measurements', fontsize=1.25*fsize)
+        ax_main.axvline(3)
+
+        ax_yDist.hist(qoi_true, bins=np.linspace(-1.25,0.5,35), orientation='horizontal', align='mid')
+        # ax_yDist.set(xlabel='count')
+        ax_yDist.tick_params(labelleft=False, labelbottom=False)
+        if save:
+            plt.savefig(f'{_prefix}_qoi_response.png', bbox_inches='tight')
+        #plt.show()
+
+        plt.figure(figsize=(10,10))
+        plt.title("Sensitivity of\nMeasurement Locations", fontsize=1.25*fsize)
+        plt.hist(ranked_slopes, bins=np.linspace(-1.25,0,25), density=True)
+        plt.xlabel("Slope", fontsize=fsize)
+        if save:
+            plt.savefig(f'{_prefix}_sensitivity_qoi.png', bbox_inches='tight')
+        #plt.show()
+
+        ##########
+
+        plt.figure(figsize=(10,10))
+        print("Most sensitive sensors in first 100:")
+        num_sensitive  = 20
+        most_sensitive = sa[sa < 100][0:num_sensitive]
+        print(most_sensitive)
+        _plot(poissonModel(lam_true))
+        for i in range(min(100, max(measurements))):
+            plt.scatter(sensors[i,0], sensors[i,1], c='w', s=200)
+            if i in most_sensitive:
+                plt.scatter(sensors[i,0], sensors[i,1], c='y', s=100)
+        #     plt.annotate(f"{i+1:02d}", (sensors[i,0]-0.0125, sensors[i,1]-0.01), alpha=1, fontsize=0.35*fsize)
+        # plt.title('Reference solution', fontsize=1.25*fsize)
+        plt.xlabel('$x_1$', fontsize=fsize)
+        plt.ylabel('$x_2$', fontsize=fsize)
+        if save:
+            plt.savefig(f'{_prefix}_reference_solution.png', bbox_inches='tight')
+        #plt.show()
