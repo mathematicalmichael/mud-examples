@@ -28,7 +28,8 @@ def plot_2d_contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C
                             initial_mean=np.array([0.25, 0.25]),
                             alpha=1, omega=1, obs_std=1,
                             show_full=True, show_data=True, show_est=False,
-                            fsize=42, figname='latest_figure.png', save=False):
+                            fsize=42, figname='latest_figure.png', save=False,
+                            compare=False, param_ref=None):
     """
     alpha: float in [0, 1], weight of Tikhonov regularization
     omega: float in [0, 1], weight of Modified regularization
@@ -94,6 +95,7 @@ def plot_2d_contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C
                     cmap=cm.viridis, alpha=0.25)
     plt.axis('equal')
 
+
     if alpha + omega > 0:
         plt.scatter(initial_mean[0], initial_mean[1],
                     label='Initial Mean',
@@ -102,6 +104,16 @@ def plot_2d_contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C
             plt.annotate('Initial Mean',
                          (initial_mean[0] + 0.001 * fsize, initial_mean[1] - 0.001 * fsize),
                          fontsize=fsize, backgroundcolor="w")
+        else:
+            if param_ref is not None:
+                plt.scatter(param_ref[0], param_ref[1],
+                    label='$\\lambda^\dagger$',
+                    color='k', s=msize, marker='*')
+                plt.annotate('Truth',
+                         (param_ref[0] + 0.0005 * fsize, param_ref[1] + 0.0005 * fsize),
+                         fontsize=fsize, backgroundcolor="w")
+
+        show_mud = omega > 0 or compare
 
         if show_full:
             # scatter and line from origin to least squares
@@ -125,6 +137,7 @@ def plot_2d_contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C
                     plt.scatter(map_pt[0], map_pt[1],
                                 label='min: Tk', color='xkcd:blue',
                                 marker='o', s=3 * msize, zorder=10)
+
             if (alpha > 0 and omega != 1):  # analytical MAP point
                 map_pt_eq = map_sol(A, b, observed_data_mean,
                                     initial_mean, initial_cov,
@@ -132,10 +145,28 @@ def plot_2d_contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C
                 plt.scatter(map_pt_eq[0], map_pt_eq[1],
                             label='MAP', color='xkcd:orange',
                             marker='x', s=msize, lw=10, zorder=10)
-                plt.annotate('MAP',
-                             (map_pt_eq[0] + 0.001 * fsize, map_pt_eq[1] - 0.001 * fsize),
-                             fontsize=fsize, backgroundcolor="w")
-            if omega > 0:  # analytical MUD point
+
+                if compare:  # second map point has half the regularization strength
+                    plt.annotate('MAP$_{\\alpha_1}$',
+                                 (map_pt_eq[0] - 0.004 * fsize, map_pt_eq[1] - 0.002 * fsize),
+                                 fontsize=fsize, backgroundcolor="w")
+
+                    map_pt_eq = map_sol(A, b, observed_data_mean,
+                                    initial_mean, initial_cov,
+                                    data_cov=obs_cov, w=alpha*0.5)
+
+                    plt.scatter(map_pt_eq[0], map_pt_eq[1],
+                                label='MAP', color='xkcd:orange',
+                                marker='x', s=msize, lw=10, zorder=10)
+                    plt.annotate('MAP$_{\\alpha_2}$',
+                                 (map_pt_eq[0] + 0.0001 * fsize, map_pt_eq[1] - 0.002 * fsize),
+                                 fontsize=fsize, backgroundcolor="w")
+                else:
+                    plt.annotate('MAP',
+                                 (map_pt_eq[0] + 0.0001 * fsize, map_pt_eq[1] - 0.002 * fsize),
+                                 fontsize=fsize, backgroundcolor="w")
+            
+            if show_mud:  # analytical MUD point
                 mud_pt_eq = mud_sol(A, b, observed_data_mean,
                                     initial_mean, initial_cov)
                 plt.scatter(mud_pt_eq[0], mud_pt_eq[1],
@@ -151,7 +182,7 @@ def plot_2d_contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C
             v = v[::-1]  # in 2D, we can just swap entries and put a negative sign in front of one
             v[0] = - v[0]
 
-            if show_full and omega > 0:
+            if show_full and show_mud:
                 # grid search to find upper/lower bounds of line being drawn.
                 # importance is the direction, image is nicer with a proper origin/termination
                 s = np.linspace(-1, 1, 1000)
