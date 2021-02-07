@@ -13,6 +13,7 @@ from mud.util import null_space
 from mud.funs import mud_sol, map_sol
 from mud.norm import full_functional, norm_input, norm_data, norm_predicted
 from mud.plot import make_2d_unit_mesh
+from mud_examples.helpers import check_dir
 
 
 def fit_log_linear_regression(input_values, output_values):
@@ -27,9 +28,10 @@ def plot_2d_contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C
                             cov_11=0.5, cov_01=-0.25,
                             initial_mean=np.array([0.25, 0.25]),
                             alpha=1, omega=1, obs_std=1,
-                            show_full=True, show_data=True, show_est=False,
+                            show_full=True, show_data=True,
+                            show_est=False, param_ref=None, compare=False,
                             fsize=42, figname='latest_figure.png', save=False,
-                            compare=False, param_ref=None):
+                            ):
     """
     alpha: float in [0, 1], weight of Tikhonov regularization
     omega: float in [0, 1], weight of Modified regularization
@@ -109,6 +111,7 @@ def plot_2d_contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C
                 plt.scatter(param_ref[0], param_ref[1],
                     label='$\\lambda^\dagger$',
                     color='k', s=msize, marker='*')
+            if compare:
                 plt.annotate('Truth',
                          (param_ref[0] + 0.0005 * fsize, param_ref[1] + 0.0005 * fsize),
                          fontsize=fsize, backgroundcolor="w")
@@ -147,25 +150,15 @@ def plot_2d_contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C
                             marker='x', s=msize, lw=10, zorder=10)
 
                 if compare:  # second map point has half the regularization strength
-                    plt.annotate('MAP$_{\\alpha_1}$',
+                    plt.annotate('MAP$_{\\alpha}$',
                                  (map_pt_eq[0] - 0.004 * fsize, map_pt_eq[1] - 0.002 * fsize),
                                  fontsize=fsize, backgroundcolor="w")
 
-                    map_pt_eq = map_sol(A, b, observed_data_mean,
-                                    initial_mean, initial_cov,
-                                    data_cov=obs_cov, w=alpha*0.5)
-
-                    plt.scatter(map_pt_eq[0], map_pt_eq[1],
-                                label='MAP', color='xkcd:orange',
-                                marker='x', s=msize, lw=10, zorder=10)
-                    plt.annotate('MAP$_{\\alpha_2}$',
-                                 (map_pt_eq[0] + 0.0001 * fsize, map_pt_eq[1] - 0.002 * fsize),
-                                 fontsize=fsize, backgroundcolor="w")
                 else:
-                    plt.annotate('MAP',
+                    plt.annotate('MAP$_{\\alpha}$',
                                  (map_pt_eq[0] + 0.0001 * fsize, map_pt_eq[1] - 0.002 * fsize),
                                  fontsize=fsize, backgroundcolor="w")
-            
+
             if show_mud:  # analytical MUD point
                 mud_pt_eq = mud_sol(A, b, observed_data_mean,
                                     initial_mean, initial_cov)
@@ -204,6 +197,9 @@ def plot_2d_contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C
     plt.yticks(fontsize=0.75 * fsize)
     plt.tight_layout()
     if save:
+        if '/' in figname:
+            fdir = ''.join(figname.split('/')[:-1])
+            check_dir(fdir)
         plt.savefig(figname, dpi=300)
 
 #     plt.title('Predicted Covariance: {}'.format((A@initial_cov@A.T).ravel() ))

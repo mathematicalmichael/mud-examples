@@ -1,6 +1,14 @@
+import os
+
 import numpy as np
 from mud.funs import mud_sol, map_sol
 
+
+def check_dir(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+        
 def fit_log_linear_regression(input_values, output_values):
     x, y = np.log10(input_values), np.log10(output_values)
     X, Y = np.vander(x, 2), np.array(y).reshape(-1, 1)
