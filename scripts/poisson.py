@@ -158,29 +158,8 @@ if __name__=='__main__':
 
     import matplotlib.pyplot as plt
 
-    u = poissonModel(gamma=1)
+    u = poissonModel(gamma=3)
     fin.plot(u, interactive=True)
     # Save solution in VTK format
     file = fin.File("poisson.pvd")
     file << u
-
-    show_plot = True
-    if show_plot:
-#         import numpy as np
-#         x=np.linspace(0,1,50)
-#         y=np.linspace(0,1,50)
-
-#         for k in [0, 0.25, 0.5, 0.75, 1]:
-#             plt.plot(x,[u(xi,k) for xi in x], lw=4*k+1, label=k)
-#             plt.title('Horizontal Slices')
-#         plt.legend()
-#         plt.show()
-
-#         for k in width*np.array([0, 0.25, 0.5, 0.75, 1]):
-#             plt.plot(y,[u(k,yi) for yi in y], lw=4*k+1, label=k)
-#             plt.title('Vertical Slices')
-#         plt.legend()
-#         plt.show()
-
-        plt.show()
-
