@@ -15,7 +15,7 @@ from mud_examples.models import generate_temporal_measurements as generate_senso
 from mud_examples.models import generate_spatial_measurements as generate_sensors_pde
 from mud_examples.datasets import load_poisson
 
-from mud.funs import mud_problem
+from mud.funs import mud_problem, map_problem
 from mud_examples.helpers import experiment_measurements, extract_statistics, experiment_equipment
 
 import pickle
@@ -105,19 +105,22 @@ def main_ode(num_trials,
              lam_true=0.5,
              domain=[[0,1]],
              tolerances=[0.1],
-             time_ratios=[1], alt=False):
+             time_ratios=[1], alt=False, bayes=False):
     res = []
     print(f"Will run simulations for %T={time_ratios}")
     sd_vals      = [ std_from_equipment(tolerance=tol, probability=0.99) for tol in tolerances ]
     sigma        = sd_vals[-1] # sorted, pick largest
     t_min, t_max = 1, 3
-    example_list = [ 'ode' ]
+    example_list = [ 'ode-mud' ]
     if alt:
-        example_list.append('ode-alt')
+        example_list.append('ode-mud-alt')
+
+    if bayes:
+        example_list.append('ode-map')
 
     for example in example_list:
         print(f"Example: {example}")
-        if example == 'ode-alt':
+        if example == 'ode-mud-alt':
             sensors = generate_sensors_ode(measurement_hertz=200, start_time=t_min, end_time=t_max)
         else:
             sensors = generate_sensors_ode(measurement_hertz=100, start_time=t_min, end_time=t_max)
@@ -133,16 +136,22 @@ def main_ode(num_trials,
         lam = np.random.rand(int(1E3)).reshape(-1,1)
         qoi = model(lam)
 
-        def mud_wrapper(num_obs, sd):
-            return mud_problem(domain=domain, lam=lam, qoi=qoi, sd=sd, qoi_true=qoi_true, num_obs=num_obs)
+        if example == 'ode-map':
+            def wrapper(num_obs, sd):
+                return map_problem(domain=domain, lam=lam, qoi=qoi,
+                                   sd=sd, qoi_true=qoi_true, num_obs=num_obs)
+        else:
+            def wrapper(num_obs, sd):
+                return mud_problem(domain=domain, lam=lam, qoi=qoi,
+                                   sd=sd, qoi_true=qoi_true, num_obs=num_obs)
 
-            
+
         print("Increasing Measurements Quantity Study")
         experiments, solutions = experiment_measurements(num_measurements=measurements,
                                                  sd=sigma,
                                                  num_trials=num_trials,
                                                  seed=seed,
-                                                 fun=mud_wrapper)
+                                                 fun=wrapper)
 
         means, variances = extract_statistics(solutions, lam_true)
         regression_mean, slope_mean = fit_log_linear_regression(time_ratios, means)
@@ -158,7 +167,7 @@ def main_ode(num_trials,
                                                   num_measure=num_sensors,
                                                   sd_vals=sd_vals,
                                                   reference_value=lam_true,
-                                                  fun=mud_wrapper)
+                                                  fun=wrapper)
 
             regression_err_mean, slope_err_mean = fit_log_linear_regression(tolerances, sd_means)
             regression_err_vars, slope_err_vars = fit_log_linear_regression(tolerances, sd_vars)
@@ -171,8 +180,8 @@ def main_ode(num_trials,
         # TO DO clean all this up
         _in = (lam, qoi, sensors, qoi_true, experiments, solutions)
         _rm = (regression_mean, slope_mean, regression_vars, slope_vars, means, variances)
-        
-        res.append((example, _in, _rm, _re))
+        example_name = '-'.join(example.split('-')[1:]).upper()
+        res.append((example_name, _in, _rm, _re))
 
         # TODO check for existence of save directory, grab subset of measurements properly.
         plot_decay_solution(solutions, generate_decay_model, fsize=fsize,
@@ -232,12 +241,13 @@ def main(args):
                          seed=seed,
                          lam_true=lam_true,
                          tolerances=tolerances,
-                         time_ratios=time_ratios)
+                         time_ratios=time_ratios, bayes=True)
 
         if len(time_ratios) > 1:
             plot_experiment_measurements(time_ratios, res,
-                                         'ode/' + example, fsize, linewidth,
-                                         save=save)
+                                         'ode/' + example,
+                                         fsize, linewidth,
+                                         save=save, legend=True)
 
         if len(tolerances) > 1:
             plot_experiment_equipment(tolerances, res,
