@@ -1,0 +1,74 @@
+name: Figures
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: 
+      - '*'
+  schedule:
+      - cron: "0 0 */7 * *"
+
+jobs:
+  pip-build:
+    name: Default ${{ matrix.python-version }}
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Dependencies
+        run: |
+          pip install .
+          pip install nbconvert ipykernel ipywidgets
+
+      - name: Generate Figures
+        run: |
+          cd scripts
+          make clean
+          make ode-examples
+
+  conda-build:
+    name: Conda ${{ matrix.python-version }}
+    strategy:
+      matrix:
+        python-version: [3.8]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+ 
+      - name: Fenics Install
+        run: |
+          echo $CONDA/bin >> $GITHUB_PATH
+          conda env update --file environment.yml --name base
+
+      - name: Install Dependencies
+        run: |
+          pip install .
+          pip install nbconvert ipykernel ipywidgets
+
+      - name: Conda information
+        run: conda list
+
+      - name: Generate Figures
+        run: |
+          cd scripts
+          python poisson.py
+          make clean
+          make ode-examples
+          #make pde-examples
+

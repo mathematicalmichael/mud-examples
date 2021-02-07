@@ -25,14 +25,15 @@ def experiment_measurements(fun, num_measurements, sd, num_trials, seed=21):
     solutions = {}
     for ns in num_measurements:
         discretizations = []
-        mud_solutions = []
+        estimates = []
         for t in range(num_trials):
             np.random.seed(seed + t)
             _d = fun(sd=sd, num_obs=ns)
+            estimate = _d.estimate()
             discretizations.append(_d)
-            mud_solutions.append(_d.mud_point())
+            estimates.append(estimate)
         experiments[ns] = discretizations
-        solutions[ns] = mud_solutions
+        solutions[ns] = estimates
 
     return experiments, solutions
 
@@ -46,9 +47,9 @@ def experiment_equipment(fun, num_measure, sd_vals, num_trials, reference_value)
     for sd in sd_vals:
         temp_err = []
         for t in range(num_trials):
-            d = fun(sd=sd, num_obs=num_measure)
-            mud_point = d.mud_point()
-            temp_err.append(np.linalg.norm(mud_point - reference_value))
+            _d = fun(sd=sd, num_obs=num_measure)
+            estimate = _d.estimate()
+            temp_err.append(np.linalg.norm(estimate - reference_value))
         sd_err.append(np.mean(temp_err))
         sd_var.append(np.var(temp_err))
 

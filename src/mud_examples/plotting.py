@@ -253,7 +253,7 @@ def plot_decay_solution(solutions, model_generator, sigma, prefix,
 
         # solutions / samples
         mud_solutions = solutions[num_meas_plot]
-        plt.plot(plotting_mesh, plot_model(mud_solutions[0][0]), lw=3, c='xkcd:bright red', alpha=alpha_signal_mudpts, label=f'{len(mud_solutions)} Updated Solutions for N={num_meas_plot}')
+        plt.plot(plotting_mesh, plot_model(mud_solutions[0][0]), lw=3, c='xkcd:bright red', alpha=alpha_signal_mudpts, label=f'{len(mud_solutions)} Estimates with N={num_meas_plot}')
         for _lam in mud_solutions[1:]:
             _true_response = plot_model(_lam[0])
             plt.plot(plotting_mesh, _true_response, lw=3, c='xkcd:bright red', alpha=alpha_signal_mudpts)
@@ -335,7 +335,7 @@ def plot_experiment_measurements(measurements, res, prefix, fsize=32, linewidth=
     # plt.ylabel('Absolute Error in MUD', fontsize=fsize)
     plt.title("$\\mathrm{\\mathbb{E}}(|\\lambda^\\mathrm{MUD} - \\lambda^\\dagger|)$", fontsize=1.25 * fsize)
     if save:
-        plt.savefig(f'{prefix}_convergence_mud_obs_mean.png', bbox_inches='tight')
+        plt.savefig(f'{prefix}_convergence_obs_mean.png', bbox_inches='tight')
     # plt.show()
 
     plt.figure(figsize=(10, 10))
@@ -355,7 +355,7 @@ def plot_experiment_measurements(measurements, res, prefix, fsize=32, linewidth=
     # plt.ylabel('Absolute Error in MUD', fontsize=fsize)
     plt.title("$\\mathrm{Var}(|\\lambda^\\mathrm{MUD} - \\lambda^\\dagger|)$", fontsize=1.25 * fsize)
     if save:
-        plt.savefig(f'{prefix}_convergence_mud_obs_var.png', bbox_inches='tight')
+        plt.savefig(f'{prefix}_convergence_obs_var.png', bbox_inches='tight')
     # plt.show()
 
 
