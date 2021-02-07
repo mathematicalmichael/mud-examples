@@ -66,7 +66,7 @@ jobs:
 
       - name: Generate Figures
         run: |
-          cd figures
+          cd scripts
           python poisson.py
           make clean
           make ode-examples
