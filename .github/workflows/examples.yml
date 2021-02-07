@@ -27,7 +27,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install mud_examples
+          pip install .
           pip install nbconvert ipykernel ipywidgets
 
       - name: Generate Figures
