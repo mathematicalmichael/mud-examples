@@ -1,10 +1,9 @@
 #!/usr/env/bin python
 import os
 # os.environ['OMP_NUM_THREADS'] = '1'
-from poisson import poissonModel 
+from poisson import evaluate_and_save_poisson as wrapper 
 import numpy as np
-from fenics import set_log_level, File, RectangleMesh, Point
-
+from fenics import set_log_level
 
 set_log_level(40) # ERROR=40
 # from mpi4py import MPI
@@ -26,7 +25,7 @@ if __name__=='__main__':
 
     num_samples = args.num
     dist = args.dist
-    outfile = args.outfile.replace('.pkl','')
+    outfile = args.outfile
     inputdim = args.input_dim
 
     if dist == 'n':  # N(0,1)
@@ -36,19 +35,8 @@ if __name__=='__main__':
     else:
         raise ValueError("Improper distribution choice, use `n` (normal), `u` (uniform)")
 
+    # indexed list of samples we will evaluate through our poisson model
     sample_seed_list = list(zip(range(num_samples), randsamples))
-
-    def wrapper(sample, outfile):
-        g=sample[1]
-        mesh = RectangleMesh(Point(0,0), Point(1,1), 36, 36)
-        # comm = mesh.mpi_comm()
-
-        u = poissonModel(gamma=g, mesh=mesh)
-        # Save solution 
-        fname = f"{outfile}-data/poisson-{int(sample[0]):06d}.xml"
-        File(fname, 'w') << u
-        return {int(sample[0]): {'u': fname, 'gamma': sample[1]}}
-
 
     results = []
     for sample in sample_seed_list:

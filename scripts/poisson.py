@@ -2,7 +2,7 @@ import dolfin as fin
 # from fenicstools.Probe import Probes
 
 
-def pcwExpr(u,n,d=1):
+def pcwExpr(u, n, d=1):
     """
     Takes an Expression `u` (on unit domain) and returns the string
     for another expression based on evaluating a piecewise-linear approximation.
@@ -13,7 +13,7 @@ def pcwExpr(u,n,d=1):
     return pcwInt(intervals, node_values, d)
 
        
-def pcwGFun(u,d=1):
+def pcwGFun(u, d=1):
     """
     Takes an iterable `u` with y-values (on interior of equispaced unit domain)
     and returns the string for an expression
@@ -36,23 +36,8 @@ def pcwInt(xvals, yvals, d=1):
     return s[1:-1]
 
 
-
-def poissonModel(gamma, mesh=None, nx=36, ny=36, width=1):
-    """
-    `gamma` is scaling parameter for left boundary condition
-    `n_x` and `n_y` are the number of elements for the horizontal/vertical axes of the mesh
-    """
-    # Create mesh and define function space
-    if mesh is None:
-        mesh = fin.RectangleMesh(fin.Point(0,0), fin.Point(width,1), nx, ny)
-    V = fin.FunctionSpace(mesh, "Lagrange", 1)
-    u = fin.TrialFunction(V)
-    v = fin.TestFunction(V)
-
-    # Define Dirichlet boundary (x = 0 or x = 1)
-    def boundary(x):
-        return x[1] < fin.DOLFIN_EPS or x[1] > 1.0 - fin.DOLFIN_EPS
-
+def get_boundary_markers_for_square(mesh):
+    
     class BoundaryX0(fin.SubDomain):
         def inside(self, x, on_boundary):
             return on_boundary and fin.near(x[0], 0, 1E-14)
@@ -69,69 +54,61 @@ def poissonModel(gamma, mesh=None, nx=36, ny=36, width=1):
         def inside(self, x, on_boundary):
             return on_boundary and fin.near(x[1], 1, 1E-14)
 
+    # not sure what the first argument here does.
     boundary_markers = fin.MeshFunction("size_t", mesh, mesh.topology().dim()-1, 0)
 
-    bx0 = BoundaryX0()
-    bx1 = BoundaryX1()
-    by0 = BoundaryY0()
-    by1 = BoundaryY1()
-
-    by1.mark(boundary_markers, 0)
-    bx1.mark(boundary_markers, 1)
-    by0.mark(boundary_markers, 2)
-    bx0.mark(boundary_markers, 3)
-
-
-    ds = fin.Measure('ds', domain=mesh, subdomain_data=boundary_markers)
-    # Define boundary condition
-    u0 = fin.Constant(0.0)
-    if isinstance(gamma, int) or isinstance(gamma, float): # 1-D case
-        #u_L = fin.Expression("-gamma*sin((2*kappa+1)*pi*x[1])", gamma=gamma, kappa=0.0, degree=2)
-        # the function below will have a min at (2/7, -gamma) by design (scaling factor chosen via calculus)
-        u_L = fin.Expression(f"pow(x[1], 2) * pow(x[1] - 1, 5) * gamma", gamma=gamma*823543/12500, degree=3)
-    else: # Higher-D case
-#         if gamma is None:
-#             u_L = fin.Expression(highDstr(gamma), gamma=3.0, kappa=0.0, degree=2)
-#             u_L = pcwExpr(u,n=10,d=1)
-        u_L = fin.Expression(pcwGFun(gamma, d=1), degree=1)
+    # starting from top of square, going clockwise
+    # we have to instantiate a class for each boundary portion in order to mark them.
+    # each operation changes the state of `boundary_markers`
+    BoundaryY1().mark(boundary_markers, 0)
+    BoundaryX1().mark(boundary_markers, 1)
+    BoundaryY0().mark(boundary_markers, 2)
+    BoundaryX0().mark(boundary_markers, 3)
     
-    u_R = fin.Constant(0)
+    return boundary_markers
 
+def poissonModel(gamma=3, mesh=None, nx=36, ny=36, width=1):
+    """
+    `gamma` is scaling parameter for left boundary condition
+    `n_x` and `n_y` are the number of elements for the horizontal/vertical axes of the mesh
+    """
+    # Create mesh and define function space
+    if mesh is None:
+        mesh = fin.RectangleMesh(fin.Point(0,0), fin.Point(width,1), nx, ny)
 
-    # starting from top, going clockwise
-    boundary_conditions = {
-    0: {'Dirichlet': u0},
-    1: {'Neumann': u_R},
-    2: {'Dirichlet': u0},
-    3: {'Neumann': u_L}
-    }
+    V = fin.FunctionSpace(mesh, "Lagrange", 1)
+    u = fin.TrialFunction(V)
+    v = fin.TestFunction(V)
 
-    bcs = []
-    for i in boundary_conditions:
-        if 'Dirichlet' in boundary_conditions[i]:
-            bc = fin.DirichletBC(V,
-                             boundary_conditions[i]['Dirichlet'],
-                             boundary_markers, i)
-            bcs.append(bc)
+    # Define the left boundary condition, parameterized by gamma
+    if isinstance(gamma, int) or isinstance(gamma, float): # 1-D case
+        # the function below will have a min at (2/7, -gamma) by design (scaling factor chosen via calculus)
+        left_bc = fin.Expression(f"pow(x[1], 2) * pow(x[1] - 1, 5) * lam", lam=gamma*823543/12500, degree=3)
+    else: # Higher-D case
+        left_bc = fin.Expression(pcwGFun(gamma, d=1), degree=1)
 
-    integrals_N = []
-    for i in boundary_conditions:
-        if 'Neumann' in boundary_conditions[i]:
-            if boundary_conditions[i]['Neumann'] != 0:
-                g = boundary_conditions[i]['Neumann']
-                integrals_N.append(g*v*ds(i))
+    # Define the rest of the boundary condition
+    dirichlet_bc = fin.Constant(0.0) # top and bottom
+    right_bc = fin.Constant(0)
 
-    bc = fin.DirichletBC(V, u0, boundary)
+    # Define integrand
+    boundary_markers = get_boundary_markers_for_square(mesh)
+    ds = fin.Measure('ds', domain=mesh, subdomain_data=boundary_markers)
 
     # Define variational problem
     f = fin.Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
-    # g = Expression("sin(2*pi*x[1])", degree=2)
-    a = fin.inner(fin.grad(u), fin.grad(v))*fin.dx
-    L = f*v*fin.dx + sum(integrals_N)
+    a = fin.inner(fin.grad(u), fin.grad(v)) * fin.dx
+    L = f * v * fin.dx + right_bc * v * ds(1) + left_bc * v * ds(3) # sum(integrals_N)
+
+    # Define Dirichlet boundary (x = 0 or x = 1)
+    def top_bottom_boundary(x):
+        return x[1] < fin.DOLFIN_EPS or x[1] > 1.0 - fin.DOLFIN_EPS
+
+    bc = fin.DirichletBC(V, dirichlet_bc, top_bottom_boundary) # this is required for correct solutions
 
     # Compute solution
     u = fin.Function(V)
-    fin.solve(a == L, u, bc) 
+    fin.solve(a == L, u, bc)
     return u
 
 
@@ -140,24 +117,30 @@ def poisson_sensor_model(sensors, gamma, nx, ny, mesh=None):
     Convenience function wrapper to just return a qoi given a parameter.
     """
     assert sensors.shape[1] == 2, "pass with shape (num_sensors, 2)"
-    num_sensors = sensors.shape[0]
-    
     u = poissonModel(gamma, mesh, nx=nx, ny=ny)
-    q = [u(xi,yi) for xi,yi in sensors]
-#     q = []
-#     V = u.function_space()
-#     probes = Probes(sensors.flatten(), V)
-# #     probes(interpolate(u,V))
-#     probes(u)
-#     q = probes.array()
+    return [u(xi,yi) for xi,yi in sensors]
 
-    return q
+def evaluate_and_save_poisson(sample, save_prefix):
+    """
+    sample is a tuple (index, gamma)
+    """
+    prefix = save_prefix.replace('.pkl','')
+    g = sample[1]
+    # define fixed mesh to avoid re-instantiation on each call to model (how it handles mesh=None)
+    mesh = fin.RectangleMesh(Point(0,0), Point(1,1), 36, 36)
+    # comm = mesh.mpi_comm()
 
+    u = poissonModel(gamma=g, mesh=mesh)
+
+    # Save solution as XML mesh
+    fname = f"{prefix}-data/poisson-{int(sample[0]):06d}.xml"
+    fin.File(fname, 'w') << u
+    # tells you where to find the saved file and what the input was to generate it.
+    return {int(sample[0]): {'u': fname, 'gamma': sample[1]}}
 
 if __name__=='__main__':
 
-    import matplotlib.pyplot as plt
-
+    # should we maybe change this to generate raw QoI data instead?
     u = poissonModel(gamma=3)
     fin.plot(u, interactive=True)
     # Save solution in VTK format
