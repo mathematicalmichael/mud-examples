@@ -258,7 +258,7 @@ def main(args):
 
 
     if args.save:
-        with open('results.pkl', 'wb') as f:
+        with open(f'{example}-results.pkl', 'wb') as f:
             pickle.dump(res, f)
 
 
