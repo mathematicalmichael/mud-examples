@@ -4,6 +4,8 @@ from pathlib import Path
 import pickle
 from mud_examples.models import generate_spatial_measurements as generate_sensors_pde
 from mud_examples.datasets import load_poisson
+import matplotlib.pyplot as plt  # move when migrating plotting code (maybe)
+import numpy as np  # only needed for band_qoi
 
 def poissonModel(gamma=3,
                  mesh=None, width=1,
@@ -176,7 +178,7 @@ def get_boundary_markers_for_rect(mesh, width=1):
     return boundary_markers
 
 
-def make_reproducible_without_fenics(prefix, lam_true=3, input_dim=2, num_samples=None, num_measure=100, out=False):
+def make_reproducible_without_fenics(prefix, lam_true=3, input_dim=2, num_samples=None, num_measure=100):
     
     model_list = pickle.load(open(f'res{input_dim}u.pkl', 'rb'))
     if num_samples is None:
@@ -196,8 +198,67 @@ def make_reproducible_without_fenics(prefix, lam_true=3, input_dim=2, num_sample
         pickle.dump(ref, f)
     print(fname, 'saved:', Path(fname).stat().st_size // 1000, 'KB')
 
-    if out:  # optional return
-        return ref
+    return fname
+
+
+def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='hor', fsize = 36, prefix=None):
+    plt.figure(figsize=(10,10))
+    colors = ['xkcd:red', 'xkcd:black', 'xkcd:orange', 'xkcd:blue', 'xkcd:green']
+    with open(fname, 'rb') as f:
+        ref = pickle.load(f)
+    sensors = ref['sensors']
+    qoi_ref = ref['data']
+    coords, vals = ref['plot']
+    x, y = sensors[:,0], sensors[:,1]
+#     try:
+#         import fenics as fin
+#         from poisson import poissonModel
+#         pn = poissonModel()
+#         fin.plot(pn, vmin=-0.5, vmax=0)
+#     except:
+    plt.tricontourf(coords[:, 0], coords[:, 1], vals, levels=20, vmin=-0.5, vmax=0)
+
+    input_dim = ref['lam'].shape[1]
+    
+    plt.title(f"Response Surface")
+    if num_sensors is not None:  # plot sensors
+        if mode == 'hor':
+            qoi_indices = band_qoi(sensors, num_qoi, axis=1)
+        elif mode == 'ver':
+            qoi_indices = band_qoi(sensors, num_qoi, axis=0)
+
+        intervals = np.linspace(0, 1, num_qoi+2)[1:-1]
+        _intervals = np.array(intervals[1:]) + ( np.array(intervals[:-1]) - np.array(intervals[1:]) ) / 2
+
+        for i in range(0, num_qoi):
+            _q = qoi_indices[i][qoi_indices[i] < num_sensors ]
+            plt.scatter(sensors[_q,0], sensors[_q,1], s=100, color=colors[i%2])
+            if i < num_qoi - 1:
+                if mode == 'hor':
+                    plt.axhline(_intervals[i], lw=3, c='k')
+                elif mode == 'ver':
+                    plt.axvline(_intervals[i], lw=3, c='k')
+
+        plt.scatter([0]*num_qoi, intervals, s=500, marker='^', c='w')
+    plt.xlim(0,1)
+    plt.ylim(0,1)
+#     plt.xticks([])
+#     plt.yticks([])
+    plt.xlabel("$x_1$", fontsize=fsize)
+    plt.ylabel("$x_2$", fontsize=fsize)
+
+    if prefix:
+        _fname = f"{prefix}_sensors_{mode}_{input_dim}D.png"
+        plt.savefig(_fname, bbox_inches='tight')
+
+# probably move to helpers or utils
+def band_qoi(sensors, num_qoi=1, axis=1):
+    intervals = np.linspace(0, 1, num_qoi+2)[1:-1]
+    _intervals = np.array(intervals[1:]) + ( np.array(intervals[:-1]) - np.array(intervals[1:]) ) / 2
+    _intervals = [0] + list(_intervals) + [1]
+    qoi_indices = [np.where(np.logical_and(sensors[:, axis] > _intervals[i],
+                                           sensors[:, axis] < _intervals[i+1]))[0] for i in range(num_qoi) ]
+    return qoi_indices
 
 
 if __name__=='__main__':
