@@ -18,11 +18,7 @@ def poissonModel(gamma=3,
     v = fin.TestFunction(V)
 
     # Define the left boundary condition, parameterized by gamma
-    if isinstance(gamma, int) or isinstance(gamma, float): # 1-D case
-        # the function below will have a min at (2/7, -gamma) by design (scaling factor chosen via calculus)
-        left_bc = fin.Expression(f"pow(x[1], 2) * pow(x[1] - 1, 5) * lam", lam=gamma*823543/12500, degree=3)
-    else: # Higher-D case
-        left_bc = fin.Expression(pcwGFun(gamma, d=1), degree=1)
+    left_bc = gamma_boundary_condition(gamma)
 
     # Define the rest of the boundary condition
     dirichlet_bc = fin.Constant(0.0) # top and bottom
@@ -47,6 +43,19 @@ def poissonModel(gamma=3,
     u = fin.Function(V)
     fin.solve(a == L, u, bc)
     return u
+
+
+def gamma_boundary_condition(gamma=3):
+    """
+    Cannot get this to instantiate successfully in another script
+    """
+    if isinstance(gamma, int) or isinstance(gamma, float): # 1-D case
+        # the function below will have a min at (2/7, -gamma) by design (scaling factor chosen via calculus)
+        lam=gamma*823543/12500
+        expr = fin.Expression(f"pow(x[1], 2) * pow(x[1] - 1, 5) * {lam}", degree=3)
+    else: # Higher-D case
+        expr = fin.Expression(piecewise_eval_from_vector(gamma, d=1), degree=1)
+    return expr
 
 
 def poisson_sensor_model(sensors, gamma, nx, ny, mesh=None):
@@ -77,18 +86,19 @@ def evaluate_and_save_poisson(sample, save_prefix):
     return {int(sample[0]): {'u': fname, 'gamma': sample[1]}}
 
 
-def pcwExpr(u, n, d=1):
+def eval_boundary_piecewise(u, n, d=1):
     """
     Takes an Expression `u` (on unit domain) and returns the string
     for another expression based on evaluating a piecewise-linear approximation.
+    The mesh is equispaced into n intervals.
     """
     dx=1/(n+1)
     intervals = [i*dx for i in range(n+2)]
-    node_values = [u(i) for i in intervals]
-    return pcwInt(intervals, node_values, d)
+    node_values = [u(0,i) for i in intervals]
+    return piecewise_eval(intervals, node_values, d)
 
        
-def pcwGFun(u, d=1):
+def piecewise_eval_from_vector(u, d=1):
     """
     Takes an iterable `u` with y-values (on interior of equispaced unit domain)
     and returns the string for an expression
@@ -98,10 +108,10 @@ def pcwGFun(u, d=1):
     dx = 1/(n+1)
     intervals = [i*dx for i in range(n+2)]
     node_values = [0] + list(u) + [1]
-    return pcwInt(intervals, node_values, d)
+    return piecewise_eval(intervals, node_values, d)
 
 
-def pcwInt(xvals, yvals, d=1):
+def piecewise_eval(xvals, yvals, d=1):
     s = ''
     for i in range(1,len(xvals)):
         start = xvals[i-1]
@@ -110,6 +120,25 @@ def pcwInt(xvals, yvals, d=1):
         s += f' ((x[{d}] >= {start}) && (x[{d}] < {end}))*'
         s += f'({yvals[i-1]}*((x[{d}]-{end})/{diff}) + (1 - ((x[{d}]-{end})/{diff}))*{yvals[i]} ) +'
     return s[1:-1]
+
+
+def eval_boundary(u, n):
+    dx=1/(n+1)
+    invals = [i*dx for i in range(n+2)]
+    outvals = [u(0,i) for i in invals][1:-1]
+    return invals[1:-1], outvals
+
+
+def expressionNorm(u,v,n=100):
+    u = eval_boundary(u, n)[1] 
+    v = eval_boundary(v, n)[1]
+    return np.linalg.norm(np.array(u) - np.array(v))/n
+
+
+def copy_expression(expression):
+    u = expression
+    return fin.Expression(u._cppcode, **u._user_parameters,
+                          degree=u.ufl_element().degree())
 
 
 def get_boundary_markers_for_rect(mesh, width=1):
