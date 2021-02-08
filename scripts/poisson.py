@@ -6,6 +6,7 @@ from mud_examples.models import generate_spatial_measurements as generate_sensor
 from mud_examples.datasets import load_poisson
 import matplotlib.pyplot as plt  # move when migrating plotting code (maybe)
 import numpy as np  # only needed for band_qoi
+from mud.funs import wme, mud_problem # needed for the poisson class
 
 def poissonModel(gamma=3,
                  mesh=None, width=1,
@@ -191,7 +192,11 @@ def make_reproducible_without_fenics(prefix, lam_true=3, input_dim=2, num_sample
     c = pn.function_space().mesh().coordinates()
     v = [pn(c[i,0], c[i,1]) for i in range(len(c))]
 
-    ref = {'sensors': sensors, 'lam': lam, 'qoi': qoi, 'truth': lam_true, 'data': qoi_ref, 'plot': (c,v)}
+    g = gamma_boundary_condition(lam_true)
+    g_mesh = np.linspace(0, 1, 1000)
+    g_plot = [g(0,y) for y in g_mesh]
+    ref = {'sensors': sensors, 'lam': lam, 'qoi': qoi, 'truth': lam_true, 'data': qoi_ref,
+           'plot_u': (c,v), 'plot_g': (g_mesh, g_plot) }
 
     fname = f'{prefix}_ref.pkl'
     with open(fname, 'wb') as f:
@@ -204,11 +209,10 @@ def make_reproducible_without_fenics(prefix, lam_true=3, input_dim=2, num_sample
 def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='hor', fsize = 36, prefix=None):
     plt.figure(figsize=(10,10))
     colors = ['xkcd:red', 'xkcd:black', 'xkcd:orange', 'xkcd:blue', 'xkcd:green']
-    with open(fname, 'rb') as f:
-        ref = pickle.load(f)
+    ref = pickle.load(open(fname, 'rb'))
     sensors = ref['sensors']
     qoi_ref = ref['data']
-    coords, vals = ref['plot']
+    coords, vals = ref['plot_u']
     x, y = sensors[:,0], sensors[:,1]
 #     try:
 #         import fenics as fin
@@ -259,6 +263,76 @@ def band_qoi(sensors, num_qoi=1, axis=1):
     qoi_indices = [np.where(np.logical_and(sensors[:, axis] > _intervals[i],
                                            sensors[:, axis] < _intervals[i+1]))[0] for i in range(num_qoi) ]
     return qoi_indices
+
+
+def split_qoi_by_indices(qoi_indices, qoi_ref, qoi, noise, sigma, max_index=None):
+    qois = []
+    if max_index is None:
+        max_index = qoi.shape[1]
+    for i in range(0, len(qoi_indices)):
+        q = qoi_indices[i][qoi_indices[i] < max_index]
+
+        _qoi = qoi[:, q]
+        _noise = noise[q]
+        _data = np.array(qoi_ref)[q] + _noise
+
+        _newqoi = wme(_qoi, _data , sigma)
+        qois.append(_newqoi)
+    return qois
+
+from scipy.stats import gaussian_kde as gkde
+from scipy.stats import distributions as dist
+
+def ratio_dci_sing(qoi):
+    kde = gkde(qoi.T)
+    ratio_eval = dist.norm.pdf(qoi)/kde.pdf(qoi.T).ravel()
+    return ratio_eval
+
+
+def ratio_dci_mult(qois):
+    nq = np.array(qois)
+    kde = gkde(nq)
+    obs = dist.norm.pdf(nq)
+    obs_eval = np.product(obs, axis=0)
+    pre_eval = kde.pdf(nq)
+    ratio_eval = np.divide(obs_eval, pre_eval)
+    return ratio_eval
+
+
+def make_mud_wrapper(domain, lam, qoi, qoi_true):
+    def mud_wrapper(num_obs, sd):
+        return mud_problem(domain=domain, lam=lam, qoi=qoi, qoi_true=qoi_true, sd=sd, num_obs=num_obs)
+
+    return mud_wrapper
+
+
+class pdeProblem(object):
+    def __init__(self, lam, qoi, lam_ref, qoi_ref, sensors, domain):
+        self.lam = lam
+        self.qoi = qoi
+        self.lam_ref = lam_ref
+        self.qoi_ref = qoi_ref
+        self.sensors = sensors
+        self.domain = domain
+
+    def wrapper(self, qoi_indices):
+        def mud_wrapper(num_obs, sd):
+            qois = split_qoi_by_indices(qoi_indices, self.qoi_ref, self.qoi,
+                                        noise=np.random.randn(num_obs)*sd,
+                                        sigma=sd, max_index=num_obs)
+            return make_mud_wrapper(self.domain, self.lam, qois, self.qoi_ref)
+        return mud_wrapper
+
+    def qoi_1d(self):
+        return make_mud_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref)
+
+    def qoi_2d_hor(self):
+        indices = band_qoi(self.sensors, num_qoi=2, axis=1)
+        return self.wrapper(indices)
+    
+    def qoi_2d_ver(self):
+        indices = band_qoi(self.sensors, num_qoi=2, axis=0)
+        return self.wrapper(indices)
 
 
 if __name__=='__main__':
