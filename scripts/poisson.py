@@ -255,6 +255,35 @@ def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='hor', fsize = 
         _fname = f"{prefix}_sensors_{mode}_{input_dim}D.png"
         plt.savefig(_fname, bbox_inches='tight')
 
+
+# from scipy.stats import gaussian_kde as gkde
+# from scipy.stats import distributions as dist
+
+# def ratio_dci_sing(qoi):
+#     kde = gkde(qoi.T)
+#     ratio_eval = dist.norm.pdf(qoi)/kde.pdf(qoi.T).ravel()
+#     return ratio_eval
+
+
+# def ratio_dci_mult(qois):
+#     nq = np.array(qois)
+#     kde = gkde(nq)
+#     obs = dist.norm.pdf(nq)
+#     obs_eval = np.product(obs, axis=0)
+#     pre_eval = kde.pdf(nq)
+#     ratio_eval = np.divide(obs_eval, pre_eval)
+#     return ratio_eval
+
+
+def make_mud_wrapper(domain, lam, qoi, qoi_true, indices=None):
+    """
+    Anonymous function
+    """
+    def mud_wrapper(num_obs, sd):
+        return mud_problem(domain=domain, lam=lam, qoi=qoi, qoi_true=qoi_true, sd=sd, num_obs=num_obs, split=indices)
+
+    return mud_wrapper
+
 # probably move to helpers or utils
 def band_qoi(sensors, num_qoi=1, axis=1):
     intervals = np.linspace(0, 1, num_qoi+2)[1:-1]
@@ -263,47 +292,6 @@ def band_qoi(sensors, num_qoi=1, axis=1):
     qoi_indices = [np.where(np.logical_and(sensors[:, axis] > _intervals[i],
                                            sensors[:, axis] < _intervals[i+1]))[0] for i in range(num_qoi) ]
     return qoi_indices
-
-
-def split_qoi_by_indices(qoi_indices, qoi_ref, qoi, noise, sigma, max_index=None):
-    qois = []
-    if max_index is None:
-        max_index = qoi.shape[1]
-    for i in range(0, len(qoi_indices)):
-        q = qoi_indices[i][qoi_indices[i] < max_index]
-
-        _qoi = qoi[:, q]
-        _noise = noise[q]
-        _data = np.array(qoi_ref)[q] + _noise
-
-        _newqoi = wme(_qoi, _data , sigma)
-        qois.append(_newqoi)
-    return qois
-
-from scipy.stats import gaussian_kde as gkde
-from scipy.stats import distributions as dist
-
-def ratio_dci_sing(qoi):
-    kde = gkde(qoi.T)
-    ratio_eval = dist.norm.pdf(qoi)/kde.pdf(qoi.T).ravel()
-    return ratio_eval
-
-
-def ratio_dci_mult(qois):
-    nq = np.array(qois)
-    kde = gkde(nq)
-    obs = dist.norm.pdf(nq)
-    obs_eval = np.product(obs, axis=0)
-    pre_eval = kde.pdf(nq)
-    ratio_eval = np.divide(obs_eval, pre_eval)
-    return ratio_eval
-
-
-def make_mud_wrapper(domain, lam, qoi, qoi_true):
-    def mud_wrapper(num_obs, sd):
-        return mud_problem(domain=domain, lam=lam, qoi=qoi, qoi_true=qoi_true, sd=sd, num_obs=num_obs)
-
-    return mud_wrapper
 
 
 class pdeProblem(object):
@@ -315,24 +303,16 @@ class pdeProblem(object):
         self.sensors = sensors
         self.domain = domain
 
-    def wrapper(self, qoi_indices):
-        def mud_wrapper(num_obs, sd):
-            qois = split_qoi_by_indices(qoi_indices, self.qoi_ref, self.qoi,
-                                        noise=np.random.randn(num_obs)*sd,
-                                        sigma=sd, max_index=num_obs)
-            return make_mud_wrapper(self.domain, self.lam, qois, self.qoi_ref)
-        return mud_wrapper
-
     def qoi_1d(self):
         return make_mud_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref)
 
     def qoi_2d_hor(self):
         indices = band_qoi(self.sensors, num_qoi=2, axis=1)
-        return self.wrapper(indices)
+        return make_mud_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref, indices)
     
     def qoi_2d_ver(self):
         indices = band_qoi(self.sensors, num_qoi=2, axis=0)
-        return self.wrapper(indices)
+        return make_mud_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref, indices)
 
 
 if __name__=='__main__':
