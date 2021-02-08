@@ -1,6 +1,9 @@
 import dolfin as fin
 # from fenicstools.Probe import Probes
-
+from pathlib import Path
+import pickle
+from mud_examples.models import generate_spatial_measurements as generate_sensors_pde
+from mud_examples.datasets import load_poisson
 
 def poissonModel(gamma=3,
                  mesh=None, width=1,
@@ -171,6 +174,30 @@ def get_boundary_markers_for_rect(mesh, width=1):
     BoundaryX0().mark(boundary_markers, 3)
     
     return boundary_markers
+
+
+def make_reproducible_without_fenics(prefix, lam_true=3, input_dim=2, num_samples=None, num_measure=100, out=False):
+    
+    model_list = pickle.load(open(f'res{input_dim}u.pkl', 'rb'))
+    if num_samples is None:
+        num_samples = len(model_list)
+    sensors = generate_sensors_pde(num_measure)
+    lam, qoi = load_poisson(sensors, model_list[0:num_samples], nx=36, ny=36)
+    qoi_ref = poisson_sensor_model(sensors, gamma=lam_true, nx=36, ny=36)
+
+    pn = poissonModel(gamma=lam_true)
+    c = pn.function_space().mesh().coordinates()
+    v = [pn(c[i,0], c[i,1]) for i in range(len(c))]
+
+    ref = {'sensors': sensors, 'lam': lam, 'qoi': qoi, 'truth': lam_true, 'data': qoi_ref, 'plot': (c,v)}
+
+    fname = f'{prefix}_ref.pkl'
+    with open(fname, 'wb') as f:
+        pickle.dump(ref, f)
+    print(fname, 'saved:', Path(fname).stat().st_size // 1000, 'KB')
+
+    if out:  # optional return
+        return ref
 
 
 if __name__=='__main__':
