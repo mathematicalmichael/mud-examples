@@ -61,7 +61,7 @@ def main_pde(model_list, num_trials=5,
                 ps.make_reproducible_without_fenics('mud-alt', lam_true, input_dim=1, num_samples=None, num_measure=num_measure)
                 P.load(fname)
             wrapper = P.mud_scalar()
-
+            ps.plot_without_fenics(fname, num_sensors=100, num_qoi=1, example=example)
         else:
             fname = f'pde_{input_dim}D/mud_ref.pkl'
             try:
@@ -72,8 +72,12 @@ def main_pde(model_list, num_trials=5,
 
             if example == 'mud-alt':
                 wrapper = P.mud_vector_vertical()
+                ps.plot_without_fenics(fname, num_sensors=100, mode='ver',
+                                       num_qoi=input_dim, example=example)
             else:
                 wrapper = P.mud_vector_horizontal()
+                ps.plot_without_fenics(fname, num_sensors=100, mode='hor',
+                                       num_qoi=input_dim, example=example)
 
         # adjust measurements to account for what we actually have simulated
         measurements = np.array(measurements)

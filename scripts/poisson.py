@@ -211,7 +211,7 @@ def make_reproducible_without_fenics(example, lam_true=3, input_dim=2, num_sampl
     return fname
 
 
-def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='hor', fsize = 36, prefix=None):
+def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='hor', fsize = 36, example=None):
     plt.figure(figsize=(10,10))
     mode = mode.lower()
     colors = ['xkcd:red', 'xkcd:black', 'xkcd:orange', 'xkcd:blue', 'xkcd:green']
@@ -230,7 +230,7 @@ def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='hor', fsize = 
 
     input_dim = ref['lam'].shape[1]
     
-    plt.title(f"Response Surface")
+    plt.title(f"Response Surface", fontsize=1.25*fsize)
     if num_sensors is not None:  # plot sensors
         intervals = np.linspace(0, 1, num_qoi+2)[1:-1]
         if mode == 'hor':
@@ -262,9 +262,10 @@ def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='hor', fsize = 
     plt.xlabel("$x_1$", fontsize=fsize)
     plt.ylabel("$x_2$", fontsize=fsize)
 
-    if prefix:
-        _fname = f"{prefix}_sensors_{mode}_{input_dim}D.png"
-        plt.savefig(_fname, bbox_inches='tight')
+    if example:
+        fname = f"pde_{input_dim}D/{example}_surface.png"
+        plt.savefig(fname, bbox_inches='tight')
+        print(f"Saved {fname}")
 
 
 # from scipy.stats import gaussian_kde as gkde
