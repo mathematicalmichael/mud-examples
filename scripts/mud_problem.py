@@ -3,7 +3,7 @@ import numpy as np
 from mud.plot import make_2d_unit_mesh
 from mud.util import std_from_equipment
 
-import pickle
+import poisson as ps  # TODO: move this to mud_examples
 
 from mud_examples.plotting import plot_experiment_measurements, plot_experiment_equipment
 from mud_examples.plotting import plot_decay_solution, plot_poisson_solution
@@ -33,41 +33,57 @@ def main_pde(model_list, num_trials=5,
              fsize=32,
              seed=21,
              lam_true=3.0,
-             domain=[[1,5]], alt=False):
-    print(f"Will run simulations for S={measurements}")
+             input_dim=2,
+             domain=[[-4,0]], alt=False, bayes=False):
+    print(f"Will run simulations for N={measurements}")
     res = []
     num_measure = max(measurements)
 
     sd_vals     = [ std_from_equipment(tolerance=tol, probability=0.99) for tol in tolerances ]
     sigma       = sd_vals[-1] # sorted, pick largest
-    example_list = [ 'pde' ]
+    example_list = [ 'mud' ]
     if alt:
-        example_list.append('pde-alt')
+        example_list.append('mud-alt')
+    if bayes:
+        example_list.append('map')
 
     for example in example_list:
         print(f"Example: {example}")
-        if example == 'pde-alt':
-            sensors = generate_sensors_pde(num_measure, ymax=0.95, xmax=0.25)
+        P = ps.pdeProblem()
+        # in 1d this is a change in sensor location
+        # in ND, change in how we partition sensors (vertical vs horizontal)
+        if example == 'mud-alt' and input_dim == 1:
+            fname = 'pde_{input_dim}D/mud-alt_ref.pkl'
+            try:
+                P.load(fname)
+            except FileNotFoundError:
+                # attempt to load xml results from disk.
+                ps.make_reproducible_without_fenics('mud-alt', lam_true, input_dim=1, num_samples=None, num_measure=num_measure)
+                P.load(fname)
+            wrapper = P.mud_scalar()
+
         else:
-            sensors = generate_sensors_pde(num_measure, ymax=0.95, xmax=0.95)
+            fname = f'pde_{input_dim}D/mud_ref.pkl'
+            try:
+                P.load(fname)
+            except FileNotFoundError:
+                ps.make_reproducible_without_fenics('mud', lam_true, input_dim=input_dim, num_samples=None, num_measure=num_measure)
+                P.load(fname)
 
-        # TODO clean this up ... if you cannot import it, load from file.
-        from poisson import poisson_sensor_model
-        qoi_true = poisson_sensor_model(sensors, gamma=lam_true, nx=36, ny=36) # wrapper around `poisson`
-        lam, qoi = load_poisson(sensors, model_list)
+            if example == 'mud-alt':
+                wrapper = P.mud_vector_vertical()
+            else:
+                wrapper = P.mud_vector_horizontal()
 
-        with open(f'{example}_data.pkl', 'wb') as f:
-            pickle.dump({'qoi_true': qoi_true, 'sensors': sensors, 'lam': lam, 'qoi': qoi}, f)
-
-        def mud_wrapper(num_obs, sd):
-            return mud_problem(domain=domain, lam=lam, qoi=qoi, sd=sd, qoi_true=qoi_true, num_obs=num_obs)
-
+        # adjust measurements to account for what we actually have simulated
+        measurements = np.array(measurements)
+        measurements = list(measurements[measurements <= P.qoi.shape[1]])
         print("Increasing Measurements Study")
         experiments, solutions = experiment_measurements(num_measurements=measurements,
                                                  sd=sigma,
                                                  num_trials=num_trials,
                                                  seed=seed,
-                                                 fun=mud_wrapper)
+                                                 fun=wrapper)
 
         means, variances = extract_statistics(solutions, lam_true)
         regression_mean, slope_mean = fit_log_linear_regression(measurements, means)
@@ -82,7 +98,7 @@ def main_pde(model_list, num_trials=5,
                                                   num_measure=num_sensors,
                                                   sd_vals=sd_vals,
                                                   reference_value=lam_true,
-                                                  fun=mud_wrapper)
+                                                  fun=wrapper)
 
             regression_err_mean, slope_err_mean = fit_log_linear_regression(tolerances, sd_means)
             regression_err_vars, slope_err_vars = fit_log_linear_regression(tolerances, sd_vars)
@@ -92,9 +108,15 @@ def main_pde(model_list, num_trials=5,
         else:
             _re = None  # hack to avoid changing data structures for the time being
 
-        _in = (lam, qoi, sensors, qoi_true, experiments, solutions)
+        _in = (P.lam, P.qoi, P.sensors, P.qoi_ref, experiments, solutions)
         _rm = (regression_mean, slope_mean, regression_vars, slope_vars, means, variances)
         res.append((example, _in, _rm, _re))
+
+        if input_dim > 1:
+            P.plot_initial()
+            P.plot_solutions(solutions, 20, example=example)
+            P.plot_solutions(solutions, 100, example=example, save=True)
+
     return res
 
 
@@ -200,6 +222,8 @@ def main(args):
     seed         = args.seed
     inputdim     = args.input_dim
     save         = args.save
+    alt          = args.alt
+    bayes        = args.bayes
     tolerances   = list(np.sort([ float(t) for t in args.sensor_tolerance ]))
     if len(tolerances) == 0: tolerances = [0.1]
 
@@ -221,10 +245,15 @@ def main(args):
                          seed=seed,
                          lam_true=lam_true,
                          tolerances=tolerances,
+                         input_dim=inputdim,
+                         alt=alt, bayes=bayes,
                          measurements=measurements)
-
-        plot_poisson_solution(res=res, measurements=measurements,
+        if inputdim == 1:
+            plot_poisson_solution(res=res, measurements=measurements,
                      fsize=fsize, prefix=f'pde_{inputdim}D/' + example, lam_true=lam_true, save=save)
+        else:
+            # somehow get P passed here or handle plotting above..
+            pass
 
         if len(measurements) > 1:
             plot_experiment_measurements(measurements, res,
@@ -241,7 +270,8 @@ def main(args):
                          seed=seed,
                          lam_true=lam_true,
                          tolerances=tolerances,
-                         time_ratios=time_ratios, bayes=True)
+                         alt=alt, bayes=bayes,
+                         time_ratios=time_ratios)
 
         if len(time_ratios) > 1:
             plot_experiment_measurements(time_ratios, res,
@@ -279,8 +309,10 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--sensor-tolerance',  default=[0.1], action='append')
     parser.add_argument('-s', '--seed',          default=21)
     parser.add_argument('-lw', '--linewidth',    default=5)
-    parser.add_argument('-i', '--input-dim',     default=1, type=int)
+    parser.add_argument('-i', '--input-dim',     default=2, type=int)
     parser.add_argument('--fsize',               default=32, type=int)
+    parser.add_argument('--bayes', action='store_true')
+    parser.add_argument('--alt', action='store_true')
     parser.add_argument('--save', action='store_true')
     args = parser.parse_args()
     main(args)

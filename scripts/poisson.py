@@ -179,12 +179,17 @@ def get_boundary_markers_for_rect(mesh, width=1):
     return boundary_markers
 
 
-def make_reproducible_without_fenics(prefix, lam_true=3, input_dim=2, num_samples=None, num_measure=100):
+def make_reproducible_without_fenics(example, lam_true=3, input_dim=2, num_samples=None, num_measure=100):
     
     model_list = pickle.load(open(f'res{input_dim}u.pkl', 'rb'))
     if num_samples is None:
         num_samples = len(model_list)
-    sensors = generate_sensors_pde(num_measure)
+        
+    if 'alt' in example:  # alternative measurement locations for more sensitivity / precision
+        sensors = generate_sensors_pde(num_measure, ymax=0.95, xmax=0.25)
+    else:
+        sensors = generate_sensors_pde(num_measure, ymax=0.95, xmax=0.95)
+
     lam, qoi = load_poisson(sensors, model_list[0:num_samples], nx=36, ny=36)
     qoi_ref = poisson_sensor_model(sensors, gamma=lam_true, nx=36, ny=36)
 
@@ -198,7 +203,7 @@ def make_reproducible_without_fenics(prefix, lam_true=3, input_dim=2, num_sample
     ref = {'sensors': sensors, 'lam': lam, 'qoi': qoi, 'truth': lam_true, 'data': qoi_ref,
            'plot_u': (c,v), 'plot_g': (g_mesh, g_plot) }
 
-    fname = f'{prefix}_ref.pkl'
+    fname = f'pde_{input_dim}D/{example}_ref.pkl'
     with open(fname, 'wb') as f:
         pickle.dump(ref, f)
     print(fname, 'saved:', Path(fname).stat().st_size // 1000, 'KB')
@@ -208,6 +213,7 @@ def make_reproducible_without_fenics(prefix, lam_true=3, input_dim=2, num_sample
 
 def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='hor', fsize = 36, prefix=None):
     plt.figure(figsize=(10,10))
+    mode = mode.lower()
     colors = ['xkcd:red', 'xkcd:black', 'xkcd:orange', 'xkcd:blue', 'xkcd:green']
     ref = pickle.load(open(fname, 'rb'))
     sensors = ref['sensors']
@@ -226,13 +232,18 @@ def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='hor', fsize = 
     
     plt.title(f"Response Surface")
     if num_sensors is not None:  # plot sensors
+        intervals = np.linspace(0, 1, num_qoi+2)[1:-1]
         if mode == 'hor':
             qoi_indices = band_qoi(sensors, num_qoi, axis=1)
+            # partitions equidistant between sensors
+            _intervals = np.array(intervals[1:]) + \
+                           ( np.array(intervals[:-1]) - \
+                           np.array(intervals[1:]) ) / 2
+
         elif mode == 'ver':
             qoi_indices = band_qoi(sensors, num_qoi, axis=0)
-
-        intervals = np.linspace(0, 1, num_qoi+2)[1:-1]
-        _intervals = np.array(intervals[1:]) + ( np.array(intervals[:-1]) - np.array(intervals[1:]) ) / 2
+            # partitions equidistant on x_1 = (0, 1)
+            _intervals = np.linspace(0, 1, num_qoi+1)[1:]
 
         for i in range(0, num_qoi):
             _q = qoi_indices[i][qoi_indices[i] < num_sensors ]
@@ -284,10 +295,16 @@ def make_mud_wrapper(domain, lam, qoi, qoi_true, indices=None):
 
     return mud_wrapper
 
+
 # probably move to helpers or utils
 def band_qoi(sensors, num_qoi=1, axis=1):
     intervals = np.linspace(0, 1, num_qoi+2)[1:-1]
-    _intervals = np.array(intervals[1:]) + ( np.array(intervals[:-1]) - np.array(intervals[1:]) ) / 2
+    if axis == 1:
+        _intervals = np.array(intervals[1:]) + ( np.array(intervals[:-1]) - np.array(intervals[1:]) ) / 2
+    elif axis == 0:
+        _intervals = np.linspace(0, 1, num_qoi+1)[1:]
+    else:
+        raise ValueError("axis must be 0 or 1 since the example is in 2D")
     _intervals = [0] + list(_intervals) + [1]
     qoi_indices = [np.where(np.logical_and(sensors[:, axis] > _intervals[i],
                                            sensors[:, axis] < _intervals[i+1]))[0] for i in range(num_qoi) ]
@@ -295,24 +312,190 @@ def band_qoi(sensors, num_qoi=1, axis=1):
 
 
 class pdeProblem(object):
-    def __init__(self, lam, qoi, lam_ref, qoi_ref, sensors, domain):
-        self.lam = lam
-        self.qoi = qoi
-        self.lam_ref = lam_ref
-        self.qoi_ref = qoi_ref
-        self.sensors = sensors
-        self.domain = domain
+    def __init__(self, fname=None):
+        self.fname = fname
+        self._lam = None
+        self._lam_ref = None
+        self._qoi = None
+        self._qoi_ref = None
+        self._sensors = None
+        self._domain = None
+        self._u = None
+        self._g = None
 
-    def qoi_1d(self):
+    @property
+    def lam(self):
+        return self._lam
+
+    @lam.setter
+    def lam(self, lam):
+        self._lam = lam
+
+    @property
+    def lam_ref(self):
+        return self._lam_ref
+
+    @lam_ref.setter
+    def lam_ref(self, lam_ref):
+        if self.domain is None:
+            raise AttributeError("domain not yet set.")
+        min_val, max_val = 0, 4  # problem-specific
+        if (lam_ref < min_val) or (lam_ref > max_val):
+            raise ValueError("lam_ref must be inside domain.")
+        self._lam_ref = lam_ref
+
+    @property
+    def qoi(self):
+        return self._qoi
+
+    @qoi.setter
+    def qoi(self, qoi):
+        self._qoi = qoi
+
+    @property
+    def qoi_ref(self):
+        return self._qoi_ref
+
+    @qoi_ref.setter
+    def qoi_ref(self, qoi_ref):
+        self._qoi_ref = qoi_ref
+
+    @property
+    def sensors(self):
+        return self._sensors
+
+    @sensors.setter
+    def sensors(self, sensors):
+        self._sensors = sensors
+
+    @property
+    def domain(self):
+        return self._domain
+
+    @domain.setter
+    def domain(self, domain):
+        self._domain = domain
+
+    @property
+    def g(self):
+        return self._g
+
+    @g.setter
+    def g(self, g):
+        self._g = g
+
+    @property
+    def u(self):
+        return self._u
+
+    @u.setter
+    def u(self, u):
+        self._u = u
+
+    def load(self, fname=None):
+        if fname: 
+            self.fname = fname
+        else:
+            fname = self.fname
+        domain, sensors, lam, qoi, qoi_ref, lam_ref, u, g = load_poisson_from_disk(fname)
+        self.domain = domain
+        self.sensors = sensors
+        self.lam = lam
+        self.lam_ref = lam_ref
+        self.qoi = qoi
+        self.qoi_ref = qoi_ref
+        self.u = u
+        self.g = g
+
+    def mud_scalar(self):
         return make_mud_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref)
 
-    def qoi_2d_hor(self):
-        indices = band_qoi(self.sensors, num_qoi=2, axis=1)
+    def mud_vector_horizontal(self, num_qoi=None):
+        if num_qoi is None:  # set output dimension = input dimension
+            num_qoi = self.lam.shape[1]
+        indices = band_qoi(self.sensors, num_qoi=num_qoi, axis=1)
         return make_mud_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref, indices)
-    
-    def qoi_2d_ver(self):
-        indices = band_qoi(self.sensors, num_qoi=2, axis=0)
+
+    def mud_vector_vertical(self, num_qoi=None):
+        if num_qoi is None:  # set output dimension = input dimension
+            num_qoi = self.lam.shape[1]
+        indices = band_qoi(self.sensors, num_qoi=num_qoi, axis=0)
         return make_mud_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref, indices)
+
+    def plot_initial(self, save=True, **kwargs):
+        self.plot(save=save,**kwargs)
+        
+    def plot_solutions(self, sols, num, save=True, **kwargs):
+        self.plot(sols=sols, num_measurements=num, save=save, **kwargs)
+
+    def plot(self, sols=None, num_measurements=20, example='mud', fsize=36, ftype='png', save=False):
+        lam, qoi, qoi_ref, g = self.lam, self.qoi, self.qoi_ref, self.g, 
+        closest_fit_index_out = np.argmin(np.linalg.norm(qoi - np.array(qoi_ref), axis=1))
+        g_projected = list(lam[closest_fit_index_out, :])
+        plt.figure(figsize=(10,10))
+
+        g_mesh, g_plot = g
+        intervals = list(np.linspace(0, 1, lam.shape[1]+2)[1:-1])
+        # fin.plot(u_plot, mesh=mesh, lw=5, c='k', label="$g$")
+        plt.plot(g_mesh, g_plot, lw=5, c='k', label="$g$")
+        plt.plot([0]+intervals+[1], [0]+g_projected+[0], lw=5, c='green', alpha=0.6, ls='--', label='$\hat{g}$', zorder=5)
+
+
+        if sols is not None:
+            if sols.get(num_measurements, None) is None:
+                raise AttributeError(f"Solutions `sols` missing requested N={num_measurements}.")
+            else:
+                prefix = f'pde_{lam.shape[1]}D/{example}_solutions_N{num_measurements}'
+                plot_lam = np.array(sols[num_measurements])
+                if 'alt' in example:
+                    qmap = '$Q_{%dD}^\prime$'%lam.shape[1]
+                else:
+                    qmap = '$Q_{%dD}$'%lam.shape[1]
+                plt.title(f'MUD Estimates for {qmap}, N={num_measurements}', fontsize=1.25*fsize)
+        else:  # initial plot, first 100
+            prefix = f'pde_{lam.shape[1]}D/initial'
+            plot_lam = lam[0:100, :]
+            plt.title('Samples from Initial Density', fontsize=1.25*fsize)
+
+        for _lam in plot_lam:
+            plt.plot([0]+intervals+[1], [0]+list(_lam)+[0], lw=1, c='purple', alpha=0.2)
+
+
+        plt.xlabel("$x_2$", fontsize=fsize)
+        plt.ylabel("$g(x, \lambda)$", fontsize=fsize)
+
+
+
+        # label min(g)
+        # plt.axvline(2/7, alpha=0.4, ls=':')
+        # plt.axhline(-lam_true, alpha=0.4, ls=':')
+        plt.ylim(-4,0)
+        plt.xlim(0,1)
+        plt.legend()
+        if save:
+            _fname = f"{prefix}.{ftype}"
+            plt.savefig(_fname, bbox_inches='tight')
+            print(f"Saved {_fname}")
+    #     plt.show()
+
+def load_poisson_from_disk(fname):
+    try:
+        ref = pickle.load(open(fname, 'rb'))
+    except FileNotFoundError as e:
+        raise FileNotFoundError("File missing. Run `make_reproducible_without_fenics` first.")
+    lam = ref['lam']
+    input_dim = lam.shape[1]
+    domain = np.array([[-4,0]]*input_dim)
+    qoi = ref['qoi']
+    qoi_ref = ref['data']
+    lam_ref = ref['truth']
+    u = ref['plot_u']
+    g = ref['plot_g']
+    sensors = ref['sensors']
+    return domain, sensors, lam, qoi, qoi_ref, lam_ref, u, g
+
+
+
 
 
 if __name__=='__main__':

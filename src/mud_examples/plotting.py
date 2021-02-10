@@ -322,8 +322,8 @@ def plot_experiment_measurements(measurements, res, prefix, fsize=32, linewidth=
     for _res in res:
         _prefix, _in, _rm, _re = _res
         regression_mean, slope_mean, regression_vars, slope_vars, means, variances = _rm
-        plt.plot(measurements, regression_mean, label=f"{_prefix:10s} slope: {slope_mean:1.4f}", lw=linewidth)
-        plt.scatter(measurements, means, marker='x', lw=20)
+        plt.plot(measurements[:len(regression_mean)], regression_mean, label=f"{_prefix:10s} slope: {slope_mean:1.4f}", lw=linewidth)
+        plt.scatter(measurements[:len(means)], means, marker='x', lw=20)
     plt.xscale('log')
     plt.yscale('log')
     plt.Axes.set_aspect(plt.gca(), 1)
@@ -342,8 +342,8 @@ def plot_experiment_measurements(measurements, res, prefix, fsize=32, linewidth=
     for _res in res:
         _prefix, _in, _rm, _re = _res
         regression_mean, slope_mean, regression_vars, slope_vars, means, variances = _rm
-        plt.plot(measurements, regression_vars, label=f"{_prefix:10s} slope: {slope_vars:1.4f}", lw=linewidth)
-        plt.scatter(measurements, variances, marker='x', lw=20)
+        plt.plot(measurements[:len(regression_vars)], regression_vars, label=f"{_prefix:10s} slope: {slope_vars:1.4f}", lw=linewidth)
+        plt.scatter(measurements[:len(variances)], variances, marker='x', lw=20)
     plt.xscale('log')
     plt.yscale('log')
     plt.Axes.set_aspect(plt.gca(), 1)
