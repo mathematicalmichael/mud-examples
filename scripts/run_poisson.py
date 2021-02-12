@@ -3,9 +3,7 @@ import os
 # os.environ['OMP_NUM_THREADS'] = '1'
 from mud_examples.poisson import evaluate_and_save_poisson as wrapper 
 import numpy as np
-from fenics import set_log_level
 
-set_log_level(40) # ERROR=40
 # from mpi4py import MPI
 # comm = MPI.COMM_WORLD
 # rank = comm.Get_rank()

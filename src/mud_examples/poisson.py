@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt  # move when migrating plotting code (maybe)
 import numpy as np  # only needed for band_qoi
 from mud.funs import wme, mud_problem # needed for the poisson class
 
+from fenics import set_log_level
+set_log_level(40) # ERROR=40
+
 def poissonModel(gamma=3,
                  mesh=None, width=1,
                  nx=36, ny=36):
