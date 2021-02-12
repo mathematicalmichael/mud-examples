@@ -1,4 +1,3 @@
-import poisson as ps  # TODO: move this to mud_examples
 from mud.funs import mud_problem, map_problem
 from mud.util import std_from_equipment
 
