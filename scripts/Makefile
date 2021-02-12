@@ -13,16 +13,14 @@ ode: mud_problem.py
 	./run_decay.sh
 
 # estimated four minutes
-pde1: res1u.pkl $(DEPS)
+pde1: res1u.pkl $(DEPS) mud_problem.py
 	mkdir -p pde_1D/
-	./run_poisson.sh
+	./run_poisson.sh  # TODO: make this the 1d
 
 # adding res2u.pkl below will generate all results.
-pde2: MUD-Discretized.ipynb $(DEPS)
+pde2: mud_problem.py
 	mkdir -p pde_2D/
-	jupyter-nbconvert --to notebook --execute \
-	MUD-Discretized.ipynb && \
-	rm -f MUD-Discretized.nbconvert.ipynb
+	./run_poisson.sh
 
 # estimated twenty minutes
 res2u.pkl: generate_pde_data.sh run_poisson.py poisson.py
