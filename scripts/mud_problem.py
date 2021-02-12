@@ -3,8 +3,6 @@ import numpy as np
 from mud.plot import make_2d_unit_mesh
 from mud.util import std_from_equipment
 
-import poisson as ps  # TODO: move this to mud_examples
-
 from mud_examples.plotting import plot_experiment_measurements, plot_experiment_equipment
 from mud_examples.plotting import plot_decay_solution, plot_poisson_solution
 
@@ -35,6 +33,7 @@ def main_pde(model_list, num_trials=5,
              lam_true=3.0,
              input_dim=2,
              domain=[[-4,0]], alt=False, bayes=False):
+    import poisson as ps  # TODO: move this to mud_examples
     print(f"Will run simulations for N={measurements}")
     res = []
     num_measure = max(measurements)
