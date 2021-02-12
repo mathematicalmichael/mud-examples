@@ -12,8 +12,8 @@ matplotlib.backend = 'Agg'
 matplotlib.rcParams['figure.figsize'] = 10,10
 matplotlib.rcParams['font.size'] = 16
 
-from ode import main_ode
-from pde import main_pde
+from mud_examples.ode import main_ode
+from mud_examples.pde import main_pde
 
 def main(args):
     np.random.seed(args.seed)
