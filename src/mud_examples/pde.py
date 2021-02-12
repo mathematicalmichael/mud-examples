@@ -8,7 +8,6 @@ matplotlib.backend = 'Agg'
 matplotlib.rcParams['figure.figsize'] = 10,10
 matplotlib.rcParams['font.size'] = 16
 
-import mud_examples.poisson as ps
 from mud.funs import mud_problem, map_problem
 from mud.util import std_from_equipment
 
@@ -26,6 +25,7 @@ def main_pde(num_trials=5,
              lam_true=3.0,
              input_dim=2,
              domain=[[-4,0]], alt=False, bayes=False):
+    import mud_examples.poisson as ps  # TODO move this outside, get fenics stuff into separate place.
     print(f"Will run simulations for N={measurements}")
     res = []
     num_measure = max(measurements)
