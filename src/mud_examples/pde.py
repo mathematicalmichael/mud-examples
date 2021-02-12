@@ -8,7 +8,7 @@ matplotlib.backend = 'Agg'
 matplotlib.rcParams['figure.figsize'] = 10,10
 matplotlib.rcParams['font.size'] = 16
 
-import mud.poisson as ps  # TODO: move this to mud_examples
+import mud_examples.poisson as ps
 from mud.funs import mud_problem, map_problem
 from mud.util import std_from_equipment
 

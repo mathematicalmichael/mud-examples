@@ -1,7 +1,7 @@
 #!/usr/env/bin python
 import os
 # os.environ['OMP_NUM_THREADS'] = '1'
-from poisson import evaluate_and_save_poisson as wrapper 
+from mud_examples.poisson import evaluate_and_save_poisson as wrapper 
 import numpy as np
 from fenics import set_log_level
 
