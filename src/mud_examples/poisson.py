@@ -1,15 +1,166 @@
-import dolfin as fin
-# from fenicstools.Probe import Probes
+# -*- coding: utf-8 -*-
+#!/usr/env/bin python
+
+import argparse
+import logging
+import os
+import sys
 from pathlib import Path
 import pickle
+
+import numpy as np  # only needed for band_qoi + sample generation for main method
+import matplotlib.pyplot as plt  # move when migrating plotting code (maybe)
+
+from mud_examples.helpers import LazyLoader
+fin = LazyLoader('dolfin')
+# from mpi4py import MPI
+# comm = MPI.COMM_WORLD
+# rank = comm.Get_rank()
+
+from mud.util import std_from_equipment # used for convenience in setting Normal distribution
 from mud_examples.models import generate_spatial_measurements as generate_sensors_pde
 from mud_examples.datasets import load_poisson
-import matplotlib.pyplot as plt  # move when migrating plotting code (maybe)
-import numpy as np  # only needed for band_qoi
 from mud.funs import wme, mud_problem # needed for the poisson class
 
-from fenics import set_log_level
-set_log_level(40) # ERROR=40
+__author__ = "Mathematical Michael"
+__copyright__ = "Mathematical Michael"
+__license__ = "mit"
+from mud_examples import __version__
+from mud import __version__ as __mud_version__
+
+_logger = logging.getLogger(__name__) # TODO: make use of this instead of print
+
+
+def parse_args(args):
+    """Parse command line parameters
+
+    Args:
+      args ([str]): command line parameters as list of strings
+
+    Returns:
+      :obj:`argparse.Namespace`: command line parameters namespace
+    """
+    parser = argparse.ArgumentParser(
+        description="Poisson Problem")
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"mud_examples {__version__}, mud {__mud_version__}")
+    parser.add_argument('-n', '--num_samples',
+        dest="num",
+        help="Number of samples",
+        default=1,
+        type=int,
+        metavar="INT")
+    parser.add_argument('-i', '--input_dim',
+        dest="input_dim",
+        help="Dimension of input space (default=2).",
+        default=2,
+        type=int,
+        metavar="INT")
+    parser.add_argument('-d', '--distribution',
+        dest="dist",
+        help="Distribution. `n` (normal), `u` (uniform, default)",
+        default='u',
+        type=str,
+        metavar="STR")
+    parser.add_argument('-b', '--beta-params',
+        dest="beta_params",
+        help="Parameters for beta distribution. Overrides --distribution. (default = 1 1 )",
+        default=None,
+        nargs='+',
+        type=float,
+        metavar="FLOAT FLOAT")
+    parser.add_argument('-p', '--prefix',
+        dest="prefix",
+        help="Output filename prefix (no extension)",
+        default='results',
+        type=str,
+        metavar="STR")
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        dest="loglevel",
+        help="set loglevel to INFO",
+        action="store_const",
+        const=logging.INFO)
+    parser.add_argument(
+        "-vv",
+        "--very-verbose",
+        dest="loglevel",
+        help="set loglevel to DEBUG",
+        action="store_const",
+        const=logging.DEBUG)
+    return parser.parse_args(args)
+
+
+def setup_logging(loglevel):
+    """Setup basic logging
+
+    Args:
+      loglevel (int): minimum loglevel for emitting messages
+    """
+    logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
+    logging.basicConfig(level=loglevel, stream=sys.stdout,
+                        format=logformat, datefmt="%Y-%m-%d %H:%M:%S")
+
+
+def main(args):
+    """Main entry point allowing external calls
+
+    Args:
+      args ([str]): command line parameter list
+    """
+    args = parse_args(args)
+    setup_logging(args.loglevel)
+    _logger.debug("Starting crazy calculations...")
+
+    num_samples = args.num
+    dist = args.dist
+    dim_input = args.input_dim
+    beta_params = args.beta_params
+
+    # perform random sampling according to command-line arguments
+    if beta_params is None:
+    
+        if dist == 'n':  # N(-2, sd), sd chosen so 99.99% samples are in (-4, 0)
+            sd = std_from_equipment(2, 0.9999)
+            randsamples = np.random.randn(num_samples, dim_input)*sd - 2
+        elif dist == 'u':  # U(-4, 0)
+            randsamples = -4*np.random.rand(num_samples, dim_input)
+        else:
+            raise ValueError("Improper distribution choice, use `n` (normal), `u` (uniform)")
+
+    else:
+        beta_params = tuple(beta_params)
+        dist = 'b' + str(beta_params).replace(', ','_').replace('(','').replace(')','')
+
+        if len(beta_params) != 2:
+            raise ValueError("Beta distribution requires only two parameters")
+
+        randsamples = 4*(np.random.beta(*beta_params, size=(num_samples, dim_input)) - 1)
+
+    # indexed list of samples we will evaluate through our poisson model
+    sample_seed_list = list(zip(range(num_samples), randsamples))
+
+    outfile = args.prefix + str(dim_input) + str(dist)
+    results = []
+    for sample in sample_seed_list:
+        r = evaluate_and_save_poisson(sample, outfile)
+        results.append(r)
+        _logger.debug(r)
+    
+    pickle.dump(results, open(f'{outfile}.pkl','wb'))    
+    _logger.info(f"Data generation completed, saved to {outfile}.pkl.")
+
+
+def run():
+    """Entry point for console_scripts
+    """
+    main(sys.argv[1:])
+    
+############################################################
+
 
 def poissonModel(gamma=3,
                  mesh=None, width=1,
@@ -74,25 +225,6 @@ def poisson_sensor_model(sensors, gamma, nx, ny, mesh=None):
     assert sensors.shape[1] == 2, "pass with shape (num_sensors, 2)"
     u = poissonModel(gamma=gamma, mesh=mesh, nx=nx, ny=ny)
     return [u(xi,yi) for xi,yi in sensors]
-
-
-def evaluate_and_save_poisson(sample, save_prefix):
-    """
-    sample is a tuple (index, gamma)
-    """
-    prefix = save_prefix.replace('.pkl','')
-    g = sample[1]
-
-    # define fixed mesh to avoid re-instantiation on each call to model (how it handles mesh=None)
-    nx, ny = 36, 36
-    mesh = fin.RectangleMesh(fin.Point(0,0), fin.Point(1,1), nx, ny)
-    u = poissonModel(gamma=g, mesh=mesh, nx=nx, ny=ny)
-
-    # Save solution as XML mesh
-    fname = f"{prefix}-data/poisson-{int(sample[0]):06d}.xml"
-    fin.File(fname, 'w') << u
-    # tells you where to find the saved file and what the input was to generate it.
-    return {int(sample[0]): {'u': fname, 'gamma': sample[1]}}
 
 
 def eval_boundary_piecewise(u, n, d=1):
@@ -482,6 +614,25 @@ class pdeProblem(object):
             print(f"Saved {_fname}")
     #     plt.show()
 
+def evaluate_and_save_poisson(sample, save_prefix):
+    """
+    sample is a tuple (index, gamma)
+    """
+    prefix = save_prefix.replace('.pkl','')
+    g = sample[1]
+
+    # define fixed mesh to avoid re-instantiation on each call to model (how it handles mesh=None)
+    nx, ny = 36, 36
+    mesh = fin.RectangleMesh(fin.Point(0,0), fin.Point(1,1), nx, ny)
+    u = poissonModel(gamma=g, mesh=mesh, nx=nx, ny=ny)
+
+    # Save solution as XML mesh
+    fname = f"{prefix}-data/poisson-{int(sample[0]):06d}.xml"
+    fin.File(fname, 'w') << u
+    # tells you where to find the saved file and what the input was to generate it.
+    return {int(sample[0]): {'u': fname, 'gamma': sample[1]}}
+
+
 def load_poisson_from_disk(fname):
     try:
         ref = pickle.load(open(fname, 'rb'))
@@ -499,14 +650,5 @@ def load_poisson_from_disk(fname):
     return domain, sensors, lam, qoi, qoi_ref, lam_ref, u, g
 
 
-
-
-
-if __name__=='__main__':
-
-    # should we maybe change this to generate raw QoI data instead?
-    u = poissonModel(gamma=3)
-    fin.plot(u, interactive=True)
-    # Save solution in VTK format
-    file = fin.File("poisson.pvd")
-    file << u
+if __name__ == "__main__":
+    run()

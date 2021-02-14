@@ -1,4 +1,9 @@
+# -*- coding: utf-8 -*-
+#!/usr/env/bin python
+
+import importlib
 import os
+import types
 
 import numpy as np
 from mud.funs import mud_sol, map_sol
@@ -8,7 +13,29 @@ def check_dir(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-        
+class LazyLoader(types.ModuleType):
+
+  def __init__(self, module_name='utensor_cgen', submod_name=None):
+    self._module_name = '{}{}'.format(
+      module_name,
+      submod_name and '.{}'.format(submod_name) or ''
+    )
+    self._mod = None
+    super(LazyLoader, self).__init__(self._module_name)
+
+  def _load(self):
+    if self._mod is None:
+      self._mod = importlib.import_module(
+        self._module_name
+      )
+    return self._mod
+
+  def __getattr__(self, attrb):
+    return getattr(self._load(), attrb)
+
+  def __dir__(self):
+    return dir(self._load())
+
 def fit_log_linear_regression(input_values, output_values):
     x, y = np.log10(input_values), np.log10(output_values)
     X, Y = np.vander(x, 2), np.array(y).reshape(-1, 1)
