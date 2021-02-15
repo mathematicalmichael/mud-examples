@@ -33,10 +33,8 @@ from mud import __version__ as __mud_version__
 
 _logger = logging.getLogger(__name__) # TODO: make use of this instead of print
 
-try:
-    fin = LazyLoader('dolfin')
-except ModuleNotFoundError:
-    _logger.error("Could not load fenics.")
+fin = LazyLoader('dolfin')
+
 
 def parse_args(args):
     """Parse command line parameters
