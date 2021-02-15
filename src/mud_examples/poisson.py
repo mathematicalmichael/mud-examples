@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt  # move when migrating plotting code (maybe)
 
 from mud_examples.helpers import LazyLoader
 
-fin = LazyLoader('dolfin')
+
 ds = LazyLoader('scipy.stats.distributions')
 # from mpi4py import MPI
 # comm = MPI.COMM_WORLD
@@ -21,7 +21,6 @@ ds = LazyLoader('scipy.stats.distributions')
 
 from mud.util import std_from_equipment # used for convenience in setting Normal distribution
 from mud_examples.models import generate_spatial_measurements as generate_sensors_pde
-from mud_examples.datasets import load_poisson
 from mud.funs import wme, mud_problem, map_problem # needed for the poisson class
 from mud_examples.helpers import check_dir
 
@@ -33,7 +32,10 @@ from mud import __version__ as __mud_version__
 
 _logger = logging.getLogger(__name__) # TODO: make use of this instead of print
 
-
+try:
+    fin = LazyLoader('dolfin')
+except ModuleNotFoundError:
+    _logger.error("Could not load fenics.")
 
 def parse_args(args):
     """Parse command line parameters
@@ -337,14 +339,20 @@ def make_reproducible_without_fenics(example, lam_true=3, input_dim=2,
     (Currently) requires XML data to be on disk, simulates sensors
     and saves everything required to one pickle file.
     """
+    _logger.info("Running make_reproducible without fenics")
     # Either load or generate the data.
     try:  # TODO: generalize this path here... take as argument
         model_list = pickle.load(open(f'{prefix}{input_dim}{dist}.pkl', 'rb'))
         if num_samples is None or num_samples > len(model_list):
             num_samples = len(model_list)
 
-    except FileNotFoundError:  # TODO: make sys call?
-        raise FileNotFoundError("Need to generate data first. Run ./generate_pde_data.sh")
+    except e:  # TODO: make sys call?
+        fname = 'scripts/pde_2D/ref_results2u.pkl'
+        _logger.error(e)
+        _logger.warn("Need to generate data first.  Run scripts/generate_pde_data.sh")
+        _logger.warn(f"Cannot find fenics runs. Attempting load of included {fname}")
+        return fname
+#         raise FileNotFoundError("Need to generate data first. Run ./generate_pde_data.sh")
 
     fdir = f'pde_{input_dim}D'
     check_dir(fdir)
@@ -356,7 +364,7 @@ def make_reproducible_without_fenics(example, lam_true=3, input_dim=2,
         sensors = generate_sensors_pde(num_measure, ymax=0.95, xmax=0.95)
         fname = f'{fdir}/ref_{prefix}{input_dim}{dist}.pkl'
 
-    lam, qoi = load_poisson(sensors, model_list[0:num_samples], nx=36, ny=36)
+    lam, qoi = load_poisson_from_fenics_run(sensors, model_list[0:num_samples], nx=36, ny=36)
     qoi_ref = poisson_sensor_model(sensors, gamma=lam_true, nx=36, ny=36)
 
     pn = poissonModel(gamma=lam_true)
@@ -441,7 +449,7 @@ def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='sca', fsize = 
     plt.ylabel("$x_2$", fontsize=fsize)
 
     if example:
-        fdir= fname.split('/')[0]
+        fdir= '/'.join(fname.split('/')[:-1])
         fname = f"{fdir}/{example}_surface.png"
         plt.savefig(fname, bbox_inches='tight')
         _logger.info(f"Saved {fname}")
@@ -737,6 +745,28 @@ def evaluate_and_save_poisson(sample, save_prefix):
     # tells you where to find the saved file and what the input was to generate it.
     return {int(sample[0]): {'u': fname, 'gamma': sample[1]}}
 
+def load_poisson_from_fenics_run(sensors, file_list, nx=36, ny=36):
+    num_samples = len(file_list)
+    print(f"Loading {num_samples} evaluations of parameter space.")
+
+    mesh = fin.RectangleMesh(fin.Point(0, 0), fin.Point(1, 1), nx, ny)
+    V = fin.FunctionSpace(mesh, 'Lagrange', 1)
+
+    qoi = []
+    lam = []
+    # go through all the files and load them into an array
+    for i in range(num_samples):
+        fname = file_list[i][i]['u']
+        u = fin.Function(V, fname)
+        q = [u(xi, yi) for xi, yi in sensors]  # sensors
+        qoi.append(np.array(q))
+        lam.append(file_list[i][i]['gamma'])  # TODO: change name of this
+    qoi = np.array(qoi)
+    lam = np.array(lam)
+
+    _logger.info(f'qoi: {qoi.shape}, lam: {lam.shape}, sensors: {sensors.shape}')
+
+    return lam, qoi
 
 def load_poisson_from_disk(fname):
     _logger.info(f"Attempting to load {fname} from disk")
@@ -756,7 +786,6 @@ def load_poisson_from_disk(fname):
     g = ref['plot_g']
     sensors = ref['sensors']
     return domain, sensors, lam, qoi, qoi_ref, lam_ref, u, g
-
 
 if __name__ == "__main__":
     run()

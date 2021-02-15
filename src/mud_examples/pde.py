@@ -1,3 +1,6 @@
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 import numpy as np
@@ -15,20 +18,28 @@ from mud_examples.models import generate_spatial_measurements as generate_sensor
 from mud_examples.helpers import experiment_measurements, extract_statistics, experiment_equipment, check_dir
 from mud_examples.plotting import fit_log_linear_regression
 
-from mud_examples.datasets import load_poisson
 import mud_examples.poisson as ps  # lazy loads fenics
 
 def main_pde(num_trials=20,
              tolerances=[0.1],
-             measurements=[5, 10, 20, 50, 100, 250, 500, 1000],
+             measurements=[5, 20, 50, 100, 500, 1000],
              fsize=32,
              seed=21,
              lam_true=3.0,
              input_dim=2, dist='u',
              prefix='results',
              alt=True, bayes=True):
+    """
 
-    print(f"Will run simulations for N={measurements}")
+    >>> from mud_examples.pde import main_pde
+    >>> res = main_pde()
+    Attempt run for measurements = [5, 20, 50, 100, 500, 1000]
+    Running example: mud
+    Running example: mud-alt
+    Running example: map
+    Done.
+    """
+    print(f"Attempt run for measurements = {measurements}")
     res = []
     num_measure = max(measurements)
 
@@ -41,7 +52,7 @@ def main_pde(num_trials=20,
         example_list.append('map')
 
     for example in example_list:
-        print(f"Example: {example}")
+        print(f"Running example: {example}")
         P = ps.pdeProblem()
         # in 1d this is a change in sensor location
         # in ND, change in how we partition sensors (vertical vs horizontal)
@@ -54,7 +65,7 @@ def main_pde(num_trials=20,
                 P.load(fname)
             except FileNotFoundError:
                 # attempt to load xml results from disk.
-                ps.make_reproducible_without_fenics('mud-alt', lam_true, input_dim=1,
+                fname = ps.make_reproducible_without_fenics('mud-alt', lam_true, input_dim=1,
                                                     num_samples=None, num_measure=num_measure,
                                                     prefix=prefix, dist=dist)
                 P.load(fname)
@@ -65,10 +76,14 @@ def main_pde(num_trials=20,
             try:
                 P.load(fname)
             except FileNotFoundError:
-                ps.make_reproducible_without_fenics('mud', lam_true, input_dim=input_dim,
-                                                    num_samples=None, num_measure=num_measure,
-                                                    prefix=prefix, dist=dist)
-                P.load(fname)
+                try: # doctests from root directory
+                    fname = f'scripts/{fname}'
+                    P.load(fname)
+                except FileNotFoundError:
+                    fname = ps.make_reproducible_without_fenics('mud', lam_true, input_dim=input_dim,
+                                                        num_samples=None, num_measure=num_measure,
+                                                        prefix=prefix, dist=dist)
+                    P.load(fname)
 
             # plots show only one hundred sensors to avoid clutter
             if example == 'mud-alt':
@@ -86,7 +101,8 @@ def main_pde(num_trials=20,
         # adjust measurements to account for what we actually have simulated
         measurements = np.array(measurements)
         measurements = list(measurements[measurements <= P.qoi.shape[1]])
-        print("Increasing Measurements Study")
+        _logger.info("Increasing Measurements Study")
+        _logger.info(f"Will run simulations for N={measurements}")
         experiments, solutions = experiment_measurements(num_measurements=measurements,
                                                  sd=sigma,
                                                  num_trials=num_trials,
@@ -101,7 +117,7 @@ def main_pde(num_trials=20,
 
         num_sensors = min(100, num_measure)
         if len(tolerances) > 1:
-            print("Increasing Measurement Precision Study")
+            _logger.info("Increasing Measurement Precision Study")
             sd_means, sd_vars = experiment_equipment(num_trials=num_trials,
                                                   num_measure=num_sensors,
                                                   sd_vals=sd_vals,
@@ -127,4 +143,5 @@ def main_pde(num_trials=20,
                 P.plot_solutions(solutions, m, example=example)
 #             P.plot_solutions(solutions, 100, example=example, save=True)
 
+    print("Done.")
     return res

@@ -1,3 +1,7 @@
+import logging
+
+_logger = logging.getLogger(__name__)
+
 from mud.funs import mud_problem, map_problem
 from mud.util import std_from_equipment
 
@@ -25,20 +29,34 @@ def main_ode(num_trials=20,
              tolerances=[0.1],
              time_ratios=[0.01, 0.05, 0.1, 0.25, 0.5, 1],
              alt=False, bayes=True):
+    """
+    
+    
+    >>> from mud_examples.ode import main_ode
+    >>> res = main_ode(time_ratios=[0.01, 0.1, 1])
+    Will run simulations for %T=[0.01, 0.1, 1]
+    Running example: mud
+    Measurements: [2, 20, 200]
+    Plotting decay solution.
+    Running example: map
+    Measurements: [2, 20, 200]
+    Plotting decay solution.
+    Done.
+    """
     res = []
     print(f"Will run simulations for %T={time_ratios}")
     sd_vals      = [ std_from_equipment(tolerance=tol, probability=0.99) for tol in tolerances ]
     sigma        = sd_vals[-1] # sorted, pick largest
     t_min, t_max = 1, 3
-    example_list = [ 'ode-mud' ]
+    example_list = [ 'mud' ]
     if alt:
-        example_list.append('ode-mud-alt')
+        example_list.append('mud-alt')
 
     if bayes:
-        example_list.append('ode-map')
+        example_list.append('map')
 
     for example in example_list:
-        print(f"Example: {example}")
+        print(f"Running example: {example}")
         if example == 'ode-mud-alt':
             sensors = generate_sensors_ode(measurement_hertz=200, start_time=t_min, end_time=t_max)
         else:
@@ -65,7 +83,7 @@ def main_ode(num_trials=20,
                                    sd=sd, qoi_true=qoi_true, num_obs=num_obs)
 
 
-        print("Increasing Measurements Quantity Study")
+        _logger.info("Increasing Measurements Quantity Study")
         experiments, solutions = experiment_measurements(num_measurements=measurements,
                                                  sd=sigma,
                                                  num_trials=num_trials,
@@ -81,7 +99,7 @@ def main_ode(num_trials=20,
         num_sensors = num_measure
         if len(tolerances) > 1:
             
-            print("Increasing Measurement Precision Study")
+            _logger.info("Increasing Measurement Precision Study")
             sd_means, sd_vars = experiment_equipment(num_trials=num_trials,
                                                   num_measure=num_sensors,
                                                   sd_vals=sd_vals,
@@ -107,4 +125,5 @@ def main_ode(num_trials=20,
                             end_time=t_max, lam_true=lam_true, qoi_true=qoi_true,
                             sigma=sigma, time_vector=sensors, prefix='ode/' + example)
 
+    print("Done.")
     return res

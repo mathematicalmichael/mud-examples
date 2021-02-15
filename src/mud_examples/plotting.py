@@ -271,6 +271,8 @@ def plot_decay_solution(solutions, model_generator, sigma, prefix,
         plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order], fontsize=fsize, loc='upper right')
         plt.tight_layout()
         if save:
+            fdir = filename.split('/')[0]
+            check_dir(fdir)
             plt.savefig(filename, bbox_inches='tight')
         # plt.show()
 

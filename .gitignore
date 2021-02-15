@@ -51,3 +51,12 @@ MANIFEST
 # Per-project virtualenvs
 .venv*/
 
+# save directories
+scripts/pde_*D/
+scripts/ode/
+scripts/*-data/
+scripts/*.pkl
+ode/
+pde_*D/
+*-data/
+*.pkl
