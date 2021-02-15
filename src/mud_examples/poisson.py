@@ -346,12 +346,18 @@ def make_reproducible_without_fenics(example, lam_true=3, input_dim=2,
         if num_samples is None or num_samples > len(model_list):
             num_samples = len(model_list)
 
-    except e:  # TODO: make sys call?
-        fname = 'scripts/pde_2D/ref_results2u.pkl'
+    except e:
         _logger.error(e)
-        _logger.warn("Need to generate data first.  Run scripts/generate_pde_data.sh")
-        _logger.warn(f"Cannot find fenics runs. Attempting load of included {fname}")
-        return fname
+        _logger.warn("Attempting data generation with system call.")
+        os.system(f'generate_poisson_data -v -n 100 -i {input_dim} -p scripts/{prefix} -d {dist}')
+        model_list = pickle.load(open(f'scripts/{prefix}{input_dim}{dist}.pkl', 'rb'))
+        if num_samples is None or num_samples > len(model_list):
+            num_samples = len(model_list)
+#         fname = 'scripts/pde_2D/ref_results2u.pkl'
+#         
+#         _logger.warn("Need to generate data first.  Run scripts/generate_pde_data.sh")
+#         _logger.warn(f"Cannot find fenics runs. Attempting load of included {fname}")
+#         return fname
 #         raise FileNotFoundError("Need to generate data first. Run ./generate_pde_data.sh")
 
     fdir = f'pde_{input_dim}D'
