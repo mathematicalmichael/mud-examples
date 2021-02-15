@@ -71,7 +71,7 @@ jobs:
 
       - name: Tests
         run: |
-          pip install .[test]
+          pip install -e .[test]
           pytest
 
       - name: Tests without loaded file
