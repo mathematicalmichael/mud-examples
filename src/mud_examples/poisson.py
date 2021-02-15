@@ -12,7 +12,8 @@ import numpy as np  # only needed for band_qoi + sample generation for main meth
 import matplotlib.pyplot as plt  # move when migrating plotting code (maybe)
 
 from mud_examples.helpers import LazyLoader
-fin = LazyLoader('dolfin')
+
+
 ds = LazyLoader('scipy.stats.distributions')
 # from mpi4py import MPI
 # comm = MPI.COMM_WORLD
@@ -32,6 +33,10 @@ from mud import __version__ as __mud_version__
 
 _logger = logging.getLogger(__name__) # TODO: make use of this instead of print
 
+try:
+    fin = LazyLoader('dolfin')
+except ModuleNotFoundError:
+    _logger.error("Could not load fenics.")
 
 def parse_args(args):
     """Parse command line parameters
