@@ -353,7 +353,7 @@ def make_reproducible_without_fenics(example, lam_true=3, input_dim=2,
         curdir = os.getcwd().split('/')[-1]
         if curdir == 'scripts':
             fpath = f'{prefix}'
-        elif curdir == 'mud_examples':
+        elif curdir == 'mud-examples':
             fpath = f'scripts/{prefix}'
         os.system(f'generate_poisson_data -v -n 10 -i {input_dim} -p {fpath} -d {dist}')
         try:
