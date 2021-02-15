@@ -12,7 +12,7 @@ from mud.funs import mud_problem, map_problem
 from mud.util import std_from_equipment
 
 from mud_examples.models import generate_spatial_measurements as generate_sensors_pde
-from mud_examples.helpers import experiment_measurements, extract_statistics, experiment_equipment
+from mud_examples.helpers import experiment_measurements, extract_statistics, experiment_equipment, check_dir
 from mud_examples.plotting import fit_log_linear_regression
 
 from mud_examples.datasets import load_poisson
@@ -45,8 +45,11 @@ def main_pde(num_trials=20,
         P = ps.pdeProblem()
         # in 1d this is a change in sensor location
         # in ND, change in how we partition sensors (vertical vs horizontal)
+        fdir = f'pde_{input_dim}D' # expectation from make_reproducible_without_fenics
+        check_dir(fdir)
+        # mud and mud alt have same sensors in higher dimensional examples
         if example == 'mud-alt' and input_dim == 1:
-            fname = f'pde_{input_dim}{dist}/mud-alt_ref.pkl'
+            fname = f'{fdir}/ref_alt_{prefix}{input_dim}{dist}.pkl'
             try:
                 P.load(fname)
             except FileNotFoundError:
@@ -58,10 +61,10 @@ def main_pde(num_trials=20,
             wrapper = P.mud_scalar()
             ps.plot_without_fenics(fname, num_sensors=100, num_qoi=1, example=example)
         else:
-            fname = f'pde_{input_dim}{dist}/mud_ref.pkl'
+            fname = f'{fdir}/ref_{prefix}{input_dim}{dist}.pkl'
             try:
                 P.load(fname)
-            except FileNotFoundError: # mud and mud alt have same sensors in higher dimensional examples
+            except FileNotFoundError:
                 ps.make_reproducible_without_fenics('mud', lam_true, input_dim=input_dim,
                                                     num_samples=None, num_measure=num_measure,
                                                     prefix=prefix, dist=dist)

@@ -22,6 +22,7 @@ from mud.util import std_from_equipment # used for convenience in setting Normal
 from mud_examples.models import generate_spatial_measurements as generate_sensors_pde
 from mud_examples.datasets import load_poisson
 from mud.funs import wme, mud_problem, map_problem # needed for the poisson class
+from mud_examples.helpers import check_dir
 
 __author__ = "Mathematical Michael"
 __copyright__ = "Mathematical Michael"
@@ -53,21 +54,27 @@ def parse_args(args):
         default=1,
         type=int,
         metavar="INT")
-    parser.add_argument('-i', '--input_dim',
-        dest="input_dim",
-        help="Dimension of input space (default=2).",
-        default=2,
-        type=int,
-        metavar="INT")
     parser.add_argument('-d', '--distribution',
         dest="dist",
         help="Distribution. `n` (normal), `u` (uniform, default)",
         default='u',
         type=str,
         metavar="STR")
+    parser.add_argument('-i', '--input_dim',
+        dest="input_dim",
+        help="Dimension of input space (default=2).",
+        default=2,
+        type=int,
+        metavar="INT")
+    parser.add_argument('-t', '--tolerance',
+        dest="tolerance",
+        help="Parameter for normal distribution. Proportion of samples (default: 0.95)",
+        default=0.95,
+        type=float,
+        metavar="FLOAT")
     parser.add_argument('-b', '--beta-params',
         dest="beta_params",
-        help="Parameters for beta distribution. Overrides --distribution. (default = 1 1 )",
+        help="Parameters for beta distribution. (default = 1 1 )",
         default=None,
         nargs='+',
         type=float,
@@ -115,32 +122,37 @@ def main(args):
     """
     args = parse_args(args)
     setup_logging(args.loglevel)
-    _logger.debug("Starting crazy calculations...")
+    _logger.debug("poisson.py data generation")
 
     num_samples = args.num
     dist = args.dist
     dim_input = args.input_dim
-    beta_params = args.beta_params
+    beta_params = args.beta_params  # signals to use beta (first preference)
+    tol = args.tolerance  # signals to use normal (beta must be empty), overrides uniform
+    if tol < 0 or tol >= 1:
+        raise ValueError("tolerance must be in (0, 1)")
 
     # perform random sampling according to command-line arguments
     if beta_params is None:
-    
-        if dist == 'n':  # N(-2, sd), sd chosen so 99.99% samples are in (-4, 0)
-            sd = std_from_equipment(2, 0.9999)
+        if dist == 'n':  # N(-2, sd), sd chosen so 100*tol % samples are in (-4, 0)
+            _logger.info(f"Generating samples from N(-2, sd), sd s.t. {100*tol}% are in (-4, 0).")
+            sd = std_from_equipment(2, tol)
             randsamples = np.random.randn(num_samples, dim_input)*sd - 2
         elif dist == 'u':  # U(-4, 0)
+            _logger.info(f"Generating samples from U(-4, 0).")
             randsamples = -4*np.random.rand(num_samples, dim_input)
         else:
-            raise ValueError("Improper distribution choice, use `n` (normal), `u` (uniform)")
+            raise ValueError("Improper distribution choice, use `n` (normal) or `u` (uniform).")
 
     else:
+        _logger.info("Using beta distribution since `beta_params` were passed.")
         beta_params = tuple(beta_params)
         dist = 'b' + str(beta_params).replace(', ','_').replace('(','').replace(')','')
 
         if len(beta_params) != 2:
-            raise ValueError("Beta distribution requires only two parameters")
+            raise ValueError("Beta distribution requires only two parameters.")
 
-        randsamples = 4*(np.random.beta(*beta_params, size=(num_samples, dim_input)) - 1)
+        randsamples = -4*np.random.beta(*beta_params, size=(num_samples, dim_input))
 
     # indexed list of samples we will evaluate through our poisson model
     sample_seed_list = list(zip(range(num_samples), randsamples))
@@ -332,10 +344,15 @@ def make_reproducible_without_fenics(example, lam_true=3, input_dim=2,
     except FileNotFoundError:  # TODO: make sys call?
         raise FileNotFoundError("Need to generate data first. Run ./generate_pde_data.sh")
 
-    if 'alt' in example:  # alternative measurement locations for more sensitivity / precision
+    fdir = f'pde_{input_dim}D'
+    check_dir(fdir)
+
+    if input_dim == 1 and 'alt' in example:  # alternative measurement locations for more sensitivity / precision
         sensors = generate_sensors_pde(num_measure, ymax=0.95, xmax=0.25)
+        fname = f'{fdir}/ref_alt_{prefix}{input_dim}{dist}.pkl'
     else:
         sensors = generate_sensors_pde(num_measure, ymax=0.95, xmax=0.95)
+        fname = f'{fdir}/ref_{prefix}{input_dim}{dist}.pkl'
 
     lam, qoi = load_poisson(sensors, model_list[0:num_samples], nx=36, ny=36)
     qoi_ref = poisson_sensor_model(sensors, gamma=lam_true, nx=36, ny=36)
@@ -356,10 +373,9 @@ def make_reproducible_without_fenics(example, lam_true=3, input_dim=2,
            'plot_g': (g_mesh, g_plot)
           }
 
-    fname = f'pde_{input_dim}{dist}/{example}_ref.pkl'
     with open(fname, 'wb') as f:
         pickle.dump(ref, f)
-    _logger.info(fname + 'saved: ' + str(Path(fname).stat().st_size // 1000) + 'KB')
+    _logger.info(fname + ' saved: ' + str(Path(fname).stat().st_size // 1000) + 'KB')
 
     return fname
 
@@ -583,17 +599,18 @@ class pdeProblem(object):
         if dist not in ['u', 'n']:
             raise ValueError("distribution could not be inferred. Must be from ('u', 'n')")
         self._dist = dist
-        _logger.info(f"Set distribution = '{dist}'")
 
     def load(self, fname=None):
         if fname: 
             self.fname = fname
-            _logger.info("filename attribute written during load")
+            _logger.info(f"Loading from supplied filename {fname}.")
         else:
             fname = self.fname
-        dist_from_fname = fname.strip('results').strip('res')
-        dist_from_fname = dist_from_fname.split('/')[0][-1]  # attempting to infer distribution from filename
-        
+            _logger.info(f"Loading from default filename {fname}.")
+
+        dist_from_fname = fname.strip('results').strip('res').strip('.pkl')
+        dist_from_fname = dist_from_fname.split('/')[-1][-1]  # attempting to infer distribution from filename
+        _logger.info(f"Inferring distribution from file name with {dist_from_fname}")
         domain, sensors, lam, qoi, qoi_ref, lam_ref, u, g = load_poisson_from_disk(fname)
         self.domain = domain
         self.sensors = sensors
@@ -604,6 +621,8 @@ class pdeProblem(object):
         self.u = u
         self.g = g
         self.dist = dist_from_fname
+        
+        _logger.info(f"lam: {self.lam.shape}, qoi: {self.qoi.shape}, dist: {self.dist}")
 
     def map_scalar(self):
         _logger.info("Solving with MAP estimates.")
@@ -639,6 +658,7 @@ class pdeProblem(object):
         qoi_ref = self.qoi_ref
         dist = self.dist
         g = self.g
+        fname = self.fname.replace('.pkl', '')
 
         closest_fit_index_out = np.argmin(np.linalg.norm(qoi - np.array(qoi_ref), axis=1))
         g_projected = list(lam[closest_fit_index_out, :])
@@ -655,7 +675,7 @@ class pdeProblem(object):
             if sols.get(num_measurements, None) is None:
                 raise AttributeError(f"Solutions `sols` missing requested N={num_measurements}.")
             else:
-                prefix = f'pde_{lam.shape[1]}{dist}/{example}_solutions_N{num_measurements}'
+                prefix = f'{fname}_{example}_solutions_N{num_measurements}'
                 plot_lam = np.array(sols[num_measurements])
                 if example == 'mud-alt':
                     qmap = '$Q_{%dD}^\prime$'%lam.shape[1]
@@ -670,7 +690,8 @@ class pdeProblem(object):
                     raise ValueError("Unsupported example type.")
                 plt.title(f'{soltype} Estimates for {qmap}, N={num_measurements}', fontsize=1.25*fsize)
         else:  # initial plot, first 100
-            prefix = f'pde_{lam.shape[1]}{dist}/initial'
+#             prefix = f'pde_{lam.shape[1]}{dist}/initial'
+            prefix = f'{fname}_{example}_initial_S{lam.shape[0]}'
             plot_lam = lam[0:100, :]
             plt.title('Samples from Initial Density', fontsize=1.25*fsize)
 
@@ -720,6 +741,7 @@ def load_poisson_from_disk(fname):
     try:
         ref = pickle.load(open(fname, 'rb'))
     except FileNotFoundError as e:
+        _logger.error(f"Failed to load {fname} from disk")
         raise FileNotFoundError(f"File {fname} missing. Run `make_reproducible_without_fenics` first.")
     lam = ref['lam']
     input_dim = lam.shape[1]

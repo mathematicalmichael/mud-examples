@@ -70,7 +70,7 @@ def parse_args(args):
 #     parser.add_argument('-n', '--num_samples',
 #         dest="num",
 #         help="Number of samples",
-#         default=1,
+#         default=100,
 #         type=int,
 #         metavar="INT")
     parser.add_argument('-i', '--input_dim',
@@ -147,7 +147,6 @@ def main(args):
     dist         = args.dist
 
     tolerances   = list(np.sort([ float(t) for t in args.sensor_tolerance ]))
-    if len(tolerances) == 0: tolerances = [0.1]
 
     if example == 'pde':
         measurements = list(np.sort([ int(n) for n in args.num_measure ]))
@@ -158,7 +157,7 @@ def main(args):
         if len(time_ratios) == 0:
             time_ratios = [1.0]
 
-    print("Running...")
+    _logger.info("Running...")
     if example == 'pde':
         lam_true = 3.0
         res = main_pde(num_trials=num_trials,
@@ -168,7 +167,7 @@ def main(args):
                          tolerances=tolerances,
                          input_dim=inputdim,
                          alt=alt, bayes=bayes,
-                         dist=dist, prefix=prefix,  # TODO: take as args -> point me to correct pkl file to load
+                         dist=dist, prefix=prefix,
                          measurements=measurements)
         if inputdim == 1:  # TODO: roll this plotting into main_pde, handle w/o fenics?
             plot_scalar_poisson_summary(res=res, measurements=measurements,
