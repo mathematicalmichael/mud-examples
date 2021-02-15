@@ -1,4 +1,9 @@
+# -*- coding: utf-8 -*-
+#!/usr/env/bin python
+
+import importlib
 import os
+import types
 
 import numpy as np
 from mud.funs import mud_sol, map_sol
@@ -8,7 +13,32 @@ def check_dir(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-        
+class LazyLoader(types.ModuleType):
+
+  def __init__(self, module_name='utensor_cgen', submod_name=None):
+    self._module_name = '{}{}'.format(
+      module_name,
+      submod_name and '.{}'.format(submod_name) or ''
+    )
+    self._mod = None
+    super(LazyLoader, self).__init__(self._module_name)
+
+  def _load(self):
+    if self._mod is None:
+      self._mod = importlib.import_module(
+        self._module_name
+      )
+    return self._mod
+
+  def __getattr__(self, attrb):
+    try:
+        return getattr(self._load(), attrb)
+    except ModuleNotFoundError:
+        pass
+
+  def __dir__(self):
+    return dir(self._load())
+
 def fit_log_linear_regression(input_values, output_values):
     x, y = np.log10(input_values), np.log10(output_values)
     X, Y = np.vander(x, 2), np.array(y).reshape(-1, 1)
@@ -70,40 +100,6 @@ def extract_statistics(solutions, reference_value):
         means.append(mean_mud_sol)
         variances.append(var_mud_sol)
 
-    return means, variances
-
-
-def experiment_measurements_index(fun, num_measurements, sd, num_trials, seed=21):
-    """
-    Fixed sensors, varying how much data is incorporated into the solution.
-    """
-    experiments = {}
-    solutions = {}
-    for ns in num_measurements:
-        ratios = []
-        mud_solutions = []
-        for t in range(num_trials):
-            np.random.seed(seed+t)
-            _r = fun(sd=sd, num_obs=ns)
-            ratios.append(_r)
-            mud_solutions.append(np.argmax(_r))
-        experiments[ns] = ratios
-        solutions[ns] = mud_solutions
-    
-    return experiments, solutions
-
-
-def extract_statistics_index(x, solutions, reference_value):
-    num_sensors_plot_conv = solutions.keys()
-    means = []
-    variances = []
-    for ns in num_sensors_plot_conv:
-        mud_solutions = [ x[_index] for _index in solutions[ns] ]
-        err = np.linalg.norm(np.array(mud_solutions) - reference_value, axis=1)/np.sqrt(len(reference_value))
-        mean_mud_sol = np.mean(err)
-        var_mud_sol = np.var(err)
-        means.append(mean_mud_sol)
-        variances.append(var_mud_sol)
     return means, variances
 
 

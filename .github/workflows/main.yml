@@ -38,7 +38,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          pip install .[test]
+          pip install -e .[test]
           pytest
 
       - name: Test install with wheels
@@ -47,9 +47,3 @@ jobs:
           pip install --upgrade wheel setuptools
           pip install .
 
-      - name: CodeCov.io Report
-        if: ${{ matrix.python-version }} == 3.8
-        run: |
-          # coverage run --source=. -m py.test
-          coverage report -m
-          bash <(curl -s https://codecov.io/bash) 

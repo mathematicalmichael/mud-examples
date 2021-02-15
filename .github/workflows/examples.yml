@@ -59,7 +59,6 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install .
-          pip install nbconvert ipykernel ipywidgets
 
       - name: Conda information
         run: conda list
@@ -67,8 +66,22 @@ jobs:
       - name: Generate Figures
         run: |
           cd scripts
-          python poisson.py
           make clean
-          make ode-examples
-          #make pde-examples
+          make pde-examples
 
+      - name: Tests
+        run: |
+          pip install -e .[test]
+          pytest
+
+      - name: Tests without loaded file
+        run: |
+          rm scripts/pde_2D/ref_results2u.pkl
+          pytest
+
+      - name: CodeCov.io Report
+        if: ${{ matrix.python-version }} == 3.8
+        run: |
+          # coverage run --source=. -m py.test
+          coverage report -m
+          bash <(curl -s https://codecov.io/bash) 

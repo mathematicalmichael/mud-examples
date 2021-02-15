@@ -109,7 +109,7 @@ def plot_2d_contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C
         else:
             if param_ref is not None:
                 plt.scatter(param_ref[0], param_ref[1],
-                    label='$\\lambda^\dagger$',
+                    label='$\\lambda^\\dagger$',
                     color='k', s=msize, marker='*')
             if compare:
                 plt.annotate('Truth',
@@ -271,6 +271,8 @@ def plot_decay_solution(solutions, model_generator, sigma, prefix,
         plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order], fontsize=fsize, loc='upper right')
         plt.tight_layout()
         if save:
+            fdir = filename.split('/')[0]
+            check_dir(fdir)
             plt.savefig(filename, bbox_inches='tight')
         # plt.show()
 
@@ -322,8 +324,8 @@ def plot_experiment_measurements(measurements, res, prefix, fsize=32, linewidth=
     for _res in res:
         _prefix, _in, _rm, _re = _res
         regression_mean, slope_mean, regression_vars, slope_vars, means, variances = _rm
-        plt.plot(measurements, regression_mean, label=f"{_prefix:10s} slope: {slope_mean:1.4f}", lw=linewidth)
-        plt.scatter(measurements, means, marker='x', lw=20)
+        plt.plot(measurements[:len(regression_mean)], regression_mean, label=f"{_prefix:10s} slope: {slope_mean:1.4f}", lw=linewidth)
+        plt.scatter(measurements[:len(means)], means, marker='x', lw=20)
     plt.xscale('log')
     plt.yscale('log')
     plt.Axes.set_aspect(plt.gca(), 1)
@@ -342,8 +344,8 @@ def plot_experiment_measurements(measurements, res, prefix, fsize=32, linewidth=
     for _res in res:
         _prefix, _in, _rm, _re = _res
         regression_mean, slope_mean, regression_vars, slope_vars, means, variances = _rm
-        plt.plot(measurements, regression_vars, label=f"{_prefix:10s} slope: {slope_vars:1.4f}", lw=linewidth)
-        plt.scatter(measurements, variances, marker='x', lw=20)
+        plt.plot(measurements[:len(regression_vars)], regression_vars, label=f"{_prefix:10s} slope: {slope_vars:1.4f}", lw=linewidth)
+        plt.scatter(measurements[:len(variances)], variances, marker='x', lw=20)
     plt.xscale('log')
     plt.yscale('log')
     plt.Axes.set_aspect(plt.gca(), 1)
@@ -359,7 +361,7 @@ def plot_experiment_measurements(measurements, res, prefix, fsize=32, linewidth=
     # plt.show()
 
 
-def plot_poisson_solution(res, measurements, prefix, lam_true, fsize=32, save=False):
+def plot_scalar_poisson_summary(res, measurements, prefix, lam_true, fsize=32, save=False):
     from fenics import plot as _plot
     from poisson import poissonModel # function evaluation (full response surface)
 
@@ -393,7 +395,7 @@ def plot_poisson_solution(res, measurements, prefix, lam_true, fsize=32, save=Fa
         slopes = np.array(slopes)
         ranked_slopes = slopes[sa]
 
-        xlabel_text = "$\lambda$"
+        xlabel_text = "$\\lambda$"
         # ylabel_text = "$u(x_i, \lambda)$"
         ylabel_text = "Measurement\nResponse"
         ax_main.axes.set_xlabel(xlabel_text, fontsize=fsize)
