@@ -20,14 +20,14 @@ ode:
 
 # adding res2u.pkl below will generate all results.
 pde2u: run_poisson.sh
-	mkdir -p pde_2u/
-	./run_poisson.sh  --prefix results
-	@echo "Generated ./pde_2u/"
+	mkdir -p pde_2D/
+	./run_poisson.sh -d u --prefix results
+	@echo "Generated files in ./pde_2D/"
 
 pde2n: run_poisson.sh
-	mkdir -p pde_2n/
-	./run_poisson.sh -d n --prefix results
-	@echo "Generated ./pde_2n/"
+	mkdir -p pde_2D/
+	./run_poisson.sh -d n --prefix 95results
+	@echo "Generated files in ./pde_2D/"
 
 # estimated twenty minutes for 1000
 res2u.pkl: generate_pde_data.sh

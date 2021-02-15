@@ -79,3 +79,9 @@ jobs:
           rm scripts/pde_2D/ref_results2u.pkl
           pytest
 
+      - name: CodeCov.io Report
+        if: ${{ matrix.python-version }} == 3.8
+        run: |
+          # coverage run --source=. -m py.test
+          coverage report -m
+          bash <(curl -s https://codecov.io/bash) 

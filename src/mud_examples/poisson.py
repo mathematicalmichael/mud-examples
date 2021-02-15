@@ -347,13 +347,21 @@ def make_reproducible_without_fenics(example, lam_true=3, input_dim=2,
             num_samples = len(model_list)
 
     except FileNotFoundError as e:
-        _logger.error(e)
-        _logger.warn("Attempting data generation with system call.")
+        _logger.error(f"make_reproducible: {e}")
+        _logger.warning("Attempting data generation with system call.")
         # below has to match where we expected our git-controlled file to be... TODO: generalize to data/
-        os.system(f'generate_poisson_data -v -n 100 -i {input_dim} -p scripts/{prefix} -d {dist}')
-        model_list = pickle.load(open(f'scripts/{prefix}{input_dim}{dist}.pkl', 'rb'))
-        if num_samples is None or num_samples > len(model_list):
-            num_samples = len(model_list)
+        curdir = os.getcwd().split('/')[-1]
+        if curdir == 'scripts':
+            fpath = f'{prefix}'
+        elif curdir == 'mud_examples':
+            fpath = f'scripts/{prefix}'
+        os.system(f'generate_poisson_data -v -n 10 -i {input_dim} -p {fpath} -d {dist}')
+        try:
+            model_list = pickle.load(open(f'{fpath}{input_dim}{dist}.pkl', 'rb'))
+            if num_samples is None or num_samples > len(model_list):
+                num_samples = len(model_list)
+        except TypeError:
+            raise ModuleNotFoundError("Try `conda install -c conda forge fenics`")
 #         fname = 'scripts/pde_2D/ref_results2u.pkl'
 #         
 #         _logger.warn("Need to generate data first.  Run scripts/generate_pde_data.sh")
@@ -754,7 +762,7 @@ def evaluate_and_save_poisson(sample, save_prefix):
 
 def load_poisson_from_fenics_run(sensors, file_list, nx=36, ny=36):
     num_samples = len(file_list)
-    print(f"Loading {num_samples} evaluations of parameter space.")
+    _logger.info(f"load_poisson_from_fenics_run - Loading {num_samples} evaluations of parameter space.")
 
     mesh = fin.RectangleMesh(fin.Point(0, 0), fin.Point(1, 1), nx, ny)
     V = fin.FunctionSpace(mesh, 'Lagrange', 1)
@@ -764,6 +772,7 @@ def load_poisson_from_fenics_run(sensors, file_list, nx=36, ny=36):
     # go through all the files and load them into an array
     for i in range(num_samples):
         fname = file_list[i][i]['u']
+        _logger.debug(f"Loading {fname}")
         u = fin.Function(V, fname)
         q = [u(xi, yi) for xi, yi in sensors]  # sensors
         qoi.append(np.array(q))
@@ -780,8 +789,8 @@ def load_poisson_from_disk(fname):
     try:
         ref = pickle.load(open(fname, 'rb'))
     except FileNotFoundError as e:
-        _logger.error(f"Failed to load {fname} from disk")
-        raise FileNotFoundError(f"File {fname} missing. Run `make_reproducible_without_fenics` first.")
+        _logger.error(f"load_poisson_from_disk - Failed to load {fname} from disk")
+        raise FileNotFoundError(f"load_poisson_from_disk: File {fname} missing. Run `make_reproducible_without_fenics` first.")
     lam = ref['lam']
     input_dim = lam.shape[1]
     domain = np.array([[-4,0]]*input_dim)

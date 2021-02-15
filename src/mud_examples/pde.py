@@ -1,4 +1,5 @@
 import logging
+import os
 
 _logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ import mud_examples.poisson as ps  # lazy loads fenics
 
 def main_pde(num_trials=20,
              tolerances=[0.1],
-             measurements=[5, 20, 50, 100, 500, 1000],
+             measurements=[5, 20, 50, 100, 250, 500],
              fsize=32,
              seed=21,
              lam_true=3.0,
@@ -32,8 +33,8 @@ def main_pde(num_trials=20,
     """
 
     >>> from mud_examples.pde import main_pde
-    >>> res = main_pde()
-    Attempt run for measurements = [5, 20, 50, 100, 500, 1000]
+    >>> res = main_pde(num_trials=10)
+    Attempt run for measurements = [5, 20, 50, 100, 250, 500]
     Running example: mud
     Running example: mud-alt
     Running example: map
@@ -77,13 +78,21 @@ def main_pde(num_trials=20,
                 P.load(fname)
             except FileNotFoundError:
                 try: # doctests from root directory
+                    if os.getcwd().split('/')[-1] == 'scripts':
+                        raise FileNotFoundError("already within scripts directory.")
+                    _logger.warning("Attempting from scripts directory.")
                     fname = f'scripts/{fname}'
                     P.load(fname)
                 except FileNotFoundError:
                     fname = ps.make_reproducible_without_fenics('mud', lam_true, input_dim=input_dim,
                                                         num_samples=None, num_measure=num_measure,
                                                         prefix=prefix, dist=dist)
-                    P.load(fname)
+                    try:
+                        P.load(fname)
+                    except FileNotFoundError as e:
+                        raise(e)
+                        _logger.critical("Exiting program")
+                        break
 
             # plots show only one hundred sensors to avoid clutter
             if example == 'mud-alt':

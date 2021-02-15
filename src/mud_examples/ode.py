@@ -33,7 +33,7 @@ def main_ode(num_trials=20,
     
     
     >>> from mud_examples.ode import main_ode
-    >>> res = main_ode(time_ratios=[0.01, 0.1, 1])
+    >>> res = main_ode(num_trials=5, time_ratios=[0.01, 0.1, 1])
     Will run simulations for %T=[0.01, 0.1, 1]
     Running example: mud
     Measurements: [2, 20, 200]
