@@ -35,7 +35,7 @@ jobs:
 
       - name: Testing
         run: |
-          pip install .[test]
+          pip install -e .[test]
           pytest
 
       - name: Build dist
