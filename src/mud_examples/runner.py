@@ -55,7 +55,7 @@ def parse_args(args):
     parser.add_argument('-m', '--num-measure',   default=[20, 100],  type=int, nargs='+')
     parser.add_argument('-r', '--ratio-measure', default=[1],  type=float, nargs='+')
     parser.add_argument('--num-trials',    default=20,    type=int)
-    parser.add_argument('-t', '--sensor-tolerance',  default=[0.1], action='append')
+    parser.add_argument('-t', '--sensor-tolerance',  default=[0.1], type=float, nargs='+')
     parser.add_argument('-s', '--seed',          default=21)
     parser.add_argument('-lw', '--linewidth',    default=5)
     parser.add_argument('--fsize',               default=32, type=int)
