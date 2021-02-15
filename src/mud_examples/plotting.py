@@ -109,7 +109,7 @@ def plot_2d_contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C
         else:
             if param_ref is not None:
                 plt.scatter(param_ref[0], param_ref[1],
-                    label='$\\lambda^\dagger$',
+                    label='$\\lambda^\\dagger$',
                     color='k', s=msize, marker='*')
             if compare:
                 plt.annotate('Truth',
