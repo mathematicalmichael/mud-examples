@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt  # move when migrating plotting code (maybe)
 
 from mud_examples.helpers import LazyLoader
 fin = LazyLoader('dolfin')
+ds = LazyLoader('scipy.stats.distributions')
 # from mpi4py import MPI
 # comm = MPI.COMM_WORLD
 # rank = comm.Get_rank()
@@ -315,16 +316,19 @@ def get_boundary_markers_for_rect(mesh, width=1):
     return boundary_markers
 
 
-def make_reproducible_without_fenics(example, lam_true=3, input_dim=2, num_samples=None, num_measure=100):
+def make_reproducible_without_fenics(example, lam_true=3, input_dim=2,
+                                     prefix='results', dist='u',
+                                     num_samples=None, num_measure=100):
     """
     (Currently) requires XML data to be on disk, simulates sensors
     and saves everything required to one pickle file.
     """
     # Either load or generate the data.
     try:  # TODO: generalize this path here... take as argument
-        model_list = pickle.load(open(f'res{input_dim}u.pkl', 'rb'))
+        model_list = pickle.load(open(f'{prefix}{input_dim}{dist}.pkl', 'rb'))
         if num_samples is None or num_samples > len(model_list):
             num_samples = len(model_list)
+
     except FileNotFoundError:  # TODO: make sys call?
         raise FileNotFoundError("Need to generate data first. Run ./generate_pde_data.sh")
 
@@ -352,10 +356,10 @@ def make_reproducible_without_fenics(example, lam_true=3, input_dim=2, num_sampl
            'plot_g': (g_mesh, g_plot)
           }
 
-    fname = f'pde_{input_dim}D/{example}_ref.pkl'
+    fname = f'pde_{input_dim}{dist}/{example}_ref.pkl'
     with open(fname, 'wb') as f:
         pickle.dump(ref, f)
-    print(fname, 'saved:', Path(fname).stat().st_size // 1000, 'KB')
+    _logger.info(fname + 'saved: ' + str(Path(fname).stat().st_size // 1000) + 'KB')
 
     return fname
 
@@ -419,9 +423,10 @@ def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='sca', fsize = 
     plt.ylabel("$x_2$", fontsize=fsize)
 
     if example:
-        fname = f"pde_{input_dim}D/{example}_surface.png"
+        fdir= fname.split('/')[0]
+        fname = f"{fdir}/{example}_surface.png"
         plt.savefig(fname, bbox_inches='tight')
-        print(f"Saved {fname}")
+        _logger.info(f"Saved {fname}")
 
 
 # from scipy.stats import gaussian_kde as gkde
@@ -443,22 +448,33 @@ def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='sca', fsize = 
 #     return ratio_eval
 
 
-def make_mud_wrapper(domain, lam, qoi, qoi_true, indices=None):
+def make_mud_wrapper(domain, lam, qoi, qoi_true, indices=None, dist='u'):
     """
     Anonymous function
     """
+    if not isinstance(dist, str):
+        raise ValueError("`dist` must be of type `str`.")
     def mud_wrapper(num_obs, sd):
-        return mud_problem(domain=domain, lam=lam, qoi=qoi, qoi_true=qoi_true, sd=sd, num_obs=num_obs, split=indices)
-
+        d = mud_problem(domain=domain, lam=lam, qoi=qoi, qoi_true=qoi_true, sd=sd, num_obs=num_obs, split=indices)
+        if dist == 'n':  # uniform is set by default
+            _logger.debug("Setting normal prior for MUD problem")
+            d.set_initial(ds.norm(loc=-2, scale=std_from_equipment(2, 0.9999)))
+        return d
     return mud_wrapper
 
-def make_map_wrapper(domain, lam, qoi, qoi_true):
+
+def make_map_wrapper(domain, lam, qoi, qoi_true, dist='u'):
     """
     Anonymous function
     """
+    if not isinstance(dist, str):
+        raise ValueError("`dist` must be of type `str`.")
     def map_wrapper(num_obs, sd):
-        return map_problem(domain=domain, lam=lam, qoi=qoi, qoi_true=qoi_true, sd=sd, num_obs=num_obs)
-
+        b = map_problem(domain=domain, lam=lam, qoi=qoi, qoi_true=qoi_true, sd=sd, num_obs=num_obs)
+        if dist == 'n':  # uniform is set by default
+            _logger.debug("Setting normal prior for MAP problem")
+            b.set_prior(ds.norm(loc=-2, scale=std_from_equipment(2, 0.9999)))
+        return b
     return map_wrapper
 
 # probably move to helpers or utils
@@ -487,6 +503,7 @@ class pdeProblem(object):
         self._domain = None
         self._u = None
         self._g = None
+        self._dist = None
 
     @property
     def lam(self):
@@ -557,11 +574,26 @@ class pdeProblem(object):
     def u(self, u):
         self._u = u
 
+    @property
+    def dist(self):
+        return self._dist
+
+    @dist.setter
+    def dist(self, dist):
+        if dist not in ['u', 'n']:
+            raise ValueError("distribution could not be inferred. Must be from ('u', 'n')")
+        self._dist = dist
+        _logger.info(f"Set distribution = '{dist}'")
+
     def load(self, fname=None):
         if fname: 
             self.fname = fname
+            _logger.info("filename attribute written during load")
         else:
             fname = self.fname
+        dist_from_fname = fname.strip('results').strip('res')
+        dist_from_fname = dist_from_fname.split('/')[0][-1]  # attempting to infer distribution from filename
+        
         domain, sensors, lam, qoi, qoi_ref, lam_ref, u, g = load_poisson_from_disk(fname)
         self.domain = domain
         self.sensors = sensors
@@ -571,33 +603,43 @@ class pdeProblem(object):
         self.qoi_ref = qoi_ref
         self.u = u
         self.g = g
+        self.dist = dist_from_fname
 
     def map_scalar(self):
-        return make_map_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref)
+        _logger.info("Solving with MAP estimates.")
+        return make_map_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref, dist=self.dist)
 
     def mud_scalar(self):
-        return make_mud_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref)
+        _logger.info("Solving with scalar-valued MUD estimates.")
+        return make_mud_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref, dist=self.dist)
 
     def mud_vector_horizontal(self, num_qoi=None):
         if num_qoi is None:  # set output dimension = input dimension
             num_qoi = self.lam.shape[1]
         indices = band_qoi(self.sensors, num_qoi=num_qoi, axis=1)
-        return make_mud_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref, indices)
+        _logger.info("Solving with horizontal-split vector-valued MUD estimates.")
+        return make_mud_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref, indices, dist=self.dist)
 
     def mud_vector_vertical(self, num_qoi=None):
         if num_qoi is None:  # set output dimension = input dimension
             num_qoi = self.lam.shape[1]
         indices = band_qoi(self.sensors, num_qoi=num_qoi, axis=0)
-        return make_mud_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref, indices)
+        _logger.info("Solving with vertical-split vector-valued MUD estimates.")
+        return make_mud_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref, indices, dist=self.dist)
 
     def plot_initial(self, save=True, **kwargs):
-        self.plot(save=save,**kwargs)
+        self.plot(save=save, **kwargs)
         
     def plot_solutions(self, sols, num, save=True, **kwargs):
         self.plot(sols=sols, num_measurements=num, save=save, **kwargs)
 
     def plot(self, sols=None, num_measurements=20, example='mud', fsize=36, ftype='png', save=False):
-        lam, qoi, qoi_ref, g = self.lam, self.qoi, self.qoi_ref, self.g, 
+        lam = self.lam
+        qoi = self.qoi
+        qoi_ref = self.qoi_ref
+        dist = self.dist
+        g = self.g
+
         closest_fit_index_out = np.argmin(np.linalg.norm(qoi - np.array(qoi_ref), axis=1))
         g_projected = list(lam[closest_fit_index_out, :])
         plt.figure(figsize=(10,10))
@@ -613,7 +655,7 @@ class pdeProblem(object):
             if sols.get(num_measurements, None) is None:
                 raise AttributeError(f"Solutions `sols` missing requested N={num_measurements}.")
             else:
-                prefix = f'pde_{lam.shape[1]}D/{example}_solutions_N{num_measurements}'
+                prefix = f'pde_{lam.shape[1]}{dist}/{example}_solutions_N{num_measurements}'
                 plot_lam = np.array(sols[num_measurements])
                 if example == 'mud-alt':
                     qmap = '$Q_{%dD}^\prime$'%lam.shape[1]
@@ -628,7 +670,7 @@ class pdeProblem(object):
                     raise ValueError("Unsupported example type.")
                 plt.title(f'{soltype} Estimates for {qmap}, N={num_measurements}', fontsize=1.25*fsize)
         else:  # initial plot, first 100
-            prefix = f'pde_{lam.shape[1]}D/initial'
+            prefix = f'pde_{lam.shape[1]}{dist}/initial'
             plot_lam = lam[0:100, :]
             plt.title('Samples from Initial Density', fontsize=1.25*fsize)
 
@@ -650,7 +692,7 @@ class pdeProblem(object):
         if save:
             _fname = f"{prefix}.{ftype}"
             plt.savefig(_fname, bbox_inches='tight')
-            print(f"Saved {_fname}")
+            _logger.info(f"Saved {_fname}")
             plt.close()
     #     plt.show()
 
@@ -674,13 +716,15 @@ def evaluate_and_save_poisson(sample, save_prefix):
 
 
 def load_poisson_from_disk(fname):
+    _logger.info(f"Attempting to load {fname} from disk")
     try:
         ref = pickle.load(open(fname, 'rb'))
     except FileNotFoundError as e:
-        raise FileNotFoundError("File missing. Run `make_reproducible_without_fenics` first.")
+        raise FileNotFoundError(f"File {fname} missing. Run `make_reproducible_without_fenics` first.")
     lam = ref['lam']
     input_dim = lam.shape[1]
     domain = np.array([[-4,0]]*input_dim)
+    _logger.info(f"Domain set by default as [-4, 0] for each dimension.")
     qoi = ref['qoi']
     qoi_ref = ref['data']
     lam_ref = ref['truth']

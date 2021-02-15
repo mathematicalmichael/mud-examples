@@ -79,12 +79,12 @@ def parse_args(args):
         default=2,
         type=int,
         metavar="INT")
-#     parser.add_argument('-d', '--distribution',
-#         dest="dist",
-#         help="Distribution. `n` (normal), `u` (uniform, default)",
-#         default='u',
-#         type=str,
-#         metavar="STR")
+    parser.add_argument('-d', '--distribution',
+        dest="dist",
+        help="Distribution. `n` (normal), `u` (uniform, default)",
+        default='u',
+        type=str,
+        metavar="STR")
 #     parser.add_argument('-b', '--beta-params',
 #         dest="beta_params",
 #         help="Parameters for beta distribution. Overrides --distribution. (default = 1 1 )",
@@ -92,12 +92,12 @@ def parse_args(args):
 #         nargs='+',
 #         type=float,
 #         metavar="FLOAT FLOAT")
-#     parser.add_argument('-p', '--prefix',
-#         dest="prefix",
-#         help="Output filename prefix (no extension)",
-#         default='results',
-#         type=str,
-#         metavar="STR")
+    parser.add_argument('-p', '--prefix',
+        dest="prefix",
+        help="Output filename prefix (no extension)",
+        default='results',
+        type=str,
+        metavar="STR")
     parser.add_argument(
         "-v",
         "--verbose",
@@ -132,6 +132,7 @@ def main(args):
     Main entrypoint for example-generation
     """
     args = parse_args(args)
+    setup_logging(args.loglevel)
     np.random.seed(args.seed)
     example       = args.example
     num_trials   = args.num_trials
@@ -142,6 +143,9 @@ def main(args):
     save         = args.save
     alt          = args.alt
     bayes        = args.bayes
+    prefix       = args.prefix
+    dist         = args.dist
+
     tolerances   = list(np.sort([ float(t) for t in args.sensor_tolerance ]))
     if len(tolerances) == 0: tolerances = [0.1]
 
@@ -164,6 +168,7 @@ def main(args):
                          tolerances=tolerances,
                          input_dim=inputdim,
                          alt=alt, bayes=bayes,
+                         dist=dist, prefix=prefix,  # TODO: take as args -> point me to correct pkl file to load
                          measurements=measurements)
         if inputdim == 1:  # TODO: roll this plotting into main_pde, handle w/o fenics?
             plot_scalar_poisson_summary(res=res, measurements=measurements,

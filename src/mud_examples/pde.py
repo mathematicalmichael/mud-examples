@@ -24,7 +24,8 @@ def main_pde(num_trials=20,
              fsize=32,
              seed=21,
              lam_true=3.0,
-             input_dim=2,
+             input_dim=2, dist='u',
+             prefix='results',
              alt=True, bayes=True):
 
     print(f"Will run simulations for N={measurements}")
@@ -45,21 +46,25 @@ def main_pde(num_trials=20,
         # in 1d this is a change in sensor location
         # in ND, change in how we partition sensors (vertical vs horizontal)
         if example == 'mud-alt' and input_dim == 1:
-            fname = 'pde_{input_dim}D/mud-alt_ref.pkl'
+            fname = f'pde_{input_dim}{dist}/mud-alt_ref.pkl'
             try:
                 P.load(fname)
             except FileNotFoundError:
                 # attempt to load xml results from disk.
-                ps.make_reproducible_without_fenics('mud-alt', lam_true, input_dim=1, num_samples=None, num_measure=num_measure)
+                ps.make_reproducible_without_fenics('mud-alt', lam_true, input_dim=1,
+                                                    num_samples=None, num_measure=num_measure,
+                                                    prefix=prefix, dist=dist)
                 P.load(fname)
             wrapper = P.mud_scalar()
             ps.plot_without_fenics(fname, num_sensors=100, num_qoi=1, example=example)
         else:
-            fname = f'pde_{input_dim}D/mud_ref.pkl'
+            fname = f'pde_{input_dim}{dist}/mud_ref.pkl'
             try:
                 P.load(fname)
-            except FileNotFoundError:
-                ps.make_reproducible_without_fenics('mud', lam_true, input_dim=input_dim, num_samples=None, num_measure=num_measure)
+            except FileNotFoundError: # mud and mud alt have same sensors in higher dimensional examples
+                ps.make_reproducible_without_fenics('mud', lam_true, input_dim=input_dim,
+                                                    num_samples=None, num_measure=num_measure,
+                                                    prefix=prefix, dist=dist)
                 P.load(fname)
 
             # plots show only one hundred sensors to avoid clutter
@@ -113,7 +118,8 @@ def main_pde(num_trials=20,
         res.append((example, _in, _rm, _re))
 
         if input_dim > 1:
-            P.plot_initial()
+            if example == 'mud':
+                P.plot_initial()
             for m in measurements:
                 P.plot_solutions(solutions, m, example=example)
 #             P.plot_solutions(solutions, 100, example=example, save=True)

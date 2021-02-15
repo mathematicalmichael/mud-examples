@@ -19,10 +19,15 @@ ode:
 #	./run_poisson.sh  # TODO: make this the 1d
 
 # adding res2u.pkl below will generate all results.
-pde2: run_poisson.sh
-	mkdir -p pde_2D/
+pde2u: run_poisson.sh
+	mkdir -p pde_2u/
 	./run_poisson.sh
-	@echo "Generated ./pde_2D/"
+	@echo "Generated ./pde_2u/"
+
+pde2n: run_poisson.sh
+	mkdir -p pde_2n/
+	./run_poisson.sh -d n
+	@echo "Generated ./pde_2n/"
 
 # estimated twenty minutes
 res2u.pkl: generate_pde_data.sh
@@ -45,7 +50,9 @@ lin/lin-rank-cov-convergence.png: MUD-Linear-Rank.ipynb
 
 ode/ode_20_reference_solution.png ode/ode_200_reference_solution.png ode/ode_convergence_mud_obs_mean.png ode/ode_convergence_mud_obs_var.png: ode
 
-pde_2D/pde_sensors_2D.png pde_2D/pde_in_2D.png pde_2D/pde_mud_2-1_N100.png pde_2D/pde_mud_2-2_N100.png: pde2
+pde_2u/pde_sensors_2D.png pde_2u/pde_in_2D.png pde_2u/pde_mud_2-1_N100.png pde_2u/pde_mud_2-2_N100.png: pde2u
+
+pde_2n/pde_sensors_2D.png pde_2n/pde_in_2D.png pde_2n/pde_mud_2-1_N100.png pde_2n/pde_mud_2-2_N100.png: pde2n
 
 contours/data_mismatch_contour.png contours/tikonov_contour.png contours/consistent_contour.png contours/classical_solution.png contours/consistent_solution.png: Contours.ipynb
 	jupyter-nbconvert --to notebook --execute \
@@ -77,10 +84,10 @@ linear-examples: \
 	lin/lin-rank-cov-convergence.png
 
 pde-examples: \
-	pde_2D/pde_sensors_2D.png \
-	pde_2D/pde_in_2D.png \
-	pde_2D/pde_mud_2-1_N100.png \
-	pde_2D/pde_mud_2-2_N100.png
+	pde_2u/pde_sensors_2D.png \
+	pde_2u/pde_in_2D.png \
+	pde_2u/pde_mud_2-1_N100.png \
+	pde_2u/pde_mud_2-2_N100.png
 
 clean:
 	rm -f   \
