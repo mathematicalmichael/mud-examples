@@ -346,9 +346,10 @@ def make_reproducible_without_fenics(example, lam_true=3, input_dim=2,
         if num_samples is None or num_samples > len(model_list):
             num_samples = len(model_list)
 
-    except e:
+    except FileNotFoundError as e:
         _logger.error(e)
         _logger.warn("Attempting data generation with system call.")
+        # below has to match where we expected our git-controlled file to be... TODO: generalize to data/
         os.system(f'generate_poisson_data -v -n 100 -i {input_dim} -p scripts/{prefix} -d {dist}')
         model_list = pickle.load(open(f'scripts/{prefix}{input_dim}{dist}.pkl', 'rb'))
         if num_samples is None or num_samples > len(model_list):
