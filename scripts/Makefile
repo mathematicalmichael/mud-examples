@@ -8,36 +8,40 @@ DEPS:=mud_problem.py poisson.py
 # n is number of trials (repeatitions of experiment to avg out results)
 # r stands for proportion of time elapsed
 # t stands for tolerance (of measurement equipment)
-ode: mud_problem.py
+ode:
 	mkdir -p ode/
 	./run_decay.sh
+	@echo "Generated ./ode/"
 
 # estimated four minutes
-pde1: res1u.pkl $(DEPS) mud_problem.py
-	mkdir -p pde_1D/
-	./run_poisson.sh  # TODO: make this the 1d
+#pde1: res1u.pkl $(DEPS)
+#	mkdir -p pde_1D/
+#	./run_poisson.sh  # TODO: make this the 1d
 
 # adding res2u.pkl below will generate all results.
-pde2: mud_problem.py
+pde2: run_poisson.sh
 	mkdir -p pde_2D/
 	./run_poisson.sh
+	@echo "Generated ./pde_2D/"
 
 # estimated twenty minutes
-res2u.pkl: generate_pde_data.sh run_poisson.py poisson.py
+res2u.pkl: generate_pde_data.sh
 	./generate_pde_data.sh
 
-data: $(DATA)
+# data: $(DATA)
 
 
 lin/lin-dim-cov-convergence.png: MUD-Linear-Dimension.ipynb
 	jupyter-nbconvert --to notebook --execute \
 	MUD-Linear-Dimension.ipynb && \
 	rm -f MUD-Linear-Dimension.nbconvert.ipynb
+	@echo "Generated ./lin/lin-dim-cov-convergence.png"
 
 lin/lin-rank-cov-convergence.png: MUD-Linear-Rank.ipynb
 	jupyter-nbconvert --to notebook --execute \
 	MUD-Linear-Rank.ipynb && \
 	rm -f MUD-Linear-Rank.nbconvert.ipynb
+	@echo "Generated ./lin/lin-rank-cov-convergence.png"
 
 ode/ode_20_reference_solution.png ode/ode_200_reference_solution.png ode/ode_convergence_mud_obs_mean.png ode/ode_convergence_mud_obs_var.png: ode
 
@@ -66,12 +70,11 @@ ode-examples: \
 	ode/ode_200_reference_solution.png \
 	ode/ode_convergence_mud_obs_mean.png \
 	ode/ode_convergence_mud_obs_var.png
-	@echo "Generated ./ode/"
+
 
 linear-examples: \
 	lin/lin-dim-cov-convergence.png \
 	lin/lin-rank-cov-convergence.png
-	@echo "Generated ./lin/"
 
 pde-examples: \
 	pde_2D/pde_sensors_2D.png \
@@ -88,3 +91,4 @@ clean:
 	@echo "Cleaned up figures"
 
 
+.PHONY: ode

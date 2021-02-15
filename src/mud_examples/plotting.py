@@ -359,7 +359,7 @@ def plot_experiment_measurements(measurements, res, prefix, fsize=32, linewidth=
     # plt.show()
 
 
-def plot_poisson_solution(res, measurements, prefix, lam_true, fsize=32, save=False):
+def plot_scalar_poisson_summary(res, measurements, prefix, lam_true, fsize=32, save=False):
     from fenics import plot as _plot
     from poisson import poissonModel # function evaluation (full response surface)
 

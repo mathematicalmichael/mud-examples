@@ -17,13 +17,14 @@ matplotlib.rcParams['figure.figsize'] = 10,10
 matplotlib.rcParams['font.size'] = 16
 
 
-def main_ode(num_trials,
+def main_ode(num_trials=20,
              fsize=32,
              seed=21,
              lam_true=0.5,
              domain=[[0,1]],
              tolerances=[0.1],
-             time_ratios=[1], alt=False, bayes=False):
+             time_ratios=[0.01, 0.05, 0.1, 0.25, 0.5, 1],
+             alt=False, bayes=True):
     res = []
     print(f"Will run simulations for %T={time_ratios}")
     sd_vals      = [ std_from_equipment(tolerance=tol, probability=0.99) for tol in tolerances ]

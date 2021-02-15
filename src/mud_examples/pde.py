@@ -16,16 +16,17 @@ from mud_examples.helpers import experiment_measurements, extract_statistics, ex
 from mud_examples.plotting import fit_log_linear_regression
 
 from mud_examples.datasets import load_poisson
+import mud_examples.poisson as ps  # lazy loads fenics
 
-def main_pde(num_trials=5,
-             tolerances=[],
-             measurements=[],
+def main_pde(num_trials=20,
+             tolerances=[0.1],
+             measurements=[5, 10, 20, 50, 100, 250, 500, 1000],
              fsize=32,
              seed=21,
              lam_true=3.0,
              input_dim=2,
-             domain=[[-4,0]], alt=False, bayes=False):
-    import mud_examples.poisson as ps  # TODO move this outside, get fenics stuff into separate place.
+             alt=True, bayes=True):
+
     print(f"Will run simulations for N={measurements}")
     res = []
     num_measure = max(measurements)
@@ -61,15 +62,19 @@ def main_pde(num_trials=5,
                 ps.make_reproducible_without_fenics('mud', lam_true, input_dim=input_dim, num_samples=None, num_measure=num_measure)
                 P.load(fname)
 
+            # plots show only one hundred sensors to avoid clutter
             if example == 'mud-alt':
                 wrapper = P.mud_vector_vertical()
                 ps.plot_without_fenics(fname, num_sensors=100, mode='ver',
                                        num_qoi=input_dim, example=example)
-            else:
+            elif example == 'mud':
                 wrapper = P.mud_vector_horizontal()
                 ps.plot_without_fenics(fname, num_sensors=100, mode='hor',
                                        num_qoi=input_dim, example=example)
-
+            elif example == 'map':
+                wrapper = P.map_scalar()
+                ps.plot_without_fenics(fname, num_sensors=100,
+                                       num_qoi=input_dim, example=example)
         # adjust measurements to account for what we actually have simulated
         measurements = np.array(measurements)
         measurements = list(measurements[measurements <= P.qoi.shape[1]])
@@ -109,7 +114,8 @@ def main_pde(num_trials=5,
 
         if input_dim > 1:
             P.plot_initial()
-            P.plot_solutions(solutions, 20, example=example)
-            P.plot_solutions(solutions, 100, example=example, save=True)
+            for m in measurements:
+                P.plot_solutions(solutions, m, example=example)
+#             P.plot_solutions(solutions, 100, example=example, save=True)
 
     return res

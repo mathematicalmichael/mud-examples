@@ -20,7 +20,7 @@ fin = LazyLoader('dolfin')
 from mud.util import std_from_equipment # used for convenience in setting Normal distribution
 from mud_examples.models import generate_spatial_measurements as generate_sensors_pde
 from mud_examples.datasets import load_poisson
-from mud.funs import wme, mud_problem # needed for the poisson class
+from mud.funs import wme, mud_problem, map_problem # needed for the poisson class
 
 __author__ = "Mathematical Michael"
 __copyright__ = "Mathematical Michael"
@@ -106,7 +106,8 @@ def setup_logging(loglevel):
 
 
 def main(args):
-    """Main entry point allowing external calls
+    """Main entry point allowing external calls.
+    Generates PDE data (requires fenics to be installed)
 
     Args:
       args ([str]): command line parameter list
@@ -315,11 +316,18 @@ def get_boundary_markers_for_rect(mesh, width=1):
 
 
 def make_reproducible_without_fenics(example, lam_true=3, input_dim=2, num_samples=None, num_measure=100):
-    
-    model_list = pickle.load(open(f'res{input_dim}u.pkl', 'rb'))
-    if num_samples is None:
-        num_samples = len(model_list)
-        
+    """
+    (Currently) requires XML data to be on disk, simulates sensors
+    and saves everything required to one pickle file.
+    """
+    # Either load or generate the data.
+    try:  # TODO: generalize this path here... take as argument
+        model_list = pickle.load(open(f'res{input_dim}u.pkl', 'rb'))
+        if num_samples is None or num_samples > len(model_list):
+            num_samples = len(model_list)
+    except FileNotFoundError:  # TODO: make sys call?
+        raise FileNotFoundError("Need to generate data first. Run ./generate_pde_data.sh")
+
     if 'alt' in example:  # alternative measurement locations for more sensitivity / precision
         sensors = generate_sensors_pde(num_measure, ymax=0.95, xmax=0.25)
     else:
@@ -335,8 +343,14 @@ def make_reproducible_without_fenics(example, lam_true=3, input_dim=2, num_sampl
     g = gamma_boundary_condition(lam_true)
     g_mesh = np.linspace(0, 1, 1000)
     g_plot = [g(0,y) for y in g_mesh]
-    ref = {'sensors': sensors, 'lam': lam, 'qoi': qoi, 'truth': lam_true, 'data': qoi_ref,
-           'plot_u': (c,v), 'plot_g': (g_mesh, g_plot) }
+    ref = {'sensors': sensors,
+           'lam': lam, 
+           'qoi': qoi, 
+           'truth': lam_true, 
+           'data': qoi_ref,
+           'plot_u': (c,v),
+           'plot_g': (g_mesh, g_plot)
+          }
 
     fname = f'pde_{input_dim}D/{example}_ref.pkl'
     with open(fname, 'wb') as f:
@@ -346,7 +360,7 @@ def make_reproducible_without_fenics(example, lam_true=3, input_dim=2, num_sampl
     return fname
 
 
-def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='hor', fsize = 36, example=None):
+def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='sca', fsize = 36, example=None):
     plt.figure(figsize=(10,10))
     mode = mode.lower()
     colors = ['xkcd:red', 'xkcd:black', 'xkcd:orange', 'xkcd:blue', 'xkcd:green']
@@ -368,7 +382,13 @@ def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='hor', fsize = 
     plt.title(f"Response Surface", fontsize=1.25*fsize)
     if num_sensors is not None:  # plot sensors
         intervals = np.linspace(0, 1, num_qoi+2)[1:-1]
-        if mode == 'hor':
+        if mode == 'sca':
+            qoi_indices = band_qoi(sensors, 1, axis=1)
+            _intervals = np.array(intervals[1:]) + \
+                           ( np.array(intervals[:-1]) - \
+                           np.array(intervals[1:]) ) / 2
+
+        elif mode == 'hor':
             qoi_indices = band_qoi(sensors, num_qoi, axis=1)
             # partitions equidistant between sensors
             _intervals = np.array(intervals[1:]) + \
@@ -379,8 +399,9 @@ def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='hor', fsize = 
             qoi_indices = band_qoi(sensors, num_qoi, axis=0)
             # partitions equidistant on x_1 = (0, 1)
             _intervals = np.linspace(0, 1, num_qoi+1)[1:]
-
-        for i in range(0, num_qoi):
+        else:
+            raise ValueError("Unsupported mode type. Select from ('sca', 'ver', 'hor'). ")
+        for i in range(0, len(qoi_indices)):
             _q = qoi_indices[i][qoi_indices[i] < num_sensors ]
             plt.scatter(sensors[_q,0], sensors[_q,1], s=100, color=colors[i%2])
             if i < num_qoi - 1:
@@ -431,6 +452,14 @@ def make_mud_wrapper(domain, lam, qoi, qoi_true, indices=None):
 
     return mud_wrapper
 
+def make_map_wrapper(domain, lam, qoi, qoi_true):
+    """
+    Anonymous function
+    """
+    def map_wrapper(num_obs, sd):
+        return map_problem(domain=domain, lam=lam, qoi=qoi, qoi_true=qoi_true, sd=sd, num_obs=num_obs)
+
+    return map_wrapper
 
 # probably move to helpers or utils
 def band_qoi(sensors, num_qoi=1, axis=1):
@@ -543,6 +572,9 @@ class pdeProblem(object):
         self.u = u
         self.g = g
 
+    def map_scalar(self):
+        return make_map_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref)
+
     def mud_scalar(self):
         return make_mud_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref)
 
@@ -583,11 +615,18 @@ class pdeProblem(object):
             else:
                 prefix = f'pde_{lam.shape[1]}D/{example}_solutions_N{num_measurements}'
                 plot_lam = np.array(sols[num_measurements])
-                if 'alt' in example:
+                if example == 'mud-alt':
                     qmap = '$Q_{%dD}^\prime$'%lam.shape[1]
-                else:
+                    soltype = 'MUD'
+                elif example == 'mud':
                     qmap = '$Q_{%dD}$'%lam.shape[1]
-                plt.title(f'MUD Estimates for {qmap}, N={num_measurements}', fontsize=1.25*fsize)
+                    soltype = 'MUD'
+                elif example == 'map':
+                    qmap = '$Q_{1D}$'
+                    soltype = 'MAP'
+                else:
+                    raise ValueError("Unsupported example type.")
+                plt.title(f'{soltype} Estimates for {qmap}, N={num_measurements}', fontsize=1.25*fsize)
         else:  # initial plot, first 100
             prefix = f'pde_{lam.shape[1]}D/initial'
             plot_lam = lam[0:100, :]
@@ -612,6 +651,7 @@ class pdeProblem(object):
             _fname = f"{prefix}.{ftype}"
             plt.savefig(_fname, bbox_inches='tight')
             print(f"Saved {_fname}")
+            plt.close()
     #     plt.show()
 
 def evaluate_and_save_poisson(sample, save_prefix):
