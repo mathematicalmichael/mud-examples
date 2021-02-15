@@ -393,7 +393,7 @@ def plot_scalar_poisson_summary(res, measurements, prefix, lam_true, fsize=32, s
         slopes = np.array(slopes)
         ranked_slopes = slopes[sa]
 
-        xlabel_text = "$\lambda$"
+        xlabel_text = "$\\lambda$"
         # ylabel_text = "$u(x_i, \lambda)$"
         ylabel_text = "Measurement\nResponse"
         ax_main.axes.set_xlabel(xlabel_text, fontsize=fsize)

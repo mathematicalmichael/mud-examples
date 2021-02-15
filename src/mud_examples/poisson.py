@@ -673,7 +673,7 @@ class pdeProblem(object):
         intervals = list(np.linspace(0, 1, lam.shape[1]+2)[1:-1])
         # fin.plot(u_plot, mesh=mesh, lw=5, c='k', label="$g$")
         plt.plot(g_mesh, g_plot, lw=5, c='k', label="$g$")
-        plt.plot([0]+intervals+[1], [0]+g_projected+[0], lw=5, c='green', alpha=0.6, ls='--', label='$\hat{g}$', zorder=5)
+        plt.plot([0]+intervals+[1], [0]+g_projected+[0], lw=5, c='green', alpha=0.6, ls='--', label='$\\hat{g}$', zorder=5)
 
 
         if sols is not None:
@@ -683,7 +683,7 @@ class pdeProblem(object):
                 prefix = f'{fname}_{example}_solutions_N{num_measurements}'
                 plot_lam = np.array(sols[num_measurements])
                 if example == 'mud-alt':
-                    qmap = '$Q_{%dD}^\prime$'%lam.shape[1]
+                    qmap = '$Q_{%dD}^\\prime$'%lam.shape[1]
                     soltype = 'MUD'
                 elif example == 'mud':
                     qmap = '$Q_{%dD}$'%lam.shape[1]
@@ -705,7 +705,7 @@ class pdeProblem(object):
 
 
         plt.xlabel("$x_2$", fontsize=fsize)
-        plt.ylabel("$g(x, \lambda)$", fontsize=fsize)
+        plt.ylabel("$g(x, \\lambda)$", fontsize=fsize)
 
 
 
