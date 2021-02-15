@@ -38,7 +38,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          pip install .[test]
+          pip install -e .[test]
           pytest
 
       - name: Test install with wheels
