@@ -2,11 +2,14 @@
 #!/usr/env/bin python
 
 import importlib
+import logging
 import os
 import types
 
 import numpy as np
 from mud.funs import mud_sol, map_sol
+
+_logger = logging.getLogger(__name__)
 
 
 def check_dir(directory):
@@ -54,6 +57,7 @@ def experiment_measurements(fun, num_measurements, sd, num_trials, seed=21):
     experiments = {}
     solutions = {}
     for ns in num_measurements:
+        _logger.debug(f'Measurement experiment. Num measurements: {ns}')
         discretizations = []
         estimates = []
         for t in range(num_trials):
@@ -75,6 +79,7 @@ def experiment_equipment(fun, num_measure, sd_vals, num_trials, reference_value)
     sd_err = []
     sd_var = []
     for sd in sd_vals:
+        _logger.debug(f'Equipment Experiment. Std Dev: {sd}')
         temp_err = []
         for t in range(num_trials):
             _d = fun(sd=sd, num_obs=num_measure)
@@ -91,6 +96,7 @@ def extract_statistics(solutions, reference_value):
     means = []
     variances = []
     for ns in num_sensors_plot_conv:
+        _logger.debug(f'Extracting stats for {ns} measurements.')
         mud_solutions = solutions[ns]
         num_trials = len(mud_solutions)
         err = [np.linalg.norm(m - reference_value) for m in mud_solutions]

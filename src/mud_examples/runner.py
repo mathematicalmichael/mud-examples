@@ -55,7 +55,7 @@ def parse_args(args):
     parser.add_argument('-m', '--num-measure',   default=[20, 100],  type=int, nargs='+')
     parser.add_argument('-r', '--ratio-measure', default=[1],  type=float, nargs='+')
     parser.add_argument('--num-trials',    default=20,    type=int)
-    parser.add_argument('-t', '--sensor-tolerance',  default=[0.1], type=float, nargs='+')
+    parser.add_argument('-t', '--sensor-tolerance',  default=[0.1], type=float, action='append')
     parser.add_argument('-s', '--seed',          default=21)
     parser.add_argument('-lw', '--linewidth',    default=5)
     parser.add_argument('--fsize',               default=32, type=int)
@@ -217,9 +217,27 @@ def run():
     """Entry point for console_scripts
     """
     main(sys.argv[1:])
-    
-############################################################
 
+
+def run_pde():
+    """Recreates Poisson figures in MUD paper.
+    """
+    run_cmd = """--example pde --alt --bayes --save \
+    --num-trials 20 -m 20 100 250 500 -t 0.1
+    """.replace('    ','').replace('\n','').split(' ')
+    main(run_cmd + sys.argv[1:])
+
+
+def run_ode():
+    """Recreates Poisson figures in MUD paper.
+    """
+    run_cmd = """-v --example ode --bayes --save \
+    --num-trials 20 -r 0.01 0.05 0.1 0.25 0.5 1 -t 0.1
+    """.replace('    ','').replace('\n','').split(' ')
+    main(run_cmd + sys.argv[1:])
+
+
+############################################################
 
 
 if __name__ == "__main__":

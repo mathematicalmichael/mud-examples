@@ -355,6 +355,8 @@ def make_reproducible_without_fenics(example, lam_true=3, input_dim=2,
             fpath = f'{prefix}'
         elif curdir == 'mud-examples':
             fpath = f'scripts/{prefix}'
+        else:
+            fpath = f'{prefix}'
         os.system(f'generate_poisson_data -v -n 10 -i {input_dim} -p {fpath} -d {dist}')
         try:
             model_list = pickle.load(open(f'{fpath}{input_dim}{dist}.pkl', 'rb'))
@@ -628,10 +630,10 @@ class pdeProblem(object):
     def load(self, fname=None):
         if fname: 
             self.fname = fname
-            _logger.info(f"Loading from supplied filename {fname}.")
+            _logger.info(f"PDE problem loading from {fname}.")
         else:
             fname = self.fname
-            _logger.info(f"Loading from default filename {fname}.")
+            _logger.info(f"PDE problem loading from default {fname}.")
 
         dist_from_fname = fname.strip('results').strip('res').strip('.pkl')
         dist_from_fname = dist_from_fname.split('/')[-1][-1]  # attempting to infer distribution from filename

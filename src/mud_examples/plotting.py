@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+#!/usr/env/bin python
+
+import logging
+
 from matplotlib import pyplot as plt
 from matplotlib import cm
 import matplotlib.gridspec as gridspec
@@ -15,8 +20,15 @@ from mud.norm import full_functional, norm_input, norm_data, norm_predicted
 from mud.plot import make_2d_unit_mesh
 from mud_examples.helpers import check_dir
 
+_logger = logging.getLogger(__name__) # TODO: make use of this instead of print
+_mpl_logger = logging.getLogger('matplotlib')
+_mpl_logger.setLevel(logging.WARNING)
+
 
 def fit_log_linear_regression(input_values, output_values):
+    if len(np.unique(output_values)) == 1:
+        _logger.info("Log Linear Regression: All values identical.")
+        return np.array(output_values), 0
     x, y = np.log10(input_values), np.log10(output_values)
     X, Y = np.vander(x, 2), np.array(y).reshape(-1, 1)
     slope, intercept = (np.linalg.pinv(X) @ Y).ravel()
@@ -279,7 +291,7 @@ def plot_decay_solution(solutions, model_generator, sigma, prefix,
 
 def plot_experiment_equipment(tolerances, res, prefix, fsize=32, linewidth=5,
                               title="Variance of MUD Error", save=True):
-    print("Plotting equipment differences...")
+    print("Plotting experiments involving equipment differences...")
     plt.figure(figsize=(10, 10))
     for _res in res:
         _prefix, _in, _rm, _re = _res
@@ -319,7 +331,7 @@ def plot_experiment_equipment(tolerances, res, prefix, fsize=32, linewidth=5,
 
 
 def plot_experiment_measurements(measurements, res, prefix, fsize=32, linewidth=5, xlabel='Number of Measurements', save=True, legend=False):
-    print("Plotting measurement experiments.")
+    print("Plotting experiments involving increasing # of measurements.")
     plt.figure(figsize=(10, 10))
     for _res in res:
         _prefix, _in, _rm, _re = _res
@@ -349,7 +361,8 @@ def plot_experiment_measurements(measurements, res, prefix, fsize=32, linewidth=
     plt.xscale('log')
     plt.yscale('log')
     plt.Axes.set_aspect(plt.gca(), 1)
-    plt.ylim(0.9 * min(variances), 1.3 * max(variances))
+#     if not len(np.unique(variances)) == 1:
+#         plt.ylim(0.9 * min(variances), 1.3 * max(variances))
     plt.ylim(1E-5, 1E-3)
     plt.xlabel(xlabel, fontsize=fsize)
     if legend:
@@ -357,15 +370,17 @@ def plot_experiment_measurements(measurements, res, prefix, fsize=32, linewidth=
     # plt.ylabel('Absolute Error in MUD', fontsize=fsize)
     plt.title("$\\mathrm{Var}(|\\lambda^\\mathrm{MUD} - \\lambda^\\dagger|)$", fontsize=1.25 * fsize)
     if save:
+        _logger.info("Saving measurement experiments.")
         plt.savefig(f'{prefix}_convergence_obs_var.png', bbox_inches='tight')
-    # plt.show()
+    else:
+        plt.show()
 
 
 def plot_scalar_poisson_summary(res, measurements, prefix, lam_true, fsize=32, save=False):
     from fenics import plot as _plot
-    from poisson import poissonModel # function evaluation (full response surface)
+    from mud_examples.poisson import poissonModel # function evaluation (full response surface)
 
-    print("Plotting surface...")
+    _logger.info("Fenics plotting for 1D example: Plotting surface...")
     for _res in res:
         _prefix, _in, _rm, _re = _res
         lam, qoi, sensors, qoi_true, experiments, solutions = _in
@@ -417,15 +432,15 @@ def plot_scalar_poisson_summary(res, measurements, prefix, lam_true, fsize=32, s
         plt.xlabel("Slope", fontsize=fsize)
         if save:
             plt.savefig(f'{_prefix}_sensitivity_qoi.png', bbox_inches='tight')
-        #plt.show()
+        else:
+            plt.show()
 
         ##########
 
         plt.figure(figsize=(10,10))
-        print("Most sensitive sensors in first 100:")
         num_sensitive  = 20
         most_sensitive = sa[sa < 100][0:num_sensitive]
-        print(most_sensitive)
+        _logger.info(f"{num_sensitive} most sensitive sensors in first 100: {most_sensitive}")
         _plot(poissonModel(lam_true))
         for i in range(min(100, max(measurements))):
             plt.scatter(sensors[i,0], sensors[i,1], c='w', s=200)
@@ -437,4 +452,5 @@ def plot_scalar_poisson_summary(res, measurements, prefix, lam_true, fsize=32, s
         plt.ylabel('$x_2$', fontsize=fsize)
         if save:
             plt.savefig(f'{_prefix}_reference_solution.png', bbox_inches='tight')
-        #plt.show()
+        else:
+            plt.show()

@@ -46,6 +46,7 @@ def main_pde(num_trials=20,
 
     sd_vals     = [ std_from_equipment(tolerance=tol, probability=0.99) for tol in tolerances ]
     sigma       = sd_vals[-1] # sorted, pick largest
+    _logger.info(f'Using std. dev {sigma}')
     example_list = [ 'mud' ]
     if alt:
         example_list.append('mud-alt')
@@ -152,5 +153,4 @@ def main_pde(num_trials=20,
                 P.plot_solutions(solutions, m, example=example)
 #             P.plot_solutions(solutions, 100, example=example, save=True)
 
-    print("Done.")
     return res

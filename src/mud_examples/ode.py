@@ -68,7 +68,7 @@ def main_ode(num_trials=20,
         num_measure = max(measurements)
 
         model    = generate_decay_model(sensors, lam_true)
-        qoi_true = model() # no args evaluates true param
+        qoi_true = model()  # no args evaluates true param
         np.random.seed(seed)
         lam = np.random.rand(int(1E3)).reshape(-1,1)
         qoi = model(lam)
