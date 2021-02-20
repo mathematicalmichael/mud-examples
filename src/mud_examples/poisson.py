@@ -3,10 +3,12 @@
 
 import argparse
 import logging
+from io import BytesIO
 import os
 import sys
 from pathlib import Path
 import pickle
+import pkgutil
 
 import numpy as np  # only needed for band_qoi + sample generation for main method
 import matplotlib.pyplot as plt  # move when migrating plotting code (maybe)
@@ -138,10 +140,10 @@ def main(args):
 
     # perform random sampling according to command-line arguments
     if beta_params is None:
-        if dist == 'n':  # N(-2, sd), sd chosen so 100*tol % samples are in (-4, 0)
-            _logger.info(f"Generating samples from N(-2, sd), sd s.t. {100*tol}% are in (-4, 0).")
+        if dist == 'n':  # N(-3, sd), sd chosen so 100*tol % samples are in (-4, 0)
+            _logger.info(f"Generating samples from N(-3, sd), sd s.t. {100*tol}% are in (-4, 0).")
             sd = std_from_equipment(2, tol)
-            randsamples = np.random.randn(num_samples, dim_input)*sd - 2
+            randsamples = np.random.randn(num_samples, dim_input)*sd - 3
         elif dist == 'u':  # U(-4, 0)
             _logger.info(f"Generating samples from U(-4, 0).")
             randsamples = -4*np.random.rand(num_samples, dim_input)
@@ -355,6 +357,8 @@ def make_reproducible_without_fenics(example, lam_true=3, input_dim=2,
             fpath = f'{prefix}'
         elif curdir == 'mud-examples':
             fpath = f'scripts/{prefix}'
+        else:
+            fpath = f'{prefix}'
         os.system(f'generate_poisson_data -v -n 10 -i {input_dim} -p {fpath} -d {dist}')
         try:
             model_list = pickle.load(open(f'{fpath}{input_dim}{dist}.pkl', 'rb'))
@@ -409,7 +413,16 @@ def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='sca', fsize = 
     plt.figure(figsize=(10,10))
     mode = mode.lower()
     colors = ['xkcd:red', 'xkcd:black', 'xkcd:orange', 'xkcd:blue', 'xkcd:green']
-    ref = pickle.load(open(fname, 'rb'))
+
+    if 'data' in fname:  # TODO turn into function.
+        _logger.info(f"Loading {fname} from package")
+        data = pkgutil.get_data(__package__, fname)
+        data = BytesIO(data)
+    else:
+        _logger.info("Loading from disk")
+        data = open(fname, 'rb')
+    ref = pickle.load(data)
+
     sensors = ref['sensors']
     qoi_ref = ref['data']
     coords, vals = ref['plot_u']
@@ -464,7 +477,10 @@ def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='sca', fsize = 
     plt.ylabel("$x_2$", fontsize=fsize)
 
     if example:
-        fdir= '/'.join(fname.split('/')[:-1])
+        if 'data' in fname:  # TODO: clean this up
+            fdir= '/'.join(fname.split('/')[1:-1])
+        else:
+            fdir= '/'.join(fname.split('/')[:-1])
         fname = f"{fdir}/{example}_surface.png"
         plt.savefig(fname, bbox_inches='tight')
         _logger.info(f"Saved {fname}")
@@ -504,17 +520,17 @@ def make_mud_wrapper(domain, lam, qoi, qoi_true, indices=None, dist='u'):
     return mud_wrapper
 
 
-def make_map_wrapper(domain, lam, qoi, qoi_true, dist='u'):
+def make_map_wrapper(domain, lam, qoi, qoi_true, dist='u', log=False):
     """
     Anonymous function
     """
     if not isinstance(dist, str):
         raise ValueError("`dist` must be of type `str`.")
     def map_wrapper(num_obs, sd):
-        b = map_problem(domain=domain, lam=lam, qoi=qoi, qoi_true=qoi_true, sd=sd, num_obs=num_obs)
+        b = map_problem(domain=domain, lam=lam, qoi=qoi, qoi_true=qoi_true, sd=sd, num_obs=num_obs, log=log)
         if dist == 'n':  # uniform is set by default
             _logger.debug("Setting normal prior for MAP problem")
-            b.set_prior(ds.norm(loc=-2, scale=std_from_equipment(2, 0.9999)))
+            b.set_prior(ds.norm(loc=-2, scale=std_from_equipment(2, 0.95)))
         return b
     return map_wrapper
 
@@ -626,12 +642,12 @@ class pdeProblem(object):
         self._dist = dist
 
     def load(self, fname=None):
-        if fname: 
+        if fname:
             self.fname = fname
-            _logger.info(f"Loading from supplied filename {fname}.")
+            _logger.info(f"PDE problem loading from {fname}.")
         else:
             fname = self.fname
-            _logger.info(f"Loading from default filename {fname}.")
+            _logger.info(f"PDE problem loading from default {fname}.")
 
         dist_from_fname = fname.strip('results').strip('res').strip('.pkl')
         dist_from_fname = dist_from_fname.split('/')[-1][-1]  # attempting to infer distribution from filename
@@ -649,9 +665,9 @@ class pdeProblem(object):
         
         _logger.info(f"lam: {self.lam.shape}, qoi: {self.qoi.shape}, dist: {self.dist}")
 
-    def map_scalar(self):
+    def map_scalar(self, log=False):
         _logger.info("Solving with MAP estimates.")
-        return make_map_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref, dist=self.dist)
+        return make_map_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref, dist=self.dist, log=log)
 
     def mud_scalar(self):
         _logger.info("Solving with scalar-valued MUD estimates.")
@@ -684,7 +700,7 @@ class pdeProblem(object):
         dist = self.dist
         g = self.g
         fname = self.fname.replace('.pkl', '')
-
+        fname = fname.replace('data/', '')
         closest_fit_index_out = np.argmin(np.linalg.norm(qoi - np.array(qoi_ref), axis=1))
         g_projected = list(lam[closest_fit_index_out, :])
         plt.figure(figsize=(10,10))
@@ -713,7 +729,7 @@ class pdeProblem(object):
                     soltype = 'MAP'
                 else:
                     raise ValueError("Unsupported example type.")
-                plt.title(f'{soltype} Estimates for {qmap}, N={num_measurements}', fontsize=1.25*fsize)
+                plt.title(f'{soltype} Estimates for {qmap}, $N={num_measurements}$', fontsize=1.25*fsize)
         else:  # initial plot, first 100
 #             prefix = f'pde_{lam.shape[1]}{dist}/initial'
             prefix = f'{fname}_{example}_initial_S{lam.shape[0]}'
@@ -787,9 +803,16 @@ def load_poisson_from_fenics_run(sensors, file_list, nx=36, ny=36):
 def load_poisson_from_disk(fname):
     _logger.info(f"Attempting to load {fname} from disk")
     try:
-        ref = pickle.load(open(fname, 'rb'))
+        if 'data' in fname:
+            _logger.info(f"Loading {fname} from package")
+            data = pkgutil.get_data(__package__, fname)
+            data = BytesIO(data)
+        else:
+            _logger.info("Loading from disk")
+            data = open(fname, 'rb')
+        ref = pickle.load(data)
     except FileNotFoundError as e:
-        _logger.error(f"load_poisson_from_disk - Failed to load {fname} from disk")
+        _logger.info(f"load_poisson_from_disk - Failed to load {fname} from disk")
         raise FileNotFoundError(f"load_poisson_from_disk: File {fname} missing. Run `make_reproducible_without_fenics` first.")
     lam = ref['lam']
     input_dim = lam.shape[1]

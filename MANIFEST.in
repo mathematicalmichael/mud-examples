@@ -1,0 +1,7 @@
+prune .github
+prune scripts
+prune notebooks
+exclude .gitignore .coveragerc .flake8
+#prune docs
+# SOURCES.txt indicates that the data is found
+#recursive-include src/mud_examples/data *.pkl

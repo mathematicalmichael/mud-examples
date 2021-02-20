@@ -38,7 +38,6 @@ def main_pde(num_trials=20,
     Running example: mud
     Running example: mud-alt
     Running example: map
-    Done.
     """
     print(f"Attempt run for measurements = {measurements}")
     res = []
@@ -46,6 +45,7 @@ def main_pde(num_trials=20,
 
     sd_vals     = [ std_from_equipment(tolerance=tol, probability=0.99) for tol in tolerances ]
     sigma       = sd_vals[-1] # sorted, pick largest
+    _logger.info(f'Using std. dev {sigma}')
     example_list = [ 'mud' ]
     if alt:
         example_list.append('mud-alt')
@@ -60,6 +60,8 @@ def main_pde(num_trials=20,
         fdir = f'pde_{input_dim}D' # expectation from make_reproducible_without_fenics
         check_dir(fdir)
         # mud and mud alt have same sensors in higher dimensional examples
+        # in 1d, the alternative approach is to change sensor placement, which requires
+        # loading a separate file.
         if example == 'mud-alt' and input_dim == 1:
             fname = f'{fdir}/ref_alt_{prefix}{input_dim}{dist}.pkl'
             try:
@@ -77,13 +79,19 @@ def main_pde(num_trials=20,
             try:
                 P.load(fname)
             except FileNotFoundError:
-                try: # doctests from root directory
-                    if os.getcwd().split('/')[-1] == 'scripts':
-                        raise FileNotFoundError("already within scripts directory.")
-                    _logger.warning("Attempting from scripts directory.")
-                    fname = f'scripts/{fname}'
+                
+                try: # available data in package
+                    _logger.info("Trying packaged data.")
+                    fname = 'data/' + fname
                     P.load(fname)
+#                     curdir = os.getcwd().split('/')[-1]
+#                     if curdir == 'scripts':
+#                         raise FileNotFoundError("already within scripts directory.")
+#                     _logger.warning("Attempting from scripts directory.")
+#                     fname = f'scripts/{fname}'
+#                     P.load(fname)
                 except FileNotFoundError:
+                    _logger.info("Failed to load requested data from disk or packaged datasets.")
                     fname = ps.make_reproducible_without_fenics('mud', lam_true, input_dim=input_dim,
                                                         num_samples=None, num_measure=num_measure,
                                                         prefix=prefix, dist=dist)
@@ -104,7 +112,7 @@ def main_pde(num_trials=20,
                 ps.plot_without_fenics(fname, num_sensors=100, mode='hor',
                                        num_qoi=input_dim, example=example)
             elif example == 'map':
-                wrapper = P.map_scalar()
+                wrapper = P.map_scalar(log=True)
                 ps.plot_without_fenics(fname, num_sensors=100,
                                        num_qoi=input_dim, example=example)
         # adjust measurements to account for what we actually have simulated
@@ -152,5 +160,4 @@ def main_pde(num_trials=20,
                 P.plot_solutions(solutions, m, example=example)
 #             P.plot_solutions(solutions, 100, example=example, save=True)
 
-    print("Done.")
     return res
