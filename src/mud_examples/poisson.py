@@ -3,10 +3,12 @@
 
 import argparse
 import logging
+from io import BytesIO
 import os
 import sys
 from pathlib import Path
 import pickle
+import pkgutil
 
 import numpy as np  # only needed for band_qoi + sample generation for main method
 import matplotlib.pyplot as plt  # move when migrating plotting code (maybe)
@@ -411,7 +413,16 @@ def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='sca', fsize = 
     plt.figure(figsize=(10,10))
     mode = mode.lower()
     colors = ['xkcd:red', 'xkcd:black', 'xkcd:orange', 'xkcd:blue', 'xkcd:green']
-    ref = pickle.load(open(fname, 'rb'))
+
+    if 'data' in fname:  # TODO turn into function.
+        _logger.info(f"Loading {fname} from package")
+        data = pkgutil.get_data(__package__, fname)
+        data = BytesIO(data)
+    else:
+        _logger.info("Loading from disk")
+        data = open(fname, 'rb')
+    ref = pickle.load(data)
+
     sensors = ref['sensors']
     qoi_ref = ref['data']
     coords, vals = ref['plot_u']
@@ -466,7 +477,10 @@ def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='sca', fsize = 
     plt.ylabel("$x_2$", fontsize=fsize)
 
     if example:
-        fdir= '/'.join(fname.split('/')[:-1])
+        if 'data' in fname:  # TODO: clean this up
+            fdir= '/'.join(fname.split('/')[1:-1])
+        else:
+            fdir= '/'.join(fname.split('/')[:-1])
         fname = f"{fdir}/{example}_surface.png"
         plt.savefig(fname, bbox_inches='tight')
         _logger.info(f"Saved {fname}")
@@ -628,7 +642,7 @@ class pdeProblem(object):
         self._dist = dist
 
     def load(self, fname=None):
-        if fname: 
+        if fname:
             self.fname = fname
             _logger.info(f"PDE problem loading from {fname}.")
         else:
@@ -686,7 +700,7 @@ class pdeProblem(object):
         dist = self.dist
         g = self.g
         fname = self.fname.replace('.pkl', '')
-
+        fname = fname.replace('data/', '')
         closest_fit_index_out = np.argmin(np.linalg.norm(qoi - np.array(qoi_ref), axis=1))
         g_projected = list(lam[closest_fit_index_out, :])
         plt.figure(figsize=(10,10))
@@ -789,7 +803,14 @@ def load_poisson_from_fenics_run(sensors, file_list, nx=36, ny=36):
 def load_poisson_from_disk(fname):
     _logger.info(f"Attempting to load {fname} from disk")
     try:
-        ref = pickle.load(open(fname, 'rb'))
+        if 'data' in fname:
+            _logger.info(f"Loading {fname} from package")
+            data = pkgutil.get_data(__package__, fname)
+            data = BytesIO(data)
+        else:
+            _logger.info("Loading from disk")
+            data = open(fname, 'rb')
+        ref = pickle.load(data)
     except FileNotFoundError as e:
         _logger.error(f"load_poisson_from_disk - Failed to load {fname} from disk")
         raise FileNotFoundError(f"load_poisson_from_disk: File {fname} missing. Run `make_reproducible_without_fenics` first.")

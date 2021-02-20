@@ -78,14 +78,19 @@ def main_pde(num_trials=20,
             try:
                 P.load(fname)
             except FileNotFoundError:
-                try: # doctests from root directory
-                    curdir = os.getcwd().split('/')[-1]
-                    if curdir == 'scripts':
-                        raise FileNotFoundError("already within scripts directory.")
-                    _logger.warning("Attempting from scripts directory.")
-                    fname = f'scripts/{fname}'
+                
+                try: # available data in package
+                    _logger.info("Trying packaged data.")
+                    fname = 'data/' + fname
                     P.load(fname)
+#                     curdir = os.getcwd().split('/')[-1]
+#                     if curdir == 'scripts':
+#                         raise FileNotFoundError("already within scripts directory.")
+#                     _logger.warning("Attempting from scripts directory.")
+#                     fname = f'scripts/{fname}'
+#                     P.load(fname)
                 except FileNotFoundError:
+                    _logger.info("Failed to load.")
                     fname = ps.make_reproducible_without_fenics('mud', lam_true, input_dim=input_dim,
                                                         num_samples=None, num_measure=num_measure,
                                                         prefix=prefix, dist=dist)
