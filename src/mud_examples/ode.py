@@ -41,7 +41,6 @@ def main_ode(num_trials=20,
     Running example: map
     Measurements: [2, 20, 200]
     Plotting decay solution.
-    Done.
     """
     res = []
     print(f"Will run simulations for %T={time_ratios}")
@@ -125,5 +124,4 @@ def main_ode(num_trials=20,
                             end_time=t_max, lam_true=lam_true, qoi_true=qoi_true,
                             sigma=sigma, time_vector=sensors, prefix='ode/' + example)
 
-    print("Done.")
     return res

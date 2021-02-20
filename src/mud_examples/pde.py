@@ -38,7 +38,6 @@ def main_pde(num_trials=20,
     Running example: mud
     Running example: mud-alt
     Running example: map
-    Done.
     """
     print(f"Attempt run for measurements = {measurements}")
     res = []
@@ -61,6 +60,8 @@ def main_pde(num_trials=20,
         fdir = f'pde_{input_dim}D' # expectation from make_reproducible_without_fenics
         check_dir(fdir)
         # mud and mud alt have same sensors in higher dimensional examples
+        # in 1d, the alternative approach is to change sensor placement, which requires
+        # loading a separate file.
         if example == 'mud-alt' and input_dim == 1:
             fname = f'{fdir}/ref_alt_{prefix}{input_dim}{dist}.pkl'
             try:
@@ -90,7 +91,7 @@ def main_pde(num_trials=20,
 #                     fname = f'scripts/{fname}'
 #                     P.load(fname)
                 except FileNotFoundError:
-                    _logger.info("Failed to load.")
+                    _logger.info("Failed to load requested data from disk or packaged datasets.")
                     fname = ps.make_reproducible_without_fenics('mud', lam_true, input_dim=input_dim,
                                                         num_samples=None, num_measure=num_measure,
                                                         prefix=prefix, dist=dist)
