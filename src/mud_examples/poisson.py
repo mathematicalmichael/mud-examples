@@ -812,7 +812,7 @@ def load_poisson_from_disk(fname):
             data = open(fname, 'rb')
         ref = pickle.load(data)
     except FileNotFoundError as e:
-        _logger.error(f"load_poisson_from_disk - Failed to load {fname} from disk")
+        _logger.info(f"load_poisson_from_disk - Failed to load {fname} from disk")
         raise FileNotFoundError(f"load_poisson_from_disk: File {fname} missing. Run `make_reproducible_without_fenics` first.")
     lam = ref['lam']
     input_dim = lam.shape[1]

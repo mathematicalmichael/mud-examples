@@ -47,3 +47,7 @@ jobs:
           pip install --upgrade wheel setuptools
           pip install .
 
+      - name: Test command-line scripts
+        run: |
+          cd /tmp
+          mud_run_all

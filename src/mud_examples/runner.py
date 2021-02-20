@@ -237,6 +237,10 @@ def run_ode():
     main(run_cmd + sys.argv[1:])
 
 
+def run_all():
+    run_ode()
+    run_pde()
+
 ############################################################
 
 
