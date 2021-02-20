@@ -79,7 +79,8 @@ def main_pde(num_trials=20,
                 P.load(fname)
             except FileNotFoundError:
                 try: # doctests from root directory
-                    if os.getcwd().split('/')[-1] == 'scripts':
+                    curdir = os.getcwd().split('/')[-1]
+                    if curdir == 'scripts':
                         raise FileNotFoundError("already within scripts directory.")
                     _logger.warning("Attempting from scripts directory.")
                     fname = f'scripts/{fname}'
@@ -105,7 +106,7 @@ def main_pde(num_trials=20,
                 ps.plot_without_fenics(fname, num_sensors=100, mode='hor',
                                        num_qoi=input_dim, example=example)
             elif example == 'map':
-                wrapper = P.map_scalar()
+                wrapper = P.map_scalar(log=True)
                 ps.plot_without_fenics(fname, num_sensors=100,
                                        num_qoi=input_dim, example=example)
         # adjust measurements to account for what we actually have simulated

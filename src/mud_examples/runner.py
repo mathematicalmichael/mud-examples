@@ -222,8 +222,8 @@ def run():
 def run_pde():
     """Recreates Poisson figures in MUD paper.
     """
-    run_cmd = """--example pde --alt --bayes --save \
-    --num-trials 20 -m 20 100 250 500 -t 0.1
+    run_cmd = """--example pde --bayes --save \
+    --num-trials 20 -m 20 100 250 500 750 1000
     """.replace('    ','').replace('\n','').split(' ')
     main(run_cmd + sys.argv[1:])
 

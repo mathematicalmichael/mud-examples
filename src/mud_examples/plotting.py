@@ -265,7 +265,7 @@ def plot_decay_solution(solutions, model_generator, sigma, prefix,
 
         # solutions / samples
         mud_solutions = solutions[num_meas_plot]
-        plt.plot(plotting_mesh, plot_model(mud_solutions[0][0]), lw=3, c='xkcd:bright red', alpha=alpha_signal_mudpts, label=f'{len(mud_solutions)} Estimates with N={num_meas_plot}')
+        plt.plot(plotting_mesh, plot_model(mud_solutions[0][0]), lw=3, c='xkcd:bright red', alpha=alpha_signal_mudpts, label=f'{len(mud_solutions)} Estimates with $N={num_meas_plot:3d}$')
         for _lam in mud_solutions[1:]:
             _true_response = plot_model(_lam[0])
             plt.plot(plotting_mesh, _true_response, lw=3, c='xkcd:bright red', alpha=alpha_signal_mudpts)

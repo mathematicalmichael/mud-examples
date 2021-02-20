@@ -138,10 +138,10 @@ def main(args):
 
     # perform random sampling according to command-line arguments
     if beta_params is None:
-        if dist == 'n':  # N(-2, sd), sd chosen so 100*tol % samples are in (-4, 0)
-            _logger.info(f"Generating samples from N(-2, sd), sd s.t. {100*tol}% are in (-4, 0).")
+        if dist == 'n':  # N(-3, sd), sd chosen so 100*tol % samples are in (-4, 0)
+            _logger.info(f"Generating samples from N(-3, sd), sd s.t. {100*tol}% are in (-4, 0).")
             sd = std_from_equipment(2, tol)
-            randsamples = np.random.randn(num_samples, dim_input)*sd - 2
+            randsamples = np.random.randn(num_samples, dim_input)*sd - 3
         elif dist == 'u':  # U(-4, 0)
             _logger.info(f"Generating samples from U(-4, 0).")
             randsamples = -4*np.random.rand(num_samples, dim_input)
@@ -506,17 +506,17 @@ def make_mud_wrapper(domain, lam, qoi, qoi_true, indices=None, dist='u'):
     return mud_wrapper
 
 
-def make_map_wrapper(domain, lam, qoi, qoi_true, dist='u'):
+def make_map_wrapper(domain, lam, qoi, qoi_true, dist='u', log=False):
     """
     Anonymous function
     """
     if not isinstance(dist, str):
         raise ValueError("`dist` must be of type `str`.")
     def map_wrapper(num_obs, sd):
-        b = map_problem(domain=domain, lam=lam, qoi=qoi, qoi_true=qoi_true, sd=sd, num_obs=num_obs)
+        b = map_problem(domain=domain, lam=lam, qoi=qoi, qoi_true=qoi_true, sd=sd, num_obs=num_obs, log=log)
         if dist == 'n':  # uniform is set by default
             _logger.debug("Setting normal prior for MAP problem")
-            b.set_prior(ds.norm(loc=-2, scale=std_from_equipment(2, 0.9999)))
+            b.set_prior(ds.norm(loc=-2, scale=std_from_equipment(2, 0.95)))
         return b
     return map_wrapper
 
@@ -651,9 +651,9 @@ class pdeProblem(object):
         
         _logger.info(f"lam: {self.lam.shape}, qoi: {self.qoi.shape}, dist: {self.dist}")
 
-    def map_scalar(self):
+    def map_scalar(self, log=False):
         _logger.info("Solving with MAP estimates.")
-        return make_map_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref, dist=self.dist)
+        return make_map_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref, dist=self.dist, log=log)
 
     def mud_scalar(self):
         _logger.info("Solving with scalar-valued MUD estimates.")
@@ -715,7 +715,7 @@ class pdeProblem(object):
                     soltype = 'MAP'
                 else:
                     raise ValueError("Unsupported example type.")
-                plt.title(f'{soltype} Estimates for {qmap}, N={num_measurements}', fontsize=1.25*fsize)
+                plt.title(f'{soltype} Estimates for {qmap}, $N={num_measurements}$', fontsize=1.25*fsize)
         else:  # initial plot, first 100
 #             prefix = f'pde_{lam.shape[1]}{dist}/initial'
             prefix = f'{fname}_{example}_initial_S{lam.shape[0]}'
