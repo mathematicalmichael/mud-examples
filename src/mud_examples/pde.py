@@ -112,7 +112,7 @@ def main_pde(num_trials=20,
                 ps.plot_without_fenics(fname, num_sensors=100, mode='hor',
                                        num_qoi=input_dim, example=example)
             elif example == 'map':
-                wrapper = P.map_scalar(log=True)
+                wrapper = P.map_scalar(log=False)
                 ps.plot_without_fenics(fname, num_sensors=100,
                                        num_qoi=input_dim, example=example)
         # adjust measurements to account for what we actually have simulated
