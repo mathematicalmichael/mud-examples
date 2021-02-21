@@ -2,14 +2,23 @@
 #!/usr/env/bin python
 
 import importlib
+import argparse
 import logging
 import os
+import sys
 import types
 
 import numpy as np
 from mud.funs import mud_sol, map_sol
 
+__author__ = "Mathematical Michael"
+__copyright__ = "Mathematical Michael"
+__license__ = "mit"
+from mud_examples import __version__
+from mud import __version__ as __mud_version__
+
 _logger = logging.getLogger(__name__)
+
 
 def parse_args(args):
     """Parse command line parameters
@@ -93,6 +102,7 @@ def parse_args(args):
 def check_dir(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
+
 
 class LazyLoader(types.ModuleType):
 
