@@ -126,7 +126,10 @@ def main(args):
         plt.xticks(fontsize=tick_fsize), plt.yticks(fontsize=tick_fsize);
         plt.xlabel("$\Lambda$",fontsize=1.25*tick_fsize)
         plt.legend(fontsize=leg_fsize, loc='upper left')
-        plt.savefig(f'comparison/bip-vs-sip-{num_data}.png', bbox_inches='tight'), plt.show();
+        if save:
+            plt.savefig(f'comparison/bip-vs-sip-{num_data}.png', bbox_inches='tight')
+            plt.close()
+        # plt.show()
     
     
         plt.figure() # Plot the push-forward of the initial, observed density, and push-forward of pullback and stats posterior
@@ -143,8 +146,10 @@ def main(args):
         plt.xticks(fontsize=tick_fsize), plt.yticks(fontsize=tick_fsize);
         plt.xlabel("$\mathcal{D}$", fontsize=1.25*tick_fsize)
         plt.legend(fontsize=leg_fsize, loc='upper left')
-        plt.savefig(f'comparison/bip-vs-sip-pf-{num_data}.png', bbox_inches='tight'), plt.show();
-        plt.close()
+        if save:
+            plt.savefig(f'comparison/bip-vs-sip-pf-{num_data}.png', bbox_inches='tight')
+            plt.close()
+        # plt.show()
 
 
 def run():
