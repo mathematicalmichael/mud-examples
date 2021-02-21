@@ -34,9 +34,7 @@ __license__ = "mit"
 from mud_examples import __version__
 from mud import __version__ as __mud_version__
 
-_logger = logging.getLogger(__name__) # TODO: make use of this instead of print
-
-
+_logger = logging.getLogger(__name__)
 
 
 def setup_logging(loglevel):
@@ -137,7 +135,7 @@ def main(in_args):
         main_lin(in_args)
 
     elif example == 'inv':
-        print("Running BIP vs SIP Comparison (1D)")
+        print("Running BIP vs SIP Comparison (1D).")
         main_inv(in_args)
 
     if args.save:
@@ -190,6 +188,7 @@ def run_all():
     
     >>> from mud_examples.runner import run_all
     >>> run_all()
+    Running BIP vs SIP Comparison (1D).
     Running Linear Examples.
     Will run simulations for %T=[0.1, 0.5, 1.0]
     Running example: mud
@@ -204,6 +203,7 @@ def run_all():
     Running example: map
     Plotting experiments involving increasing # of measurements.
     """
+    run_inv()
     run_lin()
     run_ode()
     run_pde()
