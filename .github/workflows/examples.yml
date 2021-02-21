@@ -74,9 +74,9 @@ jobs:
           pip install -e .[test]
           pytest
 
-      - name: Tests without loaded file
+      - name: Tests without packaged file
         run: |
-          rm scripts/pde_2D/ref_results2u.pkl
+          rm src/mud_examples/data/pde_2D/*
           pytest
 
       - name: CodeCov.io Report
