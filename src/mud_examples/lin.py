@@ -408,6 +408,7 @@ def contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C901
             fdir = ''.join(figname.split('/')[:-1])
             check_dir(fdir)
         plt.savefig(figname, dpi=300)
+        plt.close()
 
 #     plt.title('Predicted Covariance: {}'.format((A@initial_cov@A.T).ravel() ))
     # plt.show()
