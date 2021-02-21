@@ -146,58 +146,59 @@ def main(args):
     
     # data mismatch
     experiments['data_mismatch'] = {}
-    experiments['data_mismatch']['fig_title'] = f'{fdir}/data_mismatch_contour.png'
+    experiments['data_mismatch']['out_file'] = f'{fdir}/data_mismatch_contour.png'
     experiments['data_mismatch']['data_check'] = True
     experiments['data_mismatch']['full_check'] = False
-    experiments['data_mismatch']['tk_slide'] = 0
-    experiments['data_mismatch']['pr_slide'] = 0
+    experiments['data_mismatch']['tk_reg'] = 0
+    experiments['data_mismatch']['pr_reg'] = 0
     
     # tikonov regularization
     experiments['tikonov'] = {}
-    experiments['tikonov']['fig_title'] = f'{fdir}/tikonov_contour.png'
-    experiments['tikonov']['tk_slide'] = 1
-    experiments['tikonov']['pr_slide'] = 0
+    experiments['tikonov']['out_file'] = f'{fdir}/tikonov_contour.png'
+    experiments['tikonov']['tk_reg'] = 1
+    experiments['tikonov']['pr_reg'] = 0
     experiments['tikonov']['data_check'] = False
     experiments['tikonov']['full_check'] = False
     
     # modified regularization
     experiments['modified'] = {}
-    experiments['modified']['fig_title'] = f'{fdir}/consistent_contour.png'
-    experiments['modified']['tk_slide'] = 1
-    experiments['modified']['pr_slide'] = 1
+    experiments['modified']['out_file'] = f'{fdir}/consistent_contour.png'
+    experiments['modified']['tk_reg'] = 1
+    experiments['modified']['pr_reg'] = 1
     experiments['modified']['data_check'] = False
     experiments['modified']['full_check'] = False
     
     # map point
     experiments['classical'] = {}
-    experiments['classical']['fig_title'] = f'{fdir}/classical_solution.png'
-    experiments['classical']['tk_slide'] = 1
-    experiments['classical']['pr_slide'] = 0
+    experiments['classical']['out_file'] = f'{fdir}/classical_solution.png'
+    experiments['classical']['tk_reg'] = 1
+    experiments['classical']['pr_reg'] = 0
     experiments['classical']['data_check'] = True
     experiments['classical']['full_check'] = True
     
     # comparison
     experiments['compare'] = {}
-    experiments['compare']['fig_title'] = f'{fdir}/map_compare_contour.png'
+    experiments['compare']['out_file'] = f'{fdir}/map_compare_contour.png'
     experiments['compare']['data_check'] = True
     experiments['compare']['full_check'] = True
-    experiments['compare']['tk_slide'] = 1
-    experiments['compare']['pr_slide'] = 0
+    experiments['compare']['tk_reg'] = 1
+    experiments['compare']['pr_reg'] = 0
     experiments['compare']['comparison'] = True
     experiments['compare']['cov_01'] = -0.5
 
-    for ex in experiments.values():
-        tk_slide = ex.get('tk_slide')
-        pr_slide = ex.get('pr_slide')
-        data_check = ex.get('data_check')
-        cov_01 = ex.get('cov_01', -0.25)
-        cov_11 = ex.get('cov_11', 0.5)
-        obs_std = ex.get('obs_std', 0.5)
-        fig_title = ex.get('fig_title')
-        full_check = ex.get('full_check', True)
-        data_check = ex.get('data_check', True)
-        numr_check = ex.get('numr_check', False)
-        comparison = ex.get('comparison', False)
+    for ex in experiments:
+        _logger.info(f"Running {ex}")
+        config = experiments[ex]
+        out_file = config.get('out_file', 'latest_figure.png')
+        tk_reg = config.get('tk_reg', 1)
+        pr_reg = config.get('pr_reg', 1)
+        cov_01 = config.get('cov_01', -0.25)
+        cov_11 = config.get('cov_11', 0.5)
+        obs_std = config.get('obs_std', 0.5)
+        full_check = config.get('full_check', True)
+        data_check = config.get('data_check', True)
+        numr_check = config.get('numr_check', False)
+        comparison = config.get('comparison', False)
 
         plot_2d_contour_example(A=A, b=b, save=save,
                         param_ref=lam_true,
@@ -205,13 +206,13 @@ def main(args):
                         cov_01=cov_01,
                         cov_11=cov_11, 
                         initial_mean=initial_mean,
-                        alpha=tk_slide,
-                        omega=pr_slide,
+                        alpha=tk_reg,
+                        omega=pr_reg,
                         show_full=full_check,
                         show_data=data_check,
                         show_est=numr_check,
                         obs_std = obs_std,
-                        figname=fig_title)
+                        figname=out_file)
 
 
 def run():

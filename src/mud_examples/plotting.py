@@ -213,9 +213,10 @@ def plot_2d_contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C
             fdir = ''.join(figname.split('/')[:-1])
             check_dir(fdir)
         plt.savefig(figname, dpi=300)
-
+        plt.close()
+    else:
+        plt.show()
 #     plt.title('Predicted Covariance: {}'.format((A@initial_cov@A.T).ravel() ))
-    # plt.show()
 
 
 def plot_decay_solution(solutions, model_generator, sigma, prefix,
@@ -286,7 +287,9 @@ def plot_decay_solution(solutions, model_generator, sigma, prefix,
             fdir = filename.split('/')[0]
             check_dir(fdir)
             plt.savefig(filename, bbox_inches='tight')
-        # plt.show()
+            plt.close()
+        else:
+            plt.show()
 
 
 def plot_experiment_equipment(tolerances, res, prefix, fsize=32, linewidth=5,

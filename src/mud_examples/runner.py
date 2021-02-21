@@ -23,8 +23,8 @@ matplotlib.rcParams['figure.figsize'] = 10,10
 matplotlib.rcParams['font.size'] = 16
 
 from mud_examples.ode import main_ode
-from mud_examples.pde import main_pde
-
+from mud_examples.pde import main_pde  # TODO get these to args state like below?
+from mud_examples.lin import main as main_lin
 
 
 __author__ = "Mathematical Michael"
@@ -55,7 +55,7 @@ def parse_args(args):
     parser.add_argument('-m', '--num-measure',   default=[20, 100],  type=int, nargs='+')
     parser.add_argument('-r', '--ratio-measure', default=[1],  type=float, nargs='+')
     parser.add_argument('--num-trials',    default=20,    type=int)
-    parser.add_argument('-t', '--sensor-tolerance',  default=[0.1], type=float, action='append')
+    parser.add_argument('-t', '--sensor-tolerance',  default=[0.1], type=float, nargs='+')
     parser.add_argument('-s', '--seed',          default=21)
     parser.add_argument('-lw', '--linewidth',    default=5)
     parser.add_argument('--fsize',               default=32, type=int)
@@ -127,14 +127,14 @@ def setup_logging(loglevel):
 
 
 
-def main(args):
+def main(in_args):
     """
     Main entrypoint for example-generation
     """
-    args = parse_args(args)
+    args = parse_args(in_args)
     setup_logging(args.loglevel)
     np.random.seed(args.seed)
-    example       = args.example
+    example      = args.example
     num_trials   = args.num_trials
     fsize        = args.fsize
     linewidth    = args.linewidth
@@ -169,6 +169,7 @@ def main(args):
                          alt=alt, bayes=bayes,
                          dist=dist, prefix=prefix,
                          measurements=measurements)
+
         if inputdim == 1:  # TODO: roll this plotting into main_pde, handle w/o fenics?
             plot_scalar_poisson_summary(res=res, measurements=measurements,
                      fsize=fsize, prefix=f'pde_{inputdim}D/' + example, lam_true=lam_true, save=save)
@@ -205,8 +206,12 @@ def main(args):
                                       'ode/' + example, fsize, linewidth,
                                       title=f"Variance of MUD Error\nfor t={1+2*np.median(time_ratios):1.3f}s",
                                       save=save)
-    ##########
 
+
+
+    elif example == 'lin':
+        print("Running Linear Examples.")
+        main_lin(in_args)
 
     if args.save:
         with open('results.pkl', 'wb') as f:
@@ -223,7 +228,7 @@ def run_pde():
     """Recreates Poisson figures in MUD paper.
     """
     run_cmd = """--example pde --bayes --save \
-    --num-trials 20 -m 20 100 250 500 750 1000
+    --num-trials 20 -m 20 100 -t 0.2
     """.replace('    ','').replace('\n','').split(' ')
     main(run_cmd + sys.argv[1:])
 
@@ -231,13 +236,40 @@ def run_pde():
 def run_ode():
     """Recreates Poisson figures in MUD paper.
     """
-    run_cmd = """-v --example ode --bayes --save \
-    --num-trials 20 -r 0.01 0.05 0.1 0.25 0.5 1 -t 0.1
+    run_cmd = """--example ode --bayes --save \
+    --num-trials 20 -r 0.1 0.5 1 -t 0.1
+    """.replace('    ','').replace('\n','').split(' ')
+    main(run_cmd + sys.argv[1:])
+
+
+def run_lin():
+    """Recreates Contour figures in MUD paper.
+    """
+    run_cmd = """--example lin
     """.replace('    ','').replace('\n','').split(' ')
     main(run_cmd + sys.argv[1:])
 
 
 def run_all():
+    """Recreates all figures in MUD paper.
+    
+    >>> from mud_examples.runner import run_all
+    >>> run_all()
+    Running Linear Examples.
+    Will run simulations for %T=[0.1, 0.5, 1.0]
+    Running example: mud
+    Measurements: [20, 100, 200]
+    Plotting decay solution.
+    Running example: map
+    Measurements: [20, 100, 200]
+    Plotting decay solution.
+    Plotting experiments involving increasing # of measurements.
+    Attempt run for measurements = [20, 100]
+    Running example: mud
+    Running example: map
+    Plotting experiments involving increasing # of measurements.
+    """
+    run_lin()
     run_ode()
     run_pde()
 
