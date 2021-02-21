@@ -26,6 +26,7 @@ from mud.norm import full_functional, norm_input, norm_data, norm_predicted
 from matplotlib import cm
 from mud.funs import mud_sol, map_sol
 
+from mud_examples.helpers import parse_args
 
 def setup_logging(loglevel):
     """Setup basic logging
@@ -38,83 +39,83 @@ def setup_logging(loglevel):
                         format=logformat, datefmt="%Y-%m-%d %H:%M:%S")
 
 
-def parse_args(args):
-    """Parse command line parameters
+# def parse_args(args):
+#     """Parse command line parameters
 
-    Args:
-      args ([str]): command line parameters as list of strings
+#     Args:
+#       args ([str]): command line parameters as list of strings
 
-    Returns:
-      :obj:`argparse.Namespace`: command line parameters namespace
-    """
+#     Returns:
+#       :obj:`argparse.Namespace`: command line parameters namespace
+#     """
 
-    desc = """
-        Examples
-        """
+#     desc = """
+#         Examples
+#         """
 
-    parser = argparse.ArgumentParser(description=desc)
-    parser.add_argument('-e', '--example',       default='ode', type=str)
-    parser.add_argument('-m', '--num-measure',   default=[20, 100],  type=int, nargs='+')
-    parser.add_argument('-r', '--ratio-measure', default=[1],  type=float, nargs='+')
-    parser.add_argument('--num-trials',    default=20,    type=int)
-    parser.add_argument('-t', '--sensor-tolerance',  default=[0.1], type=float, action='append')
-    parser.add_argument('-s', '--seed',          default=21)
-    parser.add_argument('-lw', '--linewidth',    default=5)
-    parser.add_argument('--fsize',               default=32, type=int)
-    parser.add_argument('--bayes', action='store_true')
-    parser.add_argument('--alt', action='store_true')
-    parser.add_argument('--save', action='store_true')
+#     parser = argparse.ArgumentParser(description=desc)
+#     parser.add_argument('-e', '--example',       default='ode', type=str)
+#     parser.add_argument('-m', '--num-measure',   default=[20, 100],  type=int, nargs='+')
+#     parser.add_argument('-r', '--ratio-measure', default=[1],  type=float, nargs='+')
+#     parser.add_argument('--num-trials',    default=20,    type=int)
+#     parser.add_argument('-t', '--sensor-tolerance',  default=[0.1], type=float, action='append')
+#     parser.add_argument('-s', '--seed',          default=21)
+#     parser.add_argument('-lw', '--linewidth',    default=5)
+#     parser.add_argument('--fsize',               default=32, type=int)
+#     parser.add_argument('--bayes', action='store_true')
+#     parser.add_argument('--alt', action='store_true')
+#     parser.add_argument('--save', action='store_true')
 
-    parser.add_argument(
-        "--version",
-        action="version",
-        version=f"mud_examples {__version__}, mud {__mud_version__}")
-#     parser.add_argument('-n', '--num_samples',
-#         dest="num",
-#         help="Number of samples",
-#         default=100,
+#     parser.add_argument(
+#         "--version",
+#         action="version",
+#         version=f"mud_examples {__version__}, mud {__mud_version__}")
+# #     parser.add_argument('-n', '--num_samples',
+# #         dest="num",
+# #         help="Number of samples",
+# #         default=100,
+# #         type=int,
+# #         metavar="INT")
+#     parser.add_argument('-i', '--input_dim',
+#         dest="input_dim",
+#         help="Dimension of input space (default=2).",
+#         default=2,
 #         type=int,
 #         metavar="INT")
-    parser.add_argument('-i', '--input_dim',
-        dest="input_dim",
-        help="Dimension of input space (default=2).",
-        default=2,
-        type=int,
-        metavar="INT")
-    parser.add_argument('-d', '--distribution',
-        dest="dist",
-        help="Distribution. `n` (normal), `u` (uniform, default)",
-        default='u',
-        type=str,
-        metavar="STR")
-#     parser.add_argument('-b', '--beta-params',
-#         dest="beta_params",
-#         help="Parameters for beta distribution. Overrides --distribution. (default = 1 1 )",
-#         default=None,
-#         nargs='+',
-#         type=float,
-#         metavar="FLOAT FLOAT")
-    parser.add_argument('-p', '--prefix',
-        dest="prefix",
-        help="Output filename prefix (no extension)",
-        default='results',
-        type=str,
-        metavar="STR")
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        dest="loglevel",
-        help="set loglevel to INFO",
-        action="store_const",
-        const=logging.INFO)
-    parser.add_argument(
-        "-vv",
-        "--very-verbose",
-        dest="loglevel",
-        help="set loglevel to DEBUG",
-        action="store_const",
-        const=logging.DEBUG)
-    return parser.parse_args(args)
+#     parser.add_argument('-d', '--distribution',
+#         dest="dist",
+#         help="Distribution. `n` (normal), `u` (uniform, default)",
+#         default='u',
+#         type=str,
+#         metavar="STR")
+# #     parser.add_argument('-b', '--beta-params',
+# #         dest="beta_params",
+# #         help="Parameters for beta distribution. Overrides --distribution. (default = 1 1 )",
+# #         default=None,
+# #         nargs='+',
+# #         type=float,
+# #         metavar="FLOAT FLOAT")
+#     parser.add_argument('-p', '--prefix',
+#         dest="prefix",
+#         help="Output filename prefix (no extension)",
+#         default='results',
+#         type=str,
+#         metavar="STR")
+#     parser.add_argument(
+#         "-v",
+#         "--verbose",
+#         dest="loglevel",
+#         help="set loglevel to INFO",
+#         action="store_const",
+#         const=logging.INFO)
+#     parser.add_argument(
+#         "-vv",
+#         "--very-verbose",
+#         dest="loglevel",
+#         help="set loglevel to DEBUG",
+#         action="store_const",
+#         const=logging.DEBUG)
+#     return parser.parse_args(args)
 
 
 def main(args):
@@ -144,7 +145,7 @@ def main(args):
         plt.rcParams['mathtext.fontset'] = 'stix'
         plt.rcParams['font.family'] = 'STIXGeneral'
 
-    N, mu, sigma = int(1E4), 0.25, 0.1 # number of samples from initial and observed mean (mu) and st. dev (sigma)
+    N, mu, sigma = int(1E3), 0.25, 0.1 # number of samples from initial and observed mean (mu) and st. dev (sigma)
     lam = np.random.uniform(low=-1,high=1,size=N) # sample set of the initial
 
     # Evaluate the QoI map on this initial sample set to form a predicted data set
@@ -179,8 +180,8 @@ def main(args):
     
         likelihood_vals = np.zeros(N)
         for i in range(N):
-            likelihood_vals[i] = data_likelihood(qvals_predict[i], data, num_data)
-    
+            likelihood_vals[i] = data_likelihood(qvals_predict[i], data, num_data, sigma)
+
         # compute normalizing constants
         C_nonlinear = np.mean(likelihood_vals)
         data_like_normalized = likelihood_vals/C_nonlinear
@@ -222,6 +223,7 @@ def main(args):
         plt.xlabel("$\mathcal{D}$", fontsize=1.25*tick_fsize)
         plt.legend(fontsize=leg_fsize, loc='upper left')
         plt.savefig(f'comparison/bip-vs-sip-pf-{num_data}.png', bbox_inches='tight'), plt.show();
+        plt.close()
 
 
 def run():
@@ -236,7 +238,7 @@ def QoI(lam,p): # defing a QoI mapping function as monomials to some power p
     return q
 
 
-def data_likelihood(qvals, data, num_data):
+def data_likelihood(qvals, data, num_data, sigma):
     v = 1.0
     for i in range(num_data):
         v *= norm.pdf(qvals-data[i], loc=0, scale=sigma)
