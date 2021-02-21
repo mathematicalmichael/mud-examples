@@ -109,6 +109,22 @@ def extract_statistics(solutions, reference_value):
     return means, variances
 
 
+def make_2d_normal_mesh(N=50, window=1):
+    X = np.linspace(-window, window, N)
+    Y = np.linspace(-window, window, N)
+    X, Y = np.meshgrid(X, Y)
+    XX = np.vstack([X.ravel(), Y.ravel()]).T
+    return (X, Y, XX)
+
+
+def make_2d_unit_mesh(N=50, window=1):
+    X = np.linspace(0, window, N)
+    Y = np.linspace(0, window, N)
+    X, Y = np.meshgrid(X, Y)
+    XX = np.vstack([X.ravel(), Y.ravel()]).T
+    return (X, Y, XX)
+
+
 def compare_mud_map_pin(A, b, d, mean, cov):
     mud_pt = mud_sol(A, b, d, mean, cov)
     map_pt = map_sol(A, b, d, mean, cov)
