@@ -20,8 +20,7 @@ jobs:
         with:
           context: ./bin
           file: ./bin/Dockerfile
-          build-args: USER_ID=1000
-          build-args: GROUP_ID=1000
+          build-args: 'USER_ID=1000 GROUP_ID=1000'
 
   push_to_dockerhub:
     name: Push Docker image to Docker Hub
@@ -35,8 +34,7 @@ jobs:
         with:
           context: ./bin
           file: ./bin/Dockerfile
-          build-args: USER_ID=1000
-          build-args: GROUP_ID=1000
+          build-args: 'USER_ID=1000 GROUP_ID=1000'
 
 
   # push_to_dockerhub:
