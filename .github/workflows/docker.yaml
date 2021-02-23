@@ -18,10 +18,10 @@ jobs:
       - name: Push to GitHub Packages
         uses: docker/build-push-action@v2
         with:
-          context: bin
-          file: bin/Dockerfile
-          build-args: 'USER_ID=1000'
-          build-args: 'GROUP_ID=1000'
+          context: ./bin
+          file: ./bin/Dockerfile
+          build-args: USER_ID=1000
+          build-args: GROUP_ID=1000
 
   push_to_dockerhub:
     name: Push Docker image to Docker Hub
@@ -33,10 +33,10 @@ jobs:
       - name: Push to Docker Hub
         uses: docker/build-push-action@v2
         with:
-          context: bin
-          file: bin/Dockerfile
-          build-args: 'USER_ID=1000'
-          build-args: 'GROUP_ID=1000'
+          context: ./bin
+          file: ./bin/Dockerfile
+          build-args: USER_ID=1000
+          build-args: GROUP_ID=1000
 
 
   # push_to_dockerhub:
