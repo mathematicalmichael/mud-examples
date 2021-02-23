@@ -6,9 +6,9 @@ name: Publish MUD Examples
 # events but only for the master branch
 on:
   # release: [published, created, edited]
-  # push:
-  #   tags:
-  #     - 'v*'
+  push:
+    tags:
+      - 'ver*'
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
