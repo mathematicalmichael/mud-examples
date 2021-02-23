@@ -1,5 +1,9 @@
-import numpy as np
+# -*- coding: utf-8 -*-
+#!/usr/env/bin python
+
 from typing import List
+
+import numpy as np
 
 
 def createRandomLinearMap(dim_input, dim_output, dist='normal', repeated=False):
@@ -129,4 +133,3 @@ def randP(dim_output, dim_input=None, randA=randA_gauss, seed=None):
     A = randA(dim_output, dim_input, seed=seed)
     b = np.random.randn(dim_output).reshape(-1,1)
     return A, b
-

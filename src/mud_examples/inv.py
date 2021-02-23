@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #!/usr/env/bin python
+
 import argparse
 import logging
 import os
@@ -67,7 +68,7 @@ def main(args):
         plt.rcParams['font.family'] = 'STIXGeneral'
 
     N, mu, sigma = int(1E3), 0.25, 0.1 # number of samples from initial and observed mean (mu) and st. dev (sigma)
-    lam = np.random.uniform(low=-1,high=1,size=N) # sample set of the initial
+    lam = np.random.uniform(low=-1, high=1, size=N) # sample set of the initial
 
     # Evaluate the QoI map on this initial sample set to form a predicted data set
     qvals_predict = QoI(lam,5) # Evaluate lam^5 samples

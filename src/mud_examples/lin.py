@@ -1,11 +1,19 @@
 # -*- coding: utf-8 -*-
 #!/usr/env/bin python
+
 import logging
 import os
 import sys
+
 # from mud_examples.runner import setup_logging
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import cm
+from mud import __version__ as __mud_version__
+from mud.funs import map_sol, mud_sol
+from mud.norm import full_functional, norm_data, norm_input, norm_predicted
+from mud_examples import __version__
+from mud_examples.helpers import check_dir, make_2d_unit_mesh, parse_args
 from scipy.linalg import null_space
 
 plt.rcParams['figure.figsize'] = 10,10
@@ -14,15 +22,9 @@ plt.rcParams['font.size'] = 24
 __author__ = "Mathematical Michael"
 __copyright__ = "Mathematical Michael"
 __license__ = "mit"
-from mud_examples import __version__
-from mud import __version__ as __mud_version__
 
 _logger = logging.getLogger(__name__) # TODO: make use of this instead of print
 
-from mud_examples.helpers import make_2d_unit_mesh, check_dir, parse_args
-from mud.norm import full_functional, norm_input, norm_data, norm_predicted
-from matplotlib import cm
-from mud.funs import mud_sol, map_sol
 
 
 def setup_logging(loglevel):

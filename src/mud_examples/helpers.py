@@ -1,21 +1,21 @@
 # -*- coding: utf-8 -*-
 #!/usr/env/bin python
 
-import importlib
 import argparse
+import importlib
 import logging
 import os
 import sys
 import types
 
 import numpy as np
-from mud.funs import mud_sol, map_sol
+from mud import __version__ as __mud_version__
+from mud.funs import map_sol, mud_sol
+from mud_examples import __version__
 
 __author__ = "Mathematical Michael"
 __copyright__ = "Mathematical Michael"
 __license__ = "mit"
-from mud_examples import __version__
-from mud import __version__ as __mud_version__
 
 _logger = logging.getLogger(__name__)
 
