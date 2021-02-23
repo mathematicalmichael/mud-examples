@@ -26,6 +26,13 @@ __license__ = "mit"
 _logger = logging.getLogger(__name__) # TODO: make use of this instead of print
 
 
+# maybe should segment out these examples at some point.
+from mud_examples.rand import randA_outer, randA_list_svd, randP
+from mud_examples.helpers import compare_linear_sols_rank_list
+
+from mud_examples.rand import randP, randA_gauss
+from mud_examples.helpers import compare_linear_sols_dim
+
 
 def setup_logging(loglevel):
     """Setup basic logging
@@ -38,9 +45,369 @@ def setup_logging(loglevel):
                         format=logformat, datefmt="%Y-%m-%d %H:%M:%S")
 
 
-def main(args):
+def main_dim(args):
     """
-    Main entrypoint for example-generation
+    Main entrypoint for High-Dim Linear Dimension Example
+    """
+    args = parse_args(args)
+    setup_logging(args.loglevel)
+    np.random.seed(args.seed)
+#     example       = args.example
+#     num_trials   = args.num_trials
+#     fsize        = args.fsize
+#     linewidth    = args.linewidth
+#     seed         = args.seed
+#     inputdim     = args.input_dim
+#     save         = args.save
+#     alt          = args.alt
+#     bayes        = args.bayes
+#     prefix       = args.prefix
+#     dist         = args.dist
+
+    presentation = False
+    save = True
+
+    if not presentation:
+        plt.rcParams['mathtext.fontset'] = 'stix'
+        plt.rcParams['font.family'] = 'STIXGeneral'
+    fdir = 'lin'
+    check_dir(fdir)
+
+    fsize = 42
+
+
+    def numnonzero(x, tol=1E-4):
+        return len(x[abs(x)<tol])
+
+
+    # # Impact of Dimension for Various Choices of $\\Sigma_\text{init}$
+    # We sequentially incorporate $D=1, \dots , P$ dimensions into our QoI map and study the 2-norm between the true value that was used to generate the data and the analytical MUD/MAP points. 
+
+
+
+    dim_input, dim_output = 100, 100
+    seed = 12
+    np.random.seed(seed)
+
+
+    # from sklearn.datasets import make_spd_matrix as make_spd
+    # from sklearn.datasets import make_sparse_spd_matrix as make_cov
+    # cov = np.eye(dim_input)
+    initial_cov = np.diag(np.sort(np.random.rand(dim_input))[::-1]+0.5)
+
+    plt.figure(figsize=(10,10))
+    initial_mean = np.zeros(dim_input).reshape(-1,1)
+    # initial_mean = np.random.randn(dim_input).reshape(-1,1)
+    randA = randA_gauss # choose which variety of generating map
+    A, b = randP(dim_input, randA=randA)
+    prefix='lin-dim-cov'
+    alpha_list = [10**(n) for n in np.linspace(-3,4,8)]
+
+    # option to fix A and perturb lam_ref
+
+    lam_ref = np.random.randn(dim_input).reshape(-1,1)
+    d = A@lam_ref + b
+
+
+    # %%time
+    sols = compare_linear_sols_dim(lam_ref, A, b, alpha_list, initial_mean, initial_cov)
+
+
+    # c = np.linalg.cond(A)*np.linalg.norm(lam_ref)
+    c = np.linalg.norm(lam_ref)
+    # c = 1
+    err_mud_list = [[np.linalg.norm(_m[0] - lam_ref)/c for _m in sols[alpha]] for alpha in alpha_list ] # output_dim+1 values of _m
+    err_map_list = [[np.linalg.norm(_m[1] - lam_ref)/c for _m in sols[alpha]] for alpha in alpha_list ]
+    err_pin_list = [[np.linalg.norm(_m[2] - lam_ref)/c for _m in sols[alpha]] for alpha in alpha_list ]
+
+    # c = np.linalg.cond(A)
+    c = np.linalg.norm(A)
+    err_Amud_list = [[np.linalg.norm(A@(_m[0] - lam_ref))/c for _m in sols[alpha]] for alpha in alpha_list ]
+    err_Amap_list = [[np.linalg.norm(A@(_m[1] - lam_ref))/c for _m in sols[alpha]] for alpha in alpha_list ]
+    err_Apin_list = [[np.linalg.norm(A@(_m[2] - lam_ref))/c for _m in sols[alpha]] for alpha in alpha_list ]
+
+    # measure # of components that agree
+    # err_mud_list = [[numnonzero(_m[0] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list ]
+    # err_map_list = [[numnonzero(_m[1] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list ]
+    # err_pin_list = [[numnonzero(_m[2] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list ]
+
+
+    x, y = np.arange(1,dim_output,1), err_mud_list[0][0:-1]
+
+    slope, intercept = (np.linalg.pinv(np.vander(x, 2))@np.array(y).reshape(-1,1)).ravel()
+    regression = slope*x + intercept
+
+
+    # ---
+
+    # # Convergence Plot
+
+    for idx, alpha in enumerate(alpha_list):
+        if (1+idx)%2 and alpha<=10:
+            plt.annotate(f"$\\alpha$={alpha:1.2E}", (100, max(err_map_list[idx][-1], 0.01)), fontsize=24)
+        _err_mud = err_mud_list[idx]
+        _err_map = err_map_list[idx]
+        _err_pin = err_pin_list[idx]
+
+        plt.plot(x, _err_mud[:-1], label='mud', c='k', lw=10)
+        plt.plot(x, _err_map[:-1], label='map', c='r', ls='--', lw=5)
+        plt.plot(x, _err_pin[:-1], label='lsq', c='xkcd:light blue', ls='-', lw=5)
+
+    # plt.plot(x, regression, c='g', ls='-')
+    # plt.xlim(0,dim_output)
+    if 'id' in prefix:
+        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha I$", fontsize=1.25*fsize)
+    else:
+        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \Sigma$", fontsize=1.25*fsize)# plt.yscale('log')
+    # plt.yscale('log')
+    # plt.xscale('log')
+    plt.ylim(0, 1.0)
+    # plt.ylim(1E-4, 5E-2)
+    # plt.ylabel("$\\frac{||\\lambda^\\dagger - \\lambda||}{||\\lambda^\\dagger||}$", fontsize=fsize*1.25)
+    plt.ylabel("Relative Error", fontsize=fsize*1.25)
+    plt.xlabel('Dimension of Output Space', fontsize=fsize)
+    plt.legend(['mud', 'map', 'least squares'], fontsize=fsize)
+    # plt.annotate(f'Slope={slope:1.4f}', (4,4/7), fontsize=32)
+    plt.savefig(f'{fdir}/{prefix}-convergence.png', bbox_inches='tight')
+    plt.close()
+    # plt.show()
+
+    # plt.imshow(initial_cov)
+
+
+    # # ## Surface Plot
+
+    # X, Y = np.meshgrid(x,alpha_list)
+    # ZU = np.array(err_mud_list)[:,1:100]
+    # ZA = np.array(err_map_list)[:,1:100]
+
+
+    # # import matplotlib.pyplot as plt
+    # from mpl_toolkits.mplot3d import Axes3D
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection='3d')
+    # ax.plot_surface(X, np.log10(Y), ZU, alpha=0.3, color='xkcd:blue')
+    # ax.plot_surface(X, np.log10(Y), ZA, alpha=0.7, color='xkcd:orange')
+    # ax.set(ylabel='log10(Standard Deviation)', xlabel='Output Dimension', zlabel='Error')
+    # # ax.set(yscale='log')
+    # ax.view_init(15, 15)
+    # plt.savefig(f'lin/{prefix}-surface-error.png', bbox_inches='tight')
+    # plt.close()
+    # # plt.show()
+
+
+    # # # Convergence in Predictions
+
+
+    # for idx, alpha in enumerate(alpha_list):
+    #     _err_mud = err_Amud_list[idx]
+    #     _err_map = err_Amap_list[idx]
+    #     _err_pin = err_Apin_list[idx]
+
+    #     plt.plot(np.arange(0, dim_output),_err_mud[:], label='mud', c='k', lw=10)
+    #     plt.plot(np.arange(0, dim_output),_err_map[:], label='map', c='r', ls='--', lw=5)
+    #     plt.plot(np.arange(0, dim_output),_err_pin[:], label='lsq', c='xkcd:light blue', ls='-', lw=5)
+    # # plt.plot(x,regression, c='g', ls='-')
+    # # plt.xlim(0,dim_output)
+    # if 'id' in prefix:
+    #     plt.title("Convergence for Various $\\Sigma_{init} = \\alpha I$", fontsize=1.25*fsize)
+    # else:
+    #     plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \Sigma$", fontsize=1.25*fsize)# plt.yscale('log')
+    # # plt.xscale('log')
+    # # plt.ylim(0, 6)
+    # # plt.ylim(1E-4, 5E-2)
+    # plt.ylabel("Relative Error in $\mathcal{D}$", fontsize=fsize*1.25)
+    # # plt.ylabel("$\\frac{||A (\\lambda^* - \\lambda) ||}{||A||}$", fontsize=fsize, fontsize=fsize*1.25)
+    # plt.xlabel('Dimension of Output Space', fontsize=fsize)
+    # plt.legend(['mud', 'map', 'least squares'], fontsize=fsize, loc='lower left')
+    # # plt.annotate(f'Slope={slope:1.4f}', (4,4), fontsize=24)
+    # plt.savefig(f'lin/{prefix}-convergence-dimension-out.png', bbox_inches='tight')
+    # plt.close()
+    # # plt.show()
+
+
+    
+def main_rank(args):
+    """
+    Main entrypoint for High-Dim Linear Rank Example
+    """
+    args = parse_args(args)
+    setup_logging(args.loglevel)
+    np.random.seed(args.seed)
+#     example       = args.example
+#     num_trials   = args.num_trials
+#     fsize        = args.fsize
+#     linewidth    = args.linewidth
+#     seed         = args.seed
+#     inputdim     = args.input_dim
+#     save         = args.save
+#     alt          = args.alt
+#     bayes        = args.bayes
+#     prefix       = args.prefix
+#     dist         = args.dist
+
+    presentation = False
+    save = True
+
+    if not presentation:
+        plt.rcParams['mathtext.fontset'] = 'stix'
+        plt.rcParams['font.family'] = 'STIXGeneral'
+    fdir = 'lin'
+    check_dir(fdir)
+
+    fsize = 42
+    plt.figure(figsize=(10,10))
+    # ---
+
+    # # Impact of Rank(A) for Various Choices of $\\Sigma_\text{init}$
+    # We sequentially incorporate $D=1, \dots , P$ dimensions into our QoI map and study the 2-norm between the true value that was used to generate the data and the analytical MUD/MAP points. 
+
+
+    dim_input, dim_output = 100, 100
+    seed = 12
+    np.random.seed(seed)
+
+
+    # from sklearn.datasets import make_spd_matrix as make_spd
+    # from sklearn.datasets import make_sparse_spd_matrix as make_cov
+    # cov = np.eye(dim_input)
+    initial_cov = np.diag(np.sort(np.random.rand(dim_input))[::-1]+0.5)
+
+
+    initial_mean = np.zeros(dim_input).reshape(-1,1)
+    # initial_mean = np.random.randn(dim_input).reshape(-1,1)
+    A_list, b = randP(dim_input, randA=randA_list_svd)
+    prefix = 'lin-rank-cov'
+    alpha_list = [10**(n) for n in np.linspace(-3,4,8)]
+
+
+    # option to fix A and perturb lam_ref
+    lam_ref = np.random.randn(dim_input).reshape(-1,1)
+
+    # d = A@lam_ref + b
+
+
+    # %%time
+    sols = compare_linear_sols_rank_list(lam_ref, A_list, b, alpha_list, initial_mean, initial_cov)
+
+    # c = np.linalg.cond(A)*np.linalg.norm(lam_ref)
+    c = np.linalg.norm(lam_ref)
+    err_mud_list = [[np.linalg.norm(_m[0] - lam_ref)/c for _m in sols[alpha]] for alpha in alpha_list ] # output_dim+1 values of _m
+    err_map_list = [[np.linalg.norm(_m[1] - lam_ref)/c for _m in sols[alpha]] for alpha in alpha_list ]
+    err_pin_list = [[np.linalg.norm(_m[2] - lam_ref)/c for _m in sols[alpha]] for alpha in alpha_list ]
+
+
+    err_Amud_list = [[np.linalg.norm(sum(A_list[0:i+1])@(_m[0] - lam_ref))/np.linalg.norm(sum(A_list[0:i+1])) for i, _m in enumerate(sols[alpha])] for alpha in alpha_list ]
+    err_Amap_list = [[np.linalg.norm(sum(A_list[0:i+1])@(_m[1] - lam_ref))/np.linalg.norm(sum(A_list[0:i+1])) for i, _m in enumerate(sols[alpha])] for alpha in alpha_list ]
+    err_Apin_list = [[np.linalg.norm(sum(A_list[0:i+1])@(_m[2] - lam_ref))/np.linalg.norm(sum(A_list[0:i+1])) for i, _m in enumerate(sols[alpha])] for alpha in alpha_list ]
+
+    # measure # of components that agree
+    # err_mud_list = [[numnonzero(_m[0] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list ]
+    # err_map_list = [[numnonzero(_m[1] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list ]
+    # err_pin_list = [[numnonzero(_m[2] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list ]
+
+
+    # len(err_mud_list[0])
+
+
+    x, y = np.arange(1,1+dim_output,1), err_mud_list[0]
+
+    slope, intercept = (np.linalg.pinv(np.vander(x, 2))@np.array(y).reshape(-1,1)).ravel()
+    regression = slope*x + intercept
+
+
+    # # Convergence Plot
+
+    for idx, alpha in enumerate(alpha_list):
+        if (1+idx)%2 and alpha<=10:
+            plt.annotate(f"$\\alpha$={alpha:1.2E}", (100, max(err_map_list[idx][-1], 0.01)), fontsize=24)
+        _err_mud = err_mud_list[idx]
+        _err_map = err_map_list[idx]
+        _err_pin = err_pin_list[idx]
+
+        plt.plot(x, _err_mud, label='mud', c='k', lw=10)
+        plt.plot(x, _err_map, label='map', c='r', ls='--', lw=5)
+        plt.plot(x, _err_pin, label='lsq', c='xkcd:light blue', ls='-', lw=5)
+
+    # plt.plot(x, regression, c='g', ls='-')
+    # plt.xlim(0,dim_output)
+    if 'id' in prefix:
+        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha I$", fontsize=1.25*fsize)
+    else:
+        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \Sigma$", fontsize=1.25*fsize)
+    # plt.yscale('log')
+    # plt.xscale('log')
+    plt.ylim(0, 1.0)
+    # plt.ylim(1E-4, 5E-2)
+    plt.ylabel("$\\frac{||\\lambda^\\dagger - \\lambda||}{||\\lambda^\\dagger||}$", fontsize=fsize*1.25)
+    plt.xlabel('Rank(A)', fontsize=fsize)
+    plt.legend(['mud', 'map', 'least squares'], fontsize=fsize)
+    # plt.annotate(f'Slope={slope:1.4f}', (4,4/7), fontsize=32)
+    plt.savefig(f'{fdir}/{prefix}-convergence.png', bbox_inches='tight')
+    plt.close()
+    # plt.show()
+
+    # plt.imshow(initial_cov)
+
+
+    # ---
+
+    # ## Surface Plot
+
+    # X, Y = np.meshgrid(x,alpha_list)
+    # ZU = np.array(err_mud_list)
+    # ZA = np.array(err_map_list)
+    # ZI = np.array(err_pin_list)
+
+
+    # # import matplotlib.pyplot as plt
+    # from mpl_toolkits.mplot3d import Axes3D
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection='3d')
+    # ax.plot_surface(X, np.log10(Y), ZU, alpha=0.3, color='xkcd:blue')
+    # ax.plot_surface(X, np.log10(Y), ZA, alpha=0.7, color='xkcd:orange')
+    # ax.set(ylabel='log10(Standard Deviation)', xlabel='Output Dimension', zlabel='Error')
+    # # ax.set(yscale='log')
+    # ax.view_init(15, 15)
+    # # plt.savefig(f'lin/{prefix}-surface-error.png', bbox_inches='tight')
+    # plt.show()
+
+    # # print(c, slope)
+
+
+    # # # Convergence in Predictions
+
+    # for idx, alpha in enumerate(alpha_list):
+    #     _err_mud = err_Amud_list[idx]
+    #     _err_map = err_Amap_list[idx]
+    #     _err_pin = err_Apin_list[idx]
+
+    #     plt.plot(np.arange(0, dim_output), _err_mud[:], label='mud', c='k', lw=10)
+    #     plt.plot(np.arange(0, dim_output), _err_map[:], label='map', c='r', ls='--', lw=5)
+    #     plt.plot(np.arange(0, dim_output), _err_pin[:], label='lsq', c='xkcd:light blue', ls='-', lw=5)
+    # # plt.plot(x,regression, c='g', ls='-')
+    # # plt.xlim(0,dim_output)
+    # if 'id' in prefix:
+    #     plt.title("Convergence for Various $\\Sigma_{init} = \\alpha I$", fontsize=1.25*fsize)
+    # else:
+    #     plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \Sigma$", fontsize=1.25*fsize)# plt.yscale('log')
+    # plt.xscale('log')
+    # plt.yscale('log')
+    # # plt.ylim(0, 6)
+    # # plt.ylim(1E-4, 5E-2)
+    # # plt.ylabel("$\\frac{||A (\\lambda^* - \\lambda) ||}{||A||}$", fontsize=fsize)
+    # plt.ylabel("Relative Error in $\mathcal{D}$", fontsize=fsize*1.25)
+    # plt.xlabel('Matrix Rank', fontsize=fsize)
+    # plt.legend(['mud', 'map', 'least squares'], fontsize=fsize, loc='lower left')
+    # # plt.annotate(f'Slope={slope:1.4f}', (4,4), fontsize=24)
+    # # plt.savefig(f'lin/{prefix}-convergence-out.png', bbox_inches='tight')
+    # plt.show()
+
+
+    
+def main_contours(args):
+    """
+    Main entrypoint for 2D Linear Rank-Deficient Example (Contour Plots)
     """
     args = parse_args(args)
     setup_logging(args.loglevel)
@@ -149,6 +516,15 @@ def main(args):
                         show_est=numr_check,
                         obs_std = obs_std,
                         figname=out_file)
+
+
+def main(args):
+    """
+    Main entrypoint for example-generation
+    """
+    main_contours(args)
+    main_rank(args)
+    main_dim(args)
 
 
 def run():
