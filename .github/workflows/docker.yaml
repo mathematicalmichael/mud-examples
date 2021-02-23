@@ -3,6 +3,8 @@ name: DockerHub
 on:
   release:
     types: [published, created, edited]
+  push:
+    branches: 'feature/docker'
 
 jobs:
 
