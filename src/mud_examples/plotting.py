@@ -3,8 +3,11 @@
 
 import logging
 
-from matplotlib import pyplot as plt
 import matplotlib.gridspec as gridspec
+import numpy as np
+from matplotlib import pyplot as plt
+from mud_examples.helpers import check_dir
+
 plt.rcParams['figure.figsize'] = 10,10
 plt.rcParams['font.size'] = 16
 # import matplotlib
@@ -12,8 +15,6 @@ plt.rcParams['font.size'] = 16
 # matplotlib.rcParams['font.family'] = 'STIXGeneral'
 # matplotlib.backend = 'Agg'
 
-import numpy as np
-from mud_examples.helpers import check_dir
 
 _logger = logging.getLogger(__name__) # TODO: make use of this instead of print
 _mpl_logger = logging.getLogger('matplotlib')
@@ -298,5 +299,4 @@ def plot_contours(A, ref_param, subset=None,
         yloc = [ref_param[0] - w * AA[i, 1], ref_param[1] + w * AA[i, 1]]
         plt.plot(xloc, yloc, c=color, ls=ls, lw=lw, **kwds)
         plt.annotate('%d' % (contour + 1), (xloc[0], yloc[0]), fontsize=fs)
-
 

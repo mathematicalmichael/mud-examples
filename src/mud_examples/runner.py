@@ -4,35 +4,34 @@
 import argparse
 import logging
 import os
+import pickle
 import sys
 from pathlib import Path
-import pickle
-
-
-import numpy as np
-
-from mud_examples.plotting import plot_experiment_measurements, plot_experiment_equipment
-from mud_examples.plotting import plot_scalar_poisson_summary
-
 
 import matplotlib
+
+import numpy as np
+from mud import __version__ as __mud_version__
+from mud_examples import __version__
+from mud_examples.helpers import parse_args
+from mud_examples.inv import main as main_inv
+from mud_examples.lin import main as main_lin
+from mud_examples.ode import main_ode
+from mud_examples.pde import main_pde
+from mud_examples.plotting import (plot_experiment_equipment,
+                                   plot_experiment_measurements,
+                                   plot_scalar_poisson_summary)
+
 matplotlib.rcParams['mathtext.fontset'] = 'stix'
 matplotlib.rcParams['font.family'] = 'STIXGeneral'
 matplotlib.backend = 'Agg'
 matplotlib.rcParams['figure.figsize'] = 10,10
 matplotlib.rcParams['font.size'] = 16
 
-from mud_examples.ode import main_ode
-from mud_examples.pde import main_pde  # TODO get these to args state like below?
-from mud_examples.lin import main as main_lin
-from mud_examples.inv import main as main_inv
-from mud_examples.helpers import parse_args
 
 __author__ = "Mathematical Michael"
 __copyright__ = "Mathematical Michael"
 __license__ = "mit"
-from mud_examples import __version__
-from mud import __version__ as __mud_version__
 
 _logger = logging.getLogger(__name__)
 

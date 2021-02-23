@@ -3,34 +3,34 @@
 
 import argparse
 import logging
-from io import BytesIO
 import os
-import sys
-from pathlib import Path
 import pickle
 import pkgutil
+import sys
+from io import BytesIO
+from pathlib import Path
 
-import numpy as np  # only needed for band_qoi + sample generation for main method
 import matplotlib.pyplot as plt  # move when migrating plotting code (maybe)
+import numpy as np  # only needed for band_qoi + sample generation for main method
+from mud import __version__ as __mud_version__
+from mud.funs import map_problem, mud_problem
+# used for convenience in setting Normal distribution
+from mud.util import std_from_equipment
 
-from mud_examples.helpers import LazyLoader
-
+from mud_examples import __version__
+from mud_examples.helpers import LazyLoader, check_dir
+from mud_examples.models import \
+    generate_spatial_measurements as generate_sensors_pde
 
 ds = LazyLoader('scipy.stats.distributions')
 # from mpi4py import MPI
 # comm = MPI.COMM_WORLD
 # rank = comm.Get_rank()
 
-from mud.util import std_from_equipment # used for convenience in setting Normal distribution
-from mud_examples.models import generate_spatial_measurements as generate_sensors_pde
-from mud.funs import wme, mud_problem, map_problem # needed for the poisson class
-from mud_examples.helpers import check_dir
 
 __author__ = "Mathematical Michael"
 __copyright__ = "Mathematical Michael"
 __license__ = "mit"
-from mud_examples import __version__
-from mud import __version__ as __mud_version__
 
 _logger = logging.getLogger(__name__) # TODO: make use of this instead of print
 

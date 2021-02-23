@@ -1,25 +1,28 @@
 import logging
 import os
 
+import matplotlib
+import mud_examples.poisson as ps  # lazy loads fenics
+import numpy as np
+from mud.funs import map_problem, mud_problem
+from mud.util import std_from_equipment
+from mud_examples.helpers import (check_dir, experiment_equipment,
+                                  experiment_measurements, extract_statistics)
+from mud_examples.models import \
+    generate_spatial_measurements as generate_sensors_pde
+from mud_examples.plotting import fit_log_linear_regression
+
 _logger = logging.getLogger(__name__)
 
 
-import numpy as np
-import matplotlib
 matplotlib.rcParams['mathtext.fontset'] = 'stix'
 matplotlib.rcParams['font.family'] = 'STIXGeneral'
 matplotlib.backend = 'Agg'
 matplotlib.rcParams['figure.figsize'] = 10,10
 matplotlib.rcParams['font.size'] = 16
 
-from mud.funs import mud_problem, map_problem
-from mud.util import std_from_equipment
 
-from mud_examples.models import generate_spatial_measurements as generate_sensors_pde
-from mud_examples.helpers import experiment_measurements, extract_statistics, experiment_equipment, check_dir
-from mud_examples.plotting import fit_log_linear_regression
 
-import mud_examples.poisson as ps  # lazy loads fenics
 
 def main_pde(num_trials=20,
              tolerances=[0.1],

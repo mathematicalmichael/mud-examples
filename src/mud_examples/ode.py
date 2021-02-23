@@ -1,19 +1,25 @@
+# -*- coding: utf-8 -*-
+
 import logging
+
+import matplotlib
+import numpy as np
+from mud.funs import map_problem, mud_problem
+from mud.util import std_from_equipment
+from mud_examples.helpers import (experiment_equipment,
+                                  experiment_measurements, extract_statistics)
+from mud_examples.models import generate_decay_model
+from mud_examples.models import \
+    generate_spatial_measurements as generate_sensors_pde
+from mud_examples.models import \
+    generate_temporal_measurements as generate_sensors_ode
+from mud_examples.plotting import (fit_log_linear_regression,
+                                   plot_decay_solution)
 
 _logger = logging.getLogger(__name__)
 
-from mud.funs import mud_problem, map_problem
-from mud.util import std_from_equipment
 
-from mud_examples.models import generate_spatial_measurements as generate_sensors_pde
-from mud_examples.helpers import experiment_measurements, extract_statistics, experiment_equipment
-from mud_examples.plotting import plot_decay_solution
-from mud_examples.plotting import fit_log_linear_regression
-from mud_examples.models import generate_decay_model
-from mud_examples.models import generate_temporal_measurements as generate_sensors_ode
 
-import numpy as np
-import matplotlib
 matplotlib.rcParams['mathtext.fontset'] = 'stix'
 matplotlib.rcParams['font.family'] = 'STIXGeneral'
 matplotlib.backend = 'Agg'
