@@ -16,5 +16,5 @@ push: tag
 	docker push mathematicalmichael/mud:latest
 
 clean:
-	rm -rf ../src/mud_examples/.ipynb_checkpoints
+	rm -rf src/mud_examples/.ipynb_checkpoints
 	rm -rf mud_figures/
