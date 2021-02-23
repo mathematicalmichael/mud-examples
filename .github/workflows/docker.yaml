@@ -1,31 +1,54 @@
 name: DockerHub
 
 on:
-  # push:
-  #   branches: [ main, dev ]
+  release:
+    types: [published]
 
-  schedule:
-      - cron: "0 0 */7 * *"
+jobs:
 
-  push_to_dockerhub:
-    name: Publish Latest 
-    strategy:
-      matrix:
-        python-version: [3.8]
+  push_to_github:
+    name: Push Docker image to GitHub Packages
     runs-on: ubuntu-latest
+    working-directory: ./src
     steps:
-      - name: Checkout
+      - name: Check out the repo
         uses: actions/checkout@v2
 
-      - name: Build Docker Image
-        run: |
-          cd bin
-          make
-        
+      - name: Push to GitHub Packages
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: docker.pkg.github.com
+          repository: mathematicalmichael/mud-examples/mud-examples
+          tag_with_ref: true
+
       - name: Push to Docker Hub
         uses: docker/build-push-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          repository: mathematicalmichael/mud
+          repository: mathematicalmichael/mud-examples
           tag_with_ref: true
+
+  # push_to_dockerhub:
+  #   name: Push Docker image to Docker Hub
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v2
+
+  #     - name: Build Docker Image
+  #       run: |
+  #         echo "Sleeping for a minute to allow pypi to update."
+  #         sleep 60
+  #         cd bin
+  #         make
+        
+  #     - name: Push to Docker Hub
+  #       uses: docker/build-push-action@v1
+  #       with:
+  #         username: ${{ secrets.DOCKER_USERNAME }}
+  #         password: ${{ secrets.DOCKER_PASSWORD }}
+  #         repository: mathematicalmichael/mud
+  #         tag_with_ref: true
