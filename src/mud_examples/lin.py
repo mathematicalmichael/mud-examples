@@ -31,6 +31,7 @@ from mud_examples.helpers import compare_linear_sols_rank_list
 from mud_examples.rand import randP, randA_gauss
 from mud_examples.helpers import compare_linear_sols_dim
 
+
 def setup_logging(loglevel):
     """Setup basic logging
 
@@ -77,7 +78,7 @@ def main_dim(args):
         return len(x[abs(x)<tol])
 
 
-    # # Impact of Dimension for Various Choices of $\Sigma_\text{init}$
+    # # Impact of Dimension for Various Choices of $\\Sigma_\text{init}$
     # We sequentially incorporate $D=1, \dots , P$ dimensions into our QoI map and study the 2-norm between the true value that was used to generate the data and the analytical MUD/MAP points. 
 
 
@@ -92,7 +93,7 @@ def main_dim(args):
     # cov = np.eye(dim_input)
     initial_cov = np.diag(np.sort(np.random.rand(dim_input))[::-1]+0.5)
 
-
+    plt.figure(figsize=(10,10))
     initial_mean = np.zeros(dim_input).reshape(-1,1)
     # initial_mean = np.random.randn(dim_input).reshape(-1,1)
     randA = randA_gauss # choose which variety of generating map
@@ -141,7 +142,7 @@ def main_dim(args):
 
     for idx, alpha in enumerate(alpha_list):
         if (1+idx)%2 and alpha<=10:
-            plt.annotate(f"$\\alpha$={alpha:1.2E}", (100, err_map_list[idx][-1]), fontsize=24)
+            plt.annotate(f"$\\alpha$={alpha:1.2E}", (100, max(err_map_list[idx][-1], 0.01)), fontsize=24)
         _err_mud = err_mud_list[idx]
         _err_map = err_map_list[idx]
         _err_pin = err_pin_list[idx]
@@ -153,14 +154,14 @@ def main_dim(args):
     # plt.plot(x, regression, c='g', ls='-')
     # plt.xlim(0,dim_output)
     if 'id' in prefix:
-        plt.title("Convergence for Various $\Sigma_{init} = \\alpha I$", fontsize=1.25*fsize)
+        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha I$", fontsize=1.25*fsize)
     else:
-        plt.title("Convergence for Various $\Sigma_{init} = \\alpha \Sigma$", fontsize=1.25*fsize)# plt.yscale('log')
+        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \Sigma$", fontsize=1.25*fsize)# plt.yscale('log')
     # plt.yscale('log')
     # plt.xscale('log')
     plt.ylim(0, 1.0)
     # plt.ylim(1E-4, 5E-2)
-    # plt.ylabel("$\\frac{||\lambda^\dagger - \lambda||}{||\lambda^\dagger||}$", fontsize=fsize*1.25)
+    # plt.ylabel("$\\frac{||\\lambda^\\dagger - \\lambda||}{||\\lambda^\\dagger||}$", fontsize=fsize*1.25)
     plt.ylabel("Relative Error", fontsize=fsize*1.25)
     plt.xlabel('Dimension of Output Space', fontsize=fsize)
     plt.legend(['mud', 'map', 'least squares'], fontsize=fsize)
@@ -207,14 +208,14 @@ def main_dim(args):
     # # plt.plot(x,regression, c='g', ls='-')
     # # plt.xlim(0,dim_output)
     # if 'id' in prefix:
-    #     plt.title("Convergence for Various $\Sigma_{init} = \\alpha I$", fontsize=1.25*fsize)
+    #     plt.title("Convergence for Various $\\Sigma_{init} = \\alpha I$", fontsize=1.25*fsize)
     # else:
-    #     plt.title("Convergence for Various $\Sigma_{init} = \\alpha \Sigma$", fontsize=1.25*fsize)# plt.yscale('log')
+    #     plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \Sigma$", fontsize=1.25*fsize)# plt.yscale('log')
     # # plt.xscale('log')
     # # plt.ylim(0, 6)
     # # plt.ylim(1E-4, 5E-2)
     # plt.ylabel("Relative Error in $\mathcal{D}$", fontsize=fsize*1.25)
-    # # plt.ylabel("$\\frac{||A (\lambda^* - \lambda) ||}{||A||}$", fontsize=fsize, fontsize=fsize*1.25)
+    # # plt.ylabel("$\\frac{||A (\\lambda^* - \\lambda) ||}{||A||}$", fontsize=fsize, fontsize=fsize*1.25)
     # plt.xlabel('Dimension of Output Space', fontsize=fsize)
     # plt.legend(['mud', 'map', 'least squares'], fontsize=fsize, loc='lower left')
     # # plt.annotate(f'Slope={slope:1.4f}', (4,4), fontsize=24)
@@ -253,10 +254,10 @@ def main_rank(args):
     check_dir(fdir)
 
     fsize = 42
-
+    plt.figure(figsize=(10,10))
     # ---
 
-    # # Impact of Rank(A) for Various Choices of $\Sigma_\text{init}$
+    # # Impact of Rank(A) for Various Choices of $\\Sigma_\text{init}$
     # We sequentially incorporate $D=1, \dots , P$ dimensions into our QoI map and study the 2-norm between the true value that was used to generate the data and the analytical MUD/MAP points. 
 
 
@@ -317,7 +318,7 @@ def main_rank(args):
 
     for idx, alpha in enumerate(alpha_list):
         if (1+idx)%2 and alpha<=10:
-            plt.annotate(f"$\\alpha$={alpha:1.2E}", (100, err_map_list[idx][-1]), fontsize=24)
+            plt.annotate(f"$\\alpha$={alpha:1.2E}", (100, max(err_map_list[idx][-1], 0.01)), fontsize=24)
         _err_mud = err_mud_list[idx]
         _err_map = err_map_list[idx]
         _err_pin = err_pin_list[idx]
@@ -329,14 +330,14 @@ def main_rank(args):
     # plt.plot(x, regression, c='g', ls='-')
     # plt.xlim(0,dim_output)
     if 'id' in prefix:
-        plt.title("Convergence for Various $\Sigma_{init} = \\alpha I$", fontsize=1.25*fsize)
+        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha I$", fontsize=1.25*fsize)
     else:
-        plt.title("Convergence for Various $\Sigma_{init} = \\alpha \Sigma$", fontsize=1.25*fsize)
+        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \Sigma$", fontsize=1.25*fsize)
     # plt.yscale('log')
     # plt.xscale('log')
     plt.ylim(0, 1.0)
     # plt.ylim(1E-4, 5E-2)
-    plt.ylabel("$\\frac{||\lambda^\dagger - \lambda||}{||\lambda^\dagger||}$", fontsize=fsize*1.25)
+    plt.ylabel("$\\frac{||\\lambda^\\dagger - \\lambda||}{||\\lambda^\\dagger||}$", fontsize=fsize*1.25)
     plt.xlabel('Rank(A)', fontsize=fsize)
     plt.legend(['mud', 'map', 'least squares'], fontsize=fsize)
     # plt.annotate(f'Slope={slope:1.4f}', (4,4/7), fontsize=32)
@@ -385,14 +386,14 @@ def main_rank(args):
     # # plt.plot(x,regression, c='g', ls='-')
     # # plt.xlim(0,dim_output)
     # if 'id' in prefix:
-    #     plt.title("Convergence for Various $\Sigma_{init} = \\alpha I$", fontsize=1.25*fsize)
+    #     plt.title("Convergence for Various $\\Sigma_{init} = \\alpha I$", fontsize=1.25*fsize)
     # else:
-    #     plt.title("Convergence for Various $\Sigma_{init} = \\alpha \Sigma$", fontsize=1.25*fsize)# plt.yscale('log')
+    #     plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \Sigma$", fontsize=1.25*fsize)# plt.yscale('log')
     # plt.xscale('log')
     # plt.yscale('log')
     # # plt.ylim(0, 6)
     # # plt.ylim(1E-4, 5E-2)
-    # # plt.ylabel("$\\frac{||A (\lambda^* - \lambda) ||}{||A||}$", fontsize=fsize)
+    # # plt.ylabel("$\\frac{||A (\\lambda^* - \\lambda) ||}{||A||}$", fontsize=fsize)
     # plt.ylabel("Relative Error in $\mathcal{D}$", fontsize=fsize*1.25)
     # plt.xlabel('Matrix Rank', fontsize=fsize)
     # plt.legend(['mud', 'map', 'least squares'], fontsize=fsize, loc='lower left')
