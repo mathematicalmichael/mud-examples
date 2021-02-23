@@ -67,7 +67,7 @@ def main_dim(args):
     if not presentation:
         plt.rcParams['mathtext.fontset'] = 'stix'
         plt.rcParams['font.family'] = 'STIXGeneral'
-    fdir = 'lin_rank'
+    fdir = 'lin'
     check_dir(fdir)
 
     fsize = 42
@@ -249,7 +249,7 @@ def main_rank(args):
     if not presentation:
         plt.rcParams['mathtext.fontset'] = 'stix'
         plt.rcParams['font.family'] = 'STIXGeneral'
-    fdir = 'lin_dim'
+    fdir = 'lin'
     check_dir(fdir)
 
     fsize = 42
