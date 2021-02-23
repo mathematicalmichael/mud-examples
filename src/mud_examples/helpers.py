@@ -277,7 +277,7 @@ def compare_linear_sols(transform, lam_ref, A, b,
     if cov is None:
         cov = np.eye(A.shape[1])
 
-    print("alpha = {}".format(alpha_list))
+    _logger.info("alpha = {}".format(alpha_list))
     if isinstance(A, list):  # svd approach returns list
         dim_output = A[0].shape[0]
     else:
