@@ -12,7 +12,7 @@ Authors: Troy Butler & Michael Pilosov
 # Installation
 
 ```sh
-pip install mud_examples
+pip install mud-examples
 ```
 
 # Quickstart
