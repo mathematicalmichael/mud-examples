@@ -14,8 +14,8 @@ from mud_examples.summary import extract_statistics
 from mud_examples.models import generate_decay_model
 from mud_examples.models import \
     generate_temporal_measurements as generate_sensors_ode
-from mud_examples.plotting import (fit_log_linear_regression,
-                                   plot_decay_solution)
+from mud_examples.summary import fit_log_linear_regression
+from mud_examples.plotting import plot_decay_solution
 
 _logger = logging.getLogger(__name__)
 

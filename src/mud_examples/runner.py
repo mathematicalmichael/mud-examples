@@ -18,9 +18,10 @@ from mud_examples.inv import main as main_inv
 from mud_examples.lin import main as main_lin
 from mud_examples.ode import main_ode
 from mud_examples.pde import main_pde
-from mud_examples.plotting import (plot_experiment_equipment,
-                                   plot_experiment_measurements,
-                                   plot_scalar_poisson_summary)
+from mud_examples.experiments import (plot_experiment_equipment,
+                                      plot_experiment_measurements)
+
+from mud_examples.plotting import plot_scalar_poisson_summary
 
 matplotlib.rcParams['mathtext.fontset'] = 'stix'
 matplotlib.rcParams['font.family'] = 'STIXGeneral'

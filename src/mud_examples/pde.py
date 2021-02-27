@@ -12,8 +12,7 @@ from mud.util import std_from_equipment
 from mud_examples.utils import check_dir
 from mud_examples.experiments import (experiment_equipment,
                                       experiment_measurements)
-from mud_examples.summary import extract_statistics
-from mud_examples.plotting import fit_log_linear_regression
+from mud_examples.summary import extract_statistics, fit_log_linear_regression
 
 _logger = logging.getLogger(__name__)
 

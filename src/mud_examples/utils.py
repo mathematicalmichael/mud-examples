@@ -13,6 +13,27 @@ def check_dir(directory):
 
 
 def make_2d_normal_mesh(N=50, window=1):
+    """
+    Constructs mesh based on normal distribution to
+    discretize each axis.
+    >>> from mud_examples.utils import make_2d_normal_mesh
+    >>> make_2d_normal_mesh(3)
+    (array([[-1.,  0.,  1.],
+        [-1.,  0.,  1.],
+        [-1.,  0.,  1.]]),
+    array([[-1., -1., -1.],
+            [ 0.,  0.,  0.],
+            [ 1.,  1.,  1.]]),
+    array([[-1., -1.],
+            [ 0., -1.],
+            [ 1., -1.],
+            [-1.,  0.],
+            [ 0.,  0.],
+            [ 1.,  0.],
+            [-1.,  1.],
+            [ 0.,  1.],
+            [ 1.,  1.]]))
+    """
     X = np.linspace(-window, window, N)
     Y = np.linspace(-window, window, N)
     X, Y = np.meshgrid(X, Y)
@@ -21,6 +42,27 @@ def make_2d_normal_mesh(N=50, window=1):
 
 
 def make_2d_unit_mesh(N=50, window=1):
+    """
+    Constructs mesh based on uniform distribution to
+    discretize each axis.
+    >>> from mud_examples.utils import make_2d_unit_mesh
+    >>> make_2d_unit_mesh(3)
+    (array([[0. , 0.5, 1. ],
+            [0. , 0.5, 1. ],
+            [0. , 0.5, 1. ]]),
+    array([[0. , 0. , 0. ],
+            [0.5, 0.5, 0.5],
+            [1. , 1. , 1. ]]),
+    array([[0. , 0. ],
+            [0.5, 0. ],
+            [1. , 0. ],
+            [0. , 0.5],
+            [0.5, 0.5],
+            [1. , 0.5],
+            [0. , 1. ],
+            [0.5, 1. ],
+            [1. , 1. ]]))
+    """
     X = np.linspace(0, window, N)
     Y = np.linspace(0, window, N)
     X, Y = np.meshgrid(X, Y)
