@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import logging
@@ -6,11 +7,11 @@ import matplotlib
 import numpy as np
 from mud.funs import map_problem, mud_problem
 from mud.util import std_from_equipment
-from mud_examples.helpers import (experiment_equipment,
-                                  experiment_measurements, extract_statistics)
+from mud_examples.experiments import (experiment_equipment,
+                                      experiment_measurements)
+from mud_examples.summary import extract_statistics
+
 from mud_examples.models import generate_decay_model
-from mud_examples.models import \
-    generate_spatial_measurements as generate_sensors_pde
 from mud_examples.models import \
     generate_temporal_measurements as generate_sensors_ode
 from mud_examples.plotting import (fit_log_linear_regression,

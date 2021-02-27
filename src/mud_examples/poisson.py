@@ -1,5 +1,5 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#!/usr/env/bin python
 
 import argparse
 import logging
@@ -18,7 +18,7 @@ from mud.funs import map_problem, mud_problem
 from mud.util import std_from_equipment
 
 from mud_examples import __version__
-from mud_examples.helpers import LazyLoader, check_dir
+from mud_examples.utils import LazyLoader, check_dir
 from mud_examples.models import \
     generate_spatial_measurements as generate_sensors_pde
 
@@ -38,6 +38,7 @@ try:
     fin = LazyLoader('dolfin')
 except ModuleNotFoundError:
     _logger.error("Could not load fenics.")
+
 
 def parse_args(args):
     """Parse command line parameters
@@ -330,7 +331,7 @@ def get_boundary_markers_for_rect(mesh, width=1):
     BoundaryX1().mark(boundary_markers, 1)
     BoundaryY0().mark(boundary_markers, 2)
     BoundaryX0().mark(boundary_markers, 3)
-    
+
     return boundary_markers
 
 

@@ -1,14 +1,14 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#!/usr/env/bin python
 
 import logging
 
 import matplotlib.gridspec as gridspec
 import numpy as np
 from matplotlib import pyplot as plt
-from mud_examples.helpers import check_dir
+from mud_examples.utils import check_dir
 
-plt.rcParams['figure.figsize'] = 10,10
+plt.rcParams['figure.figsize'] = 10, 10
 plt.rcParams['font.size'] = 16
 # import matplotlib
 # matplotlib.rcParams['mathtext.fontset'] = 'stix'
@@ -19,18 +19,6 @@ plt.rcParams['font.size'] = 16
 _logger = logging.getLogger(__name__) # TODO: make use of this instead of print
 _mpl_logger = logging.getLogger('matplotlib')
 _mpl_logger.setLevel(logging.WARNING)
-
-
-def fit_log_linear_regression(input_values, output_values):
-    if len(np.unique(output_values)) == 1:
-        _logger.info("Log Linear Regression: All values identical.")
-        return np.array(output_values), 0
-    x, y = np.log10(input_values), np.log10(output_values)
-    X, Y = np.vander(x, 2), np.array(y).reshape(-1, 1)
-    slope, intercept = (np.linalg.pinv(X) @ Y).ravel()
-    regression_line = 10**(slope * x + intercept)
-    return regression_line, slope
-
 
 
 def plot_decay_solution(solutions, model_generator, sigma, prefix,
@@ -103,92 +91,6 @@ def plot_decay_solution(solutions, model_generator, sigma, prefix,
             plt.savefig(filename, bbox_inches='tight')
         # plt.show()
 
-
-def plot_experiment_equipment(tolerances, res, prefix, fsize=32, linewidth=5,
-                              title="Variance of MUD Error", save=True):
-    print("Plotting experiments involving equipment differences...")
-    plt.figure(figsize=(10, 10))
-    for _res in res:
-        _prefix, _in, _rm, _re = _res
-        regression_err_mean, slope_err_mean, regression_err_vars, slope_err_vars, sd_means, sd_vars, num_sensors = _re
-        plt.plot(tolerances, regression_err_mean, label=f"{_prefix:10s} slope: {slope_err_mean:1.4f}", lw=linewidth)
-        plt.scatter(tolerances, sd_means, marker='x', lw=20)
-
-    plt.yscale('log')
-    plt.xscale('log')
-    plt.Axes.set_aspect(plt.gca(), 1)
-    plt.ylim(2E-3, 2E-2)
-    # plt.ylabel("Absolute Error", fontsize=fsize)
-    plt.xlabel('Tolerance', fontsize=fsize)
-    plt.legend()
-    plt.title(f"Mean of MUD Error for N={num_sensors}", fontsize=1.25 * fsize)
-    if save:
-        plt.savefig(f'{prefix}_convergence_mud_std_mean.png', bbox_inches='tight')
-    # plt.show()
-
-    plt.figure(figsize=(10, 10))
-    for _res in res:
-        _prefix, _in, _rm, _re = _res
-        regression_err_mean, slope_err_mean, regression_err_vars, slope_err_vars, sd_means, sd_vars, num_sensors = _re
-        plt.plot(tolerances, regression_err_vars, label=f"{_prefix:10s} slope: {slope_err_vars:1.4f}", lw=linewidth)
-        plt.scatter(tolerances, sd_vars, marker='x', lw=20)
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.ylim(2E-5, 2E-4)
-    plt.Axes.set_aspect(plt.gca(), 1)
-    # plt.ylabel("Absolute Error", fontsize=fsize)
-    plt.xlabel('Tolerance', fontsize=fsize)
-    plt.legend()
-    plt.title(title, fontsize=1.25 * fsize)
-    if save:
-        plt.savefig(f'{prefix}_convergence_mud_std_var.png', bbox_inches='tight')
-    # plt.show()
-
-
-def plot_experiment_measurements(measurements, res, prefix, fsize=32, linewidth=5, xlabel='Number of Measurements', save=True, legend=False):
-    print("Plotting experiments involving increasing # of measurements.")
-    plt.figure(figsize=(10, 10))
-    for _res in res:
-        _prefix, _in, _rm, _re = _res
-        regression_mean, slope_mean, regression_vars, slope_vars, means, variances = _rm
-        plt.plot(measurements[:len(regression_mean)], regression_mean, label=f"{_prefix:10s} slope: {slope_mean:1.4f}", lw=linewidth)
-        plt.scatter(measurements[:len(means)], means, marker='x', lw=20)
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.Axes.set_aspect(plt.gca(), 1)
-    plt.ylim(0.9 * min(means), 1.3 * max(means))
-    plt.ylim(2E-3, 2E-1)
-    plt.xlabel(xlabel, fontsize=fsize)
-    if legend:
-        plt.legend(fontsize=fsize * 0.8)
-    # plt.ylabel('Absolute Error in MUD', fontsize=fsize)
-    plt.title("$\\mathrm{\\mathbb{E}}(|\\lambda^\\mathrm{MUD} - \\lambda^\\dagger|)$", fontsize=1.25 * fsize)
-    if save:
-        plt.savefig(f'{prefix}_convergence_obs_mean.png', bbox_inches='tight')
-    # plt.show()
-
-    plt.figure(figsize=(10, 10))
-    for _res in res:
-        _prefix, _in, _rm, _re = _res
-        regression_mean, slope_mean, regression_vars, slope_vars, means, variances = _rm
-        plt.plot(measurements[:len(regression_vars)], regression_vars, label=f"{_prefix:10s} slope: {slope_vars:1.4f}", lw=linewidth)
-        plt.scatter(measurements[:len(variances)], variances, marker='x', lw=20)
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.Axes.set_aspect(plt.gca(), 1)
-#     if not len(np.unique(variances)) == 1:
-#         plt.ylim(0.9 * min(variances), 1.3 * max(variances))
-    plt.ylim(1E-5, 1E-3)
-    plt.xlabel(xlabel, fontsize=fsize)
-    if legend:
-        plt.legend(fontsize=fsize * 0.8)
-    # plt.ylabel('Absolute Error in MUD', fontsize=fsize)
-    plt.title("$\\mathrm{Var}(|\\lambda^\\mathrm{MUD} - \\lambda^\\dagger|)$", fontsize=1.25 * fsize)
-    if save:
-        _logger.info("Saving measurement experiments.")
-        plt.savefig(f'{prefix}_convergence_obs_var.png', bbox_inches='tight')
-    else:
-        plt.show()
 
 
 def plot_scalar_poisson_summary(res, measurements, prefix, lam_true, fsize=32, save=False):

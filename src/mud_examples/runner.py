@@ -1,5 +1,5 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#!/usr/env/bin python
 
 import argparse
 import logging
@@ -13,7 +13,7 @@ import matplotlib
 import numpy as np
 from mud import __version__ as __mud_version__
 from mud_examples import __version__
-from mud_examples.helpers import parse_args
+from mud_examples.parsers import parse_args
 from mud_examples.inv import main as main_inv
 from mud_examples.lin import main as main_lin
 from mud_examples.ode import main_ode
@@ -92,8 +92,11 @@ def main(in_args):
                          measurements=measurements)
 
         if inputdim == 1:  # TODO: roll this plotting into main_pde, handle w/o fenics?
-            plot_scalar_poisson_summary(res=res, measurements=measurements,
-                     fsize=fsize, prefix=f'pde_{inputdim}D/' + example, lam_true=lam_true, save=save)
+            plot_scalar_poisson_summary(res=res,
+                                        measurements=measurements,
+                                        fsize=fsize,
+                                        prefix=f'pde_{inputdim}D/' + example,
+                                        lam_true=lam_true, save=save)
         else:
             # solution / sensors plotted by main_pde method
             pass

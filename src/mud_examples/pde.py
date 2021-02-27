@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import logging
 import os
 
@@ -6,10 +9,10 @@ import mud_examples.poisson as ps  # lazy loads fenics
 import numpy as np
 from mud.funs import map_problem, mud_problem
 from mud.util import std_from_equipment
-from mud_examples.helpers import (check_dir, experiment_equipment,
-                                  experiment_measurements, extract_statistics)
-from mud_examples.models import \
-    generate_spatial_measurements as generate_sensors_pde
+from mud_examples.utils import check_dir
+from mud_examples.experiments import (experiment_equipment,
+                                      experiment_measurements)
+from mud_examples.summary import extract_statistics
 from mud_examples.plotting import fit_log_linear_regression
 
 _logger = logging.getLogger(__name__)
@@ -83,7 +86,7 @@ def main_pde(num_trials=20,
                 P.load(fname)
             except FileNotFoundError:
                 
-                try: # available data in package
+                try:  # available data in package
                     _logger.info("Trying packaged data.")
                     fname = 'data/' + fname
                     P.load(fname)

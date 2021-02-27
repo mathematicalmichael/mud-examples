@@ -1,37 +1,35 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#!/usr/env/bin python
 
 import logging
-import os
+# import os
 import sys
 
 # from mud_examples.runner import setup_logging
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import cm
-from mud import __version__ as __mud_version__
+# from mud import __version__ as __mud_version__
 from mud.funs import map_sol, mud_sol
 from mud.norm import full_functional, norm_data, norm_input, norm_predicted
-from mud_examples import __version__
-from mud_examples.helpers import check_dir, make_2d_unit_mesh, parse_args
 from scipy.linalg import null_space
 
-plt.rcParams['figure.figsize'] = 10,10
+# from mud_examples import __version__
+from mud_examples.utils import make_2d_unit_mesh
+from mud_examples.parsers import parse_args
+# maybe should segment out these examples at some point.
+from mud_examples.rand import randA_gauss, randA_list_svd, randA_outer, randP
+from mud_examples.utils import check_dir
+
+plt.rcParams['figure.figsize'] = 10, 10
 plt.rcParams['font.size'] = 24
 
 __author__ = "Mathematical Michael"
 __copyright__ = "Mathematical Michael"
 __license__ = "mit"
 
-_logger = logging.getLogger(__name__) # TODO: make use of this instead of print
+_logger = logging.getLogger(__name__)  # TODO: make use of this instead of print
 
-
-# maybe should segment out these examples at some point.
-from mud_examples.rand import randA_outer, randA_list_svd, randP
-from mud_examples.helpers import compare_linear_sols_rank_list
-
-from mud_examples.rand import randP, randA_gauss
-from mud_examples.helpers import compare_linear_sols_dim
 
 
 def setup_logging(loglevel):
@@ -718,6 +716,86 @@ def contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C901
 
 #     plt.title('Predicted Covariance: {}'.format((A@initial_cov@A.T).ravel() ))
     # plt.show()
+
+
+def compare_mud_map_pin(A, b, d, mean, cov):
+    mud_pt = mud_sol(A, b, d, mean, cov)
+    map_pt = map_sol(A, b, d, mean, cov)
+    pin_pt = (np.linalg.pinv(A)@(d-b)).reshape(-1,1)
+    return mud_pt, map_pt, pin_pt
+
+
+def transform_rank_list(lam_ref, A, b, rank):
+    """
+    A is a list here. We sum the first `rank` elements of it
+    to return a matrix with the desired rank.
+    """
+    _A = sum(A[0:rank])
+    _b = b
+    _d = _A@lam_ref + _b
+    assert np.linalg.matrix_rank(_A) == rank, "Unexpected rank mismatch"
+    return _A, _b, _d
+
+
+def transform_dim_out(lam_ref, A, b, dim):
+    if isinstance(A, list) or isinstance(A, tuple):
+        raise AttributeError("A must be a matrix, not a list or tuple.")
+
+    _A = A[:dim, :]
+    _b = b[:dim, :]
+    _d = _A@lam_ref + _b
+    return _A, _b, _d
+
+
+def compare_linear_sols_rank_list(lam_ref, A, b,
+                             alpha=1, mean=None, cov=None):
+    """
+    Input and output dimensions fixed, varying rank 1..dim_output.
+    """
+    
+    return compare_linear_sols(transform_rank_list, lam_ref, A, b, alpha, mean, cov)
+
+
+def compare_linear_sols_dim(lam_ref, A, b,
+                            alpha=1, mean=None, cov=None):
+    """
+    Input dimension fixed, varying output dimension.
+    """
+    return compare_linear_sols(transform_dim_out, lam_ref, A, b, alpha, mean, cov)
+
+
+def compare_linear_sols(transform, lam_ref, A, b,
+                            alpha=1, mean=None, cov=None):
+    """
+    Input dimension fixed, varying according to the output
+    of the anonymous function `transform`'s return.
+    """
+    sols = {}
+    if isinstance(alpha, list) or isinstance(alpha, tuple):
+        alpha_list = alpha
+    else:
+        alpha_list = [alpha]
+
+    if mean is None:
+        mean = np.zeros(A.shape[1])
+    
+    if cov is None:
+        cov = np.eye(A.shape[1])
+
+    _logger.info("alpha = {}".format(alpha_list))
+    if isinstance(A, list):  # svd approach returns list
+        dim_output = A[0].shape[0]
+    else:
+        dim_output = A.shape[0]
+
+    for alpha in alpha_list:
+        sols[alpha] = []
+        for _out in range(1, dim_output+1, 1):
+            _A, _b, _d = transform(lam_ref, A, b, _out)
+            _mud, _map, _pin = compare_mud_map_pin(_A, _b, _d, mean, alpha*cov)
+            sols[alpha].append((_mud, _map, _pin))
+
+    return sols
 
 
 if __name__ == "__main__":
