@@ -156,7 +156,7 @@ def main_dim(args):
     if 'id' in prefix:
         plt.title("Convergence for Various $\\Sigma_{init} = \\alpha I$", fontsize=1.25*fsize)
     else:
-        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \Sigma$", fontsize=1.25*fsize)# plt.yscale('log')
+        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \\Sigma$", fontsize=1.25*fsize)# plt.yscale('log')
     # plt.yscale('log')
     # plt.xscale('log')
     plt.ylim(0, 1.0)
@@ -332,7 +332,7 @@ def main_rank(args):
     if 'id' in prefix:
         plt.title("Convergence for Various $\\Sigma_{init} = \\alpha I$", fontsize=1.25*fsize)
     else:
-        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \Sigma$", fontsize=1.25*fsize)
+        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \\Sigma$", fontsize=1.25*fsize)
     # plt.yscale('log')
     # plt.xscale('log')
     plt.ylim(0, 1.0)

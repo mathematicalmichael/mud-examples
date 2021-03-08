@@ -117,7 +117,7 @@ def main(args):
                  linewidth=4, label="Initial/Prior")
         plt.plot(lam_plot, update_kde(lam_plot), 'k-.',
                  linewidth=4, label="Update")
-        post_plot = plt.plot(lam_plot, posterior_kde(lam_plot), 'g:',
+        plt.plot(lam_plot, posterior_kde(lam_plot), 'g:',
                              linewidth=4, label='Posterior')
         plt.xlim([-1, 1])
         if num_data > 1:
