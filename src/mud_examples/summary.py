@@ -9,6 +9,17 @@ _logger = logging.getLogger(__name__)
 
 
 def extract_statistics(solutions, reference_value):
+    """Extracts experiment statistics from solutions set
+    Assumes keys of dictionary are sample sizes, and each
+    value is a list containing solutions for each trial.
+
+    >>> S = {2: [1, 1, 1], 4: [1, 1, 1]}
+    >>> means, vars = extract_statistics(S, 0)
+    >>> print(means)
+    [1.0, 1.0]
+    >>> print(vars)
+    [0.0, 0.0]
+    """
     num_sensors_plot_conv = solutions.keys()
     means = []
     variances = []
@@ -27,6 +38,13 @@ def extract_statistics(solutions, reference_value):
 
 
 def fit_log_linear_regression(input_values, output_values):
+    """Fits a log-linear regression
+
+    >>> import numpy as np
+    >>> x = np.arange(1,11)
+    >>> np.round(fit_log_linear_regression(x,x)[1], 4)
+    1.0
+    """
     if len(np.unique(output_values)) == 1:
         _logger.info("Log Linear Regression: All values identical.")
         return np.array(output_values), 0
