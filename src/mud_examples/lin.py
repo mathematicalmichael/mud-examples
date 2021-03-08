@@ -68,7 +68,7 @@ def main_dim(args):
     if not presentation:
         plt.rcParams['mathtext.fontset'] = 'stix'
         plt.rcParams['font.family'] = 'STIXGeneral'
-    fdir = 'lin'
+    fdir = 'figures/lin'
     check_dir(fdir)
 
     fsize = 42
@@ -709,7 +709,7 @@ def contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C901
     plt.tight_layout()
     if save:
         if '/' in figname:
-            fdir = ''.join(figname.split('/')[:-1])
+            fdir = '/'.join(figname.split('/')[:-1])
             check_dir(fdir)
         plt.savefig(figname, dpi=300)
         plt.close()

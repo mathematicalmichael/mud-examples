@@ -63,7 +63,7 @@ def main_pde(num_trials=20,
         # in 1d this is a change in sensor location
         # in ND, change in how we partition sensors (vertical vs horizontal)
         fdir = f'pde_{input_dim}D' # expectation from make_reproducible_without_fenics
-        check_dir(fdir)
+
         # mud and mud alt have same sensors in higher dimensional examples
         # in 1d, the alternative approach is to change sensor placement, which requires
         # loading a separate file.

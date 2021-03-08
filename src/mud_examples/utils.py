@@ -61,6 +61,13 @@ def make_2d_unit_mesh(N=50, window=1):
 
 
 def fit_log_linear_regression(input_values, output_values):
+    """Fits a log-linear regression
+
+    >>> import numpy as np
+    >>> x = np.arange(1,11)
+    >>> np.round(fit_log_linear_regression(x,x)[1], 4)
+    1.0
+    """
     x, y = np.log10(input_values), np.log10(output_values)
     X, Y = np.vander(x, 2), np.array(y).reshape(-1, 1)
     slope, intercept = (np.linalg.pinv(X) @ Y).ravel()
