@@ -103,7 +103,7 @@ def main(in_args):
             pass
 
         if len(measurements) > 1 and inputdim == 1:
-            plot_experiment_measurements(measurements, res,
+            plot_experiment_measurements(res,
                                          f'figures/pde_{inputdim}D/' + example, fsize,
                                          linewidth, save=save)
 
@@ -122,7 +122,7 @@ def main(in_args):
                          time_ratios=time_ratios)
 
         if len(time_ratios) > 1:
-            plot_experiment_measurements(time_ratios, res,
+            plot_experiment_measurements(res,
                                          'figures/ode/' + example,
                                          fsize, linewidth,
                                          save=save, legend=True)
@@ -185,7 +185,7 @@ def run_ode():
     0
     """
     run_cmd = """--example ode --bayes --save \
-    --num-trials 20 -r 0.1 0.5 1 -t 0.1
+    --num-trials 20 -r 0.1 0.25 0.5 1 -t 0.1
     """.replace('    ','').replace('\n','').split(' ')
     main(run_cmd + sys.argv[1:])
 

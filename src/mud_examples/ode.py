@@ -63,7 +63,7 @@ def main_ode(num_trials=20,
 
     for example in example_list:
         print(f"Running example: {example}")
-        if example == 'ode-mud-alt':
+        if example == 'mud-alt':
             sensors = generate_sensors_ode(measurement_hertz=200, start_time=t_min, end_time=t_max)
         else:
             sensors = generate_sensors_ode(measurement_hertz=100, start_time=t_min, end_time=t_max)
@@ -79,15 +79,16 @@ def main_ode(num_trials=20,
         lam = np.random.rand(int(1E3)).reshape(-1,1)
         qoi = model(lam)
 
-        if example == 'ode-map':
+        if example == 'map':
             def wrapper(num_obs, sd):
                 return map_problem(domain=domain, lam=lam, qoi=qoi,
                                    sd=sd, qoi_true=qoi_true, num_obs=num_obs)
-        else:
+        elif example == 'mud':
             def wrapper(num_obs, sd):
                 return mud_problem(domain=domain, lam=lam, qoi=qoi,
                                    sd=sd, qoi_true=qoi_true, num_obs=num_obs)
-
+        else:
+            raise ValueError("Unknown example type")
 
         _logger.info("Increasing Measurements Quantity Study")
         experiments, solutions = experiment_measurements(num_measurements=measurements,
@@ -97,8 +98,8 @@ def main_ode(num_trials=20,
                                                  fun=wrapper)
 
         means, variances = extract_statistics(solutions, lam_true)
-        regression_mean, slope_mean = fit_log_linear_regression(time_ratios, means)
-        regression_vars, slope_vars = fit_log_linear_regression(time_ratios, variances)
+        regression_mean, slope_mean = fit_log_linear_regression(measurements, means)
+        regression_vars, slope_vars = fit_log_linear_regression(measurements, variances)
 
         ##########
 
@@ -123,7 +124,7 @@ def main_ode(num_trials=20,
         # TO DO clean all this up
         _in = (lam, qoi, sensors, qoi_true, experiments, solutions)
         _rm = (regression_mean, slope_mean, regression_vars, slope_vars, means, variances)
-        example_name = '-'.join(example.split('-')[1:]).upper()
+        example_name = example.upper()
         res.append((example_name, _in, _rm, _re))
 
         # TODO check for existence of save directory, grab subset of measurements properly.

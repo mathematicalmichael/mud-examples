@@ -122,7 +122,7 @@ def plot_experiment_equipment(tolerances, res, prefix, fsize=32, linewidth=5,
         plt.show()
 
 
-def plot_experiment_measurements(measurements, res, prefix,
+def plot_experiment_measurements(res, prefix,
                                  fsize=32, linewidth=5,
                                  xlabel='Number of Measurements',
                                  save=True, legend=False):
@@ -130,11 +130,13 @@ def plot_experiment_measurements(measurements, res, prefix,
     plt.figure(figsize=(10, 10))
     for _res in res:
         _prefix, _in, _rm, _re = _res
+        solutions = _in[-1]
+        measurements = list(solutions.keys())
         regression_mean, slope_mean, \
             regression_vars, slope_vars, \
             means, variances = _rm
         plt.plot(measurements[:len(regression_mean)], regression_mean,
-                 label=f"{_prefix:10s} slope: {slope_mean:1.4f}",
+                 label=f"{_prefix:4s} slope: {slope_mean:1.4f}",
                  lw=linewidth)
         plt.scatter(measurements[:len(means)], means, marker='x', lw=20)
     plt.xscale('log')
@@ -163,7 +165,7 @@ def plot_experiment_measurements(measurements, res, prefix,
             regression_vars, slope_vars, \
             means, variances = _rm
         plt.plot(measurements[:len(regression_vars)], regression_vars,
-                 label=f"{_prefix:10s} slope: {slope_vars:1.4f}",
+                 label=f"{_prefix:4s} slope: {slope_vars:1.4f}",
                  lw=linewidth)
         plt.scatter(measurements[:len(variances)], variances,
                     marker='x', lw=20)
@@ -172,7 +174,7 @@ def plot_experiment_measurements(measurements, res, prefix,
     plt.Axes.set_aspect(plt.gca(), 1)
 #     if not len(np.unique(variances)) == 1:
 #         plt.ylim(0.9 * min(variances), 1.3 * max(variances))
-    plt.ylim(1E-5, 1E-3)
+    plt.ylim(5E-6, 5E-4)
     plt.xlabel(xlabel, fontsize=fsize)
     if legend:
         plt.legend(fontsize=fsize * 0.8)
