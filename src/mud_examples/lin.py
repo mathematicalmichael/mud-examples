@@ -55,7 +55,7 @@ def main_dim(args):
 #     fsize        = args.fsize
 #     linewidth    = args.linewidth
 #     seed         = args.seed
-#     inputdim     = args.input_dim
+    # dim_input     = args.input_dim
 #     save         = args.save
 #     alt          = args.alt
 #     bayes        = args.bayes
@@ -82,7 +82,7 @@ def main_dim(args):
     # We sequentially incorporate $D=1, \dots , P$ dimensions into our QoI map and study the 2-norm between the true value that was used to generate the data and the analytical MUD/MAP points. 
 
 
-
+    # dim_output = dim_input
     dim_input, dim_output = 100, 100
     seed = 12
     np.random.seed(seed)
@@ -323,9 +323,9 @@ def main_rank(args):
         _err_map = err_map_list[idx]
         _err_pin = err_pin_list[idx]
 
-        plt.plot(x, _err_mud, label='mud', c='k', lw=10)
-        plt.plot(x, _err_map, label='map', c='r', ls='--', lw=5)
-        plt.plot(x, _err_pin, label='lsq', c='xkcd:light blue', ls='-', lw=5)
+        plt.plot(x, _err_mud, label='MUD', c='k', lw=10)
+        plt.plot(x, _err_map, label='MAP', c='r', ls='--', lw=5)
+        plt.plot(x, _err_pin, label='LSQ', c='xkcd:light blue', ls='-', lw=5)
 
     # plt.plot(x, regression, c='g', ls='-')
     # plt.xlim(0,dim_output)
@@ -339,7 +339,7 @@ def main_rank(args):
     # plt.ylim(1E-4, 5E-2)
     plt.ylabel("$\\frac{||\\lambda^\\dagger - \\lambda||}{||\\lambda^\\dagger||}$", fontsize=fsize*1.25)
     plt.xlabel('Rank(A)', fontsize=fsize)
-    plt.legend(['mud', 'map', 'least squares'], fontsize=fsize)
+    plt.legend(['MUD', 'MAP', 'Least Squares'], fontsize=fsize)
     # plt.annotate(f'Slope={slope:1.4f}', (4,4/7), fontsize=32)
     plt.savefig(f'{fdir}/{prefix}-convergence.png', bbox_inches='tight')
     plt.close()

@@ -173,12 +173,12 @@ def run_ode():
     """Recreates Poisson figures in MUD paper.
 
     >>> run_ode()
-    Will run simulations for %T=[0.1, 0.5, 1.0]
+    Will run simulations for %T=[0.1, 0.25, 0.5, 1.0]
     Running example: mud
-    Measurements: [20, 100, 200]
+    Measurements: [20, 50, 100, 200]
     Plotting decay solution.
     Running example: map
-    Measurements: [20, 100, 200]
+    Measurements: [20, 50, 100, 200]
     Plotting decay solution.
     Plotting experiments involving increasing # of measurements.
     >>> import os; os.system('rm -rf figures/')
