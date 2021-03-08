@@ -250,7 +250,7 @@ def main_rank(args):
     if not presentation:
         plt.rcParams['mathtext.fontset'] = 'stix'
         plt.rcParams['font.family'] = 'STIXGeneral'
-    fdir = 'lin'
+    fdir = 'figures/lin'
     check_dir(fdir)
 
     fsize = 42
@@ -428,7 +428,7 @@ def main_contours(args):
     if not presentation:
         plt.rcParams['mathtext.fontset'] = 'stix'
         plt.rcParams['font.family'] = 'STIXGeneral'
-    fdir = 'contours'
+    fdir = 'figures/contours'
     check_dir(fdir)
     lam_true = np.array([0.7, 0.3])
     initial_mean = np.array([0.25, 0.25])

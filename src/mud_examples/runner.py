@@ -155,6 +155,13 @@ def run():
 
 def run_pde():
     """Recreates Poisson figures in MUD paper.
+
+    >>> run_pde()
+    Attempt run for measurements = [20, 100]
+    Running example: mud
+    Running example: map
+    >>> import os; os.system('rm -rf figures/')
+    0
     """
     run_cmd = """--example pde --bayes --save \
     --num-trials 20 -m 20 100 -t 0.1
@@ -164,6 +171,18 @@ def run_pde():
 
 def run_ode():
     """Recreates Poisson figures in MUD paper.
+
+    >>> run_ode()
+    Will run simulations for %T=[0.1, 0.5, 1.0]
+    Running example: mud
+    Measurements: [20, 100, 200]
+    Plotting decay solution.
+    Running example: map
+    Measurements: [20, 100, 200]
+    Plotting decay solution.
+    Plotting experiments involving increasing # of measurements.
+    >>> import os; os.system('rm -rf figures/')
+    0
     """
     run_cmd = """--example ode --bayes --save \
     --num-trials 20 -r 0.1 0.5 1 -t 0.1
@@ -173,6 +192,10 @@ def run_ode():
 
 def run_lin():
     """Recreates Contour figures in MUD paper.
+    >>> run_lin()
+    Running Linear Examples.
+    >>> import os; os.system('rm -rf figures/')
+    0
     """
     run_cmd = """--example lin
     """.replace('    ','').replace('\n','').split(' ')
@@ -181,6 +204,10 @@ def run_lin():
 
 def run_inv():
     """Recreates Contour figures in MUD paper.
+    >>> run_inv()
+    Running BIP vs SIP Comparison (1D).
+    >>> import os; os.system('rm -rf figures/')
+    0
     """
     run_cmd = """--example inv
     """.replace('    ','').replace('\n','').split(' ')
@@ -189,23 +216,6 @@ def run_inv():
 
 def run_all():
     """Recreates all figures in MUD paper.
-    
-    >>> from mud_examples.runner import run_all
-    >>> run_all()
-    Running BIP vs SIP Comparison (1D).
-    Running Linear Examples.
-    Will run simulations for %T=[0.1, 0.5, 1.0]
-    Running example: mud
-    Measurements: [20, 100, 200]
-    Plotting decay solution.
-    Running example: map
-    Measurements: [20, 100, 200]
-    Plotting decay solution.
-    Plotting experiments involving increasing # of measurements.
-    Attempt run for measurements = [20, 100]
-    Running example: mud
-    Running example: map
-    Plotting experiments involving increasing # of measurements.
     """
     run_inv()
     run_lin()

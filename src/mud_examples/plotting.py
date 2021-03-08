@@ -7,6 +7,7 @@ import matplotlib.gridspec as gridspec
 import numpy as np
 from matplotlib import pyplot as plt
 from mud_examples.utils import check_dir
+from scipy.linalg import null_space
 
 plt.rcParams['figure.figsize'] = 10, 10
 plt.rcParams['font.size'] = 16

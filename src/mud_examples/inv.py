@@ -57,8 +57,8 @@ def main(args):
 #     bayes        = args.bayes
 #     prefix       = args.prefix
 #     dist         = args.dist
-
-    check_dir('comparison')
+    fdir = 'figures/comparison'
+    check_dir(fdir)
     presentation = False
     save = True
 
@@ -129,7 +129,7 @@ def main(args):
         plt.xlabel("$\\Lambda$", fontsize=1.25*tick_fsize)
         plt.legend(fontsize=leg_fsize, loc='upper left')
         if save:
-            plt.savefig(f'comparison/bip-vs-sip-{num_data}.png',
+            plt.savefig(f'{fdir}/bip-vs-sip-{num_data}.png',
                         bbox_inches='tight')
             plt.close()
         # plt.show()
@@ -156,7 +156,7 @@ def main(args):
         plt.xlabel("$\\mathcal{D}$", fontsize=1.25*tick_fsize)
         plt.legend(fontsize=leg_fsize, loc='upper left')
         if save:
-            plt.savefig(f'comparison/bip-vs-sip-pf-{num_data}.png',
+            plt.savefig(f'{fdir}/bip-vs-sip-pf-{num_data}.png',
                         bbox_inches='tight')
             plt.close()
         # plt.show()
