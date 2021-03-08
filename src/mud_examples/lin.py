@@ -1,37 +1,35 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#!/usr/env/bin python
 
 import logging
-import os
+# import os
 import sys
 
 # from mud_examples.runner import setup_logging
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import cm
-from mud import __version__ as __mud_version__
+# from mud import __version__ as __mud_version__
 from mud.funs import map_sol, mud_sol
 from mud.norm import full_functional, norm_data, norm_input, norm_predicted
-from mud_examples import __version__
-from mud_examples.helpers import check_dir, make_2d_unit_mesh, parse_args
 from scipy.linalg import null_space
 
-plt.rcParams['figure.figsize'] = 10,10
+# from mud_examples import __version__
+from mud_examples.utils import make_2d_unit_mesh
+from mud_examples.parsers import parse_args
+# maybe should segment out these examples at some point.
+from mud_examples.rand import randA_gauss, randA_list_svd, randA_outer, randP
+from mud_examples.utils import check_dir
+
+plt.rcParams['figure.figsize'] = 10, 10
 plt.rcParams['font.size'] = 24
 
 __author__ = "Mathematical Michael"
 __copyright__ = "Mathematical Michael"
 __license__ = "mit"
 
-_logger = logging.getLogger(__name__) # TODO: make use of this instead of print
+_logger = logging.getLogger(__name__)  # TODO: make use of this instead of print
 
-
-# maybe should segment out these examples at some point.
-from mud_examples.rand import randA_outer, randA_list_svd, randP
-from mud_examples.helpers import compare_linear_sols_rank_list
-
-from mud_examples.rand import randP, randA_gauss
-from mud_examples.helpers import compare_linear_sols_dim
 
 
 def setup_logging(loglevel):
@@ -57,7 +55,7 @@ def main_dim(args):
 #     fsize        = args.fsize
 #     linewidth    = args.linewidth
 #     seed         = args.seed
-#     inputdim     = args.input_dim
+    # dim_input     = args.input_dim
 #     save         = args.save
 #     alt          = args.alt
 #     bayes        = args.bayes
@@ -70,7 +68,7 @@ def main_dim(args):
     if not presentation:
         plt.rcParams['mathtext.fontset'] = 'stix'
         plt.rcParams['font.family'] = 'STIXGeneral'
-    fdir = 'lin'
+    fdir = 'figures/lin'
     check_dir(fdir)
 
     fsize = 42
@@ -84,7 +82,7 @@ def main_dim(args):
     # We sequentially incorporate $D=1, \dots , P$ dimensions into our QoI map and study the 2-norm between the true value that was used to generate the data and the analytical MUD/MAP points. 
 
 
-
+    # dim_output = dim_input
     dim_input, dim_output = 100, 100
     seed = 12
     np.random.seed(seed)
@@ -158,7 +156,7 @@ def main_dim(args):
     if 'id' in prefix:
         plt.title("Convergence for Various $\\Sigma_{init} = \\alpha I$", fontsize=1.25*fsize)
     else:
-        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \Sigma$", fontsize=1.25*fsize)# plt.yscale('log')
+        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \\Sigma$", fontsize=1.25*fsize)# plt.yscale('log')
     # plt.yscale('log')
     # plt.xscale('log')
     plt.ylim(0, 1.0)
@@ -252,7 +250,7 @@ def main_rank(args):
     if not presentation:
         plt.rcParams['mathtext.fontset'] = 'stix'
         plt.rcParams['font.family'] = 'STIXGeneral'
-    fdir = 'lin'
+    fdir = 'figures/lin'
     check_dir(fdir)
 
     fsize = 42
@@ -325,23 +323,23 @@ def main_rank(args):
         _err_map = err_map_list[idx]
         _err_pin = err_pin_list[idx]
 
-        plt.plot(x, _err_mud, label='mud', c='k', lw=10)
-        plt.plot(x, _err_map, label='map', c='r', ls='--', lw=5)
-        plt.plot(x, _err_pin, label='lsq', c='xkcd:light blue', ls='-', lw=5)
+        plt.plot(x, _err_mud, label='MUD', c='k', lw=10)
+        plt.plot(x, _err_map, label='MAP', c='r', ls='--', lw=5)
+        plt.plot(x, _err_pin, label='LSQ', c='xkcd:light blue', ls='-', lw=5)
 
     # plt.plot(x, regression, c='g', ls='-')
     # plt.xlim(0,dim_output)
     if 'id' in prefix:
         plt.title("Convergence for Various $\\Sigma_{init} = \\alpha I$", fontsize=1.25*fsize)
     else:
-        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \Sigma$", fontsize=1.25*fsize)
+        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \\Sigma$", fontsize=1.25*fsize)
     # plt.yscale('log')
     # plt.xscale('log')
     plt.ylim(0, 1.0)
     # plt.ylim(1E-4, 5E-2)
     plt.ylabel("$\\frac{||\\lambda^\\dagger - \\lambda||}{||\\lambda^\\dagger||}$", fontsize=fsize*1.25)
     plt.xlabel('Rank(A)', fontsize=fsize)
-    plt.legend(['mud', 'map', 'least squares'], fontsize=fsize)
+    plt.legend(['MUD', 'MAP', 'Least Squares'], fontsize=fsize)
     # plt.annotate(f'Slope={slope:1.4f}', (4,4/7), fontsize=32)
     plt.savefig(f'{fdir}/{prefix}-convergence.png', bbox_inches='tight')
     plt.close()
@@ -430,7 +428,7 @@ def main_contours(args):
     if not presentation:
         plt.rcParams['mathtext.fontset'] = 'stix'
         plt.rcParams['font.family'] = 'STIXGeneral'
-    fdir = 'contours'
+    fdir = 'figures/contours'
     check_dir(fdir)
     lam_true = np.array([0.7, 0.3])
     initial_mean = np.array([0.25, 0.25])
@@ -711,13 +709,93 @@ def contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C901
     plt.tight_layout()
     if save:
         if '/' in figname:
-            fdir = ''.join(figname.split('/')[:-1])
+            fdir = '/'.join(figname.split('/')[:-1])
             check_dir(fdir)
         plt.savefig(figname, dpi=300)
         plt.close()
 
 #     plt.title('Predicted Covariance: {}'.format((A@initial_cov@A.T).ravel() ))
     # plt.show()
+
+
+def compare_mud_map_pin(A, b, d, mean, cov):
+    mud_pt = mud_sol(A, b, d, mean, cov)
+    map_pt = map_sol(A, b, d, mean, cov)
+    pin_pt = (np.linalg.pinv(A)@(d-b)).reshape(-1,1)
+    return mud_pt, map_pt, pin_pt
+
+
+def transform_rank_list(lam_ref, A, b, rank):
+    """
+    A is a list here. We sum the first `rank` elements of it
+    to return a matrix with the desired rank.
+    """
+    _A = sum(A[0:rank])
+    _b = b
+    _d = _A@lam_ref + _b
+    assert np.linalg.matrix_rank(_A) == rank, "Unexpected rank mismatch"
+    return _A, _b, _d
+
+
+def transform_dim_out(lam_ref, A, b, dim):
+    if isinstance(A, list) or isinstance(A, tuple):
+        raise AttributeError("A must be a matrix, not a list or tuple.")
+
+    _A = A[:dim, :]
+    _b = b[:dim, :]
+    _d = _A@lam_ref + _b
+    return _A, _b, _d
+
+
+def compare_linear_sols_rank_list(lam_ref, A, b,
+                             alpha=1, mean=None, cov=None):
+    """
+    Input and output dimensions fixed, varying rank 1..dim_output.
+    """
+    
+    return compare_linear_sols(transform_rank_list, lam_ref, A, b, alpha, mean, cov)
+
+
+def compare_linear_sols_dim(lam_ref, A, b,
+                            alpha=1, mean=None, cov=None):
+    """
+    Input dimension fixed, varying output dimension.
+    """
+    return compare_linear_sols(transform_dim_out, lam_ref, A, b, alpha, mean, cov)
+
+
+def compare_linear_sols(transform, lam_ref, A, b,
+                            alpha=1, mean=None, cov=None):
+    """
+    Input dimension fixed, varying according to the output
+    of the anonymous function `transform`'s return.
+    """
+    sols = {}
+    if isinstance(alpha, list) or isinstance(alpha, tuple):
+        alpha_list = alpha
+    else:
+        alpha_list = [alpha]
+
+    if mean is None:
+        mean = np.zeros(A.shape[1])
+    
+    if cov is None:
+        cov = np.eye(A.shape[1])
+
+    _logger.info("alpha = {}".format(alpha_list))
+    if isinstance(A, list):  # svd approach returns list
+        dim_output = A[0].shape[0]
+    else:
+        dim_output = A.shape[0]
+
+    for alpha in alpha_list:
+        sols[alpha] = []
+        for _out in range(1, dim_output+1, 1):
+            _A, _b, _d = transform(lam_ref, A, b, _out)
+            _mud, _map, _pin = compare_mud_map_pin(_A, _b, _d, mean, alpha*cov)
+            sols[alpha].append((_mud, _map, _pin))
+
+    return sols
 
 
 if __name__ == "__main__":

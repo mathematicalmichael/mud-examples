@@ -52,6 +52,7 @@ MANIFEST
 .venv*/
 
 # save directories
+figures/
 scripts/pde_*D/
 scripts/ode/
 scripts/*-data/
@@ -60,3 +61,4 @@ ode/
 pde_*D/
 *-data/
 *.pkl
+

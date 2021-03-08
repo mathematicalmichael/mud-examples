@@ -1,5 +1,5 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#!/usr/env/bin python
 
 import argparse
 import logging
@@ -13,14 +13,15 @@ import matplotlib
 import numpy as np
 from mud import __version__ as __mud_version__
 from mud_examples import __version__
-from mud_examples.helpers import parse_args
+from mud_examples.parsers import parse_args
 from mud_examples.inv import main as main_inv
 from mud_examples.lin import main as main_lin
 from mud_examples.ode import main_ode
 from mud_examples.pde import main_pde
-from mud_examples.plotting import (plot_experiment_equipment,
-                                   plot_experiment_measurements,
-                                   plot_scalar_poisson_summary)
+from mud_examples.experiments import (plot_experiment_equipment,
+                                      plot_experiment_measurements)
+
+from mud_examples.plotting import plot_scalar_poisson_summary
 
 matplotlib.rcParams['mathtext.fontset'] = 'stix'
 matplotlib.rcParams['font.family'] = 'STIXGeneral'
@@ -92,19 +93,23 @@ def main(in_args):
                          measurements=measurements)
 
         if inputdim == 1:  # TODO: roll this plotting into main_pde, handle w/o fenics?
-            plot_scalar_poisson_summary(res=res, measurements=measurements,
-                     fsize=fsize, prefix=f'pde_{inputdim}D/' + example, lam_true=lam_true, save=save)
+            plot_scalar_poisson_summary(res=res,
+                                        measurements=measurements,
+                                        fsize=fsize,
+                                        prefix=f'figures/pde_{inputdim}D/' + example,
+                                        lam_true=lam_true, save=save)
         else:
             # solution / sensors plotted by main_pde method
             pass
 
-        if len(measurements) > 1:
-            plot_experiment_measurements(measurements, res,
-                                         f'pde_{inputdim}D/' + example, fsize,
+        if len(measurements) > 1 and inputdim == 1:
+            plot_experiment_measurements(res,
+                                         f'figures/pde_{inputdim}D/' + example, fsize,
                                          linewidth, save=save)
-        if len(tolerances) > 1:
+
+        if len(tolerances) > 1 and inputdim == 1:
             plot_experiment_equipment(tolerances, res,
-                                      f'pde_{inputdim}D/' + example, fsize,
+                                      f'figures/pde_{inputdim}D/' + example, fsize,
                                       linewidth, save=save)
     elif example == 'ode':
         lam_true = 0.5
@@ -117,14 +122,14 @@ def main(in_args):
                          time_ratios=time_ratios)
 
         if len(time_ratios) > 1:
-            plot_experiment_measurements(time_ratios, res,
-                                         'ode/' + example,
+            plot_experiment_measurements(res,
+                                         'figures/ode/' + example,
                                          fsize, linewidth,
                                          save=save, legend=True)
 
         if len(tolerances) > 1:
             plot_experiment_equipment(tolerances, res,
-                                      'ode/' + example, fsize, linewidth,
+                                      'figures/ode/' + example, fsize, linewidth,
                                       title=f"Variance of MUD Error\nfor t={1+2*np.median(time_ratios):1.3f}s",
                                       save=save)
 
@@ -150,24 +155,47 @@ def run():
 
 def run_pde():
     """Recreates Poisson figures in MUD paper.
+
+    >>> run_pde()
+    Attempt run for measurements = [20, 100]
+    Running example: mud
+    Running example: map
+    >>> import os; os.system('rm -rf figures/')
+    0
     """
     run_cmd = """--example pde --bayes --save \
-    --num-trials 20 -m 20 100 -t 0.2
+    --num-trials 20 -m 20 100 -t 0.1
     """.replace('    ','').replace('\n','').split(' ')
     main(run_cmd + sys.argv[1:])
 
 
 def run_ode():
     """Recreates Poisson figures in MUD paper.
+
+    >>> run_ode()
+    Will run simulations for %T=[0.1, 0.25, 0.5, 1.0]
+    Running example: mud
+    Measurements: [20, 50, 100, 200]
+    Plotting decay solution.
+    Running example: map
+    Measurements: [20, 50, 100, 200]
+    Plotting decay solution.
+    Plotting experiments involving increasing # of measurements.
+    >>> import os; os.system('rm -rf figures/')
+    0
     """
     run_cmd = """--example ode --bayes --save \
-    --num-trials 20 -r 0.1 0.5 1 -t 0.1
+    --num-trials 20 -r 0.1 0.25 0.5 1 -t 0.1
     """.replace('    ','').replace('\n','').split(' ')
     main(run_cmd + sys.argv[1:])
 
 
 def run_lin():
     """Recreates Contour figures in MUD paper.
+    >>> run_lin()
+    Running Linear Examples.
+    >>> import os; os.system('rm -rf figures/')
+    0
     """
     run_cmd = """--example lin
     """.replace('    ','').replace('\n','').split(' ')
@@ -176,6 +204,10 @@ def run_lin():
 
 def run_inv():
     """Recreates Contour figures in MUD paper.
+    >>> run_inv()
+    Running BIP vs SIP Comparison (1D).
+    >>> import os; os.system('rm -rf figures/')
+    0
     """
     run_cmd = """--example inv
     """.replace('    ','').replace('\n','').split(' ')
@@ -184,23 +216,6 @@ def run_inv():
 
 def run_all():
     """Recreates all figures in MUD paper.
-    
-    >>> from mud_examples.runner import run_all
-    >>> run_all()
-    Running BIP vs SIP Comparison (1D).
-    Running Linear Examples.
-    Will run simulations for %T=[0.1, 0.5, 1.0]
-    Running example: mud
-    Measurements: [20, 100, 200]
-    Plotting decay solution.
-    Running example: map
-    Measurements: [20, 100, 200]
-    Plotting decay solution.
-    Plotting experiments involving increasing # of measurements.
-    Attempt run for measurements = [20, 100]
-    Running example: mud
-    Running example: map
-    Plotting experiments involving increasing # of measurements.
     """
     run_inv()
     run_lin()

@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import logging
 import os
 
@@ -6,11 +9,10 @@ import mud_examples.poisson as ps  # lazy loads fenics
 import numpy as np
 from mud.funs import map_problem, mud_problem
 from mud.util import std_from_equipment
-from mud_examples.helpers import (check_dir, experiment_equipment,
-                                  experiment_measurements, extract_statistics)
-from mud_examples.models import \
-    generate_spatial_measurements as generate_sensors_pde
-from mud_examples.plotting import fit_log_linear_regression
+from mud_examples.utils import check_dir
+from mud_examples.experiments import (experiment_equipment,
+                                      experiment_measurements)
+from mud_examples.summary import extract_statistics, fit_log_linear_regression
 
 _logger = logging.getLogger(__name__)
 
@@ -61,7 +63,7 @@ def main_pde(num_trials=20,
         # in 1d this is a change in sensor location
         # in ND, change in how we partition sensors (vertical vs horizontal)
         fdir = f'pde_{input_dim}D' # expectation from make_reproducible_without_fenics
-        check_dir(fdir)
+
         # mud and mud alt have same sensors in higher dimensional examples
         # in 1d, the alternative approach is to change sensor placement, which requires
         # loading a separate file.
@@ -83,7 +85,7 @@ def main_pde(num_trials=20,
                 P.load(fname)
             except FileNotFoundError:
                 
-                try: # available data in package
+                try:  # available data in package
                     _logger.info("Trying packaged data.")
                     fname = 'data/' + fname
                     P.load(fname)
@@ -101,9 +103,8 @@ def main_pde(num_trials=20,
                     try:
                         P.load(fname)
                     except FileNotFoundError as e:
-                        raise(e)
                         _logger.critical("Exiting program")
-                        break
+                        raise(e)
 
             # plots show only one hundred sensors to avoid clutter
             if example == 'mud-alt':
@@ -164,3 +165,7 @@ def main_pde(num_trials=20,
 #             P.plot_solutions(solutions, 100, example=example, save=True)
 
     return res
+
+
+if __name__ == '__main__':
+    main_pde()
