@@ -103,9 +103,8 @@ def main_pde(num_trials=20,
                     try:
                         P.load(fname)
                     except FileNotFoundError as e:
-                        raise(e)
                         _logger.critical("Exiting program")
-                        break
+                        raise(e)
 
             # plots show only one hundred sensors to avoid clutter
             if example == 'mud-alt':
@@ -166,3 +165,7 @@ def main_pde(num_trials=20,
 #             P.plot_solutions(solutions, 100, example=example, save=True)
 
     return res
+
+
+if __name__ == '__main__':
+    main_pde()

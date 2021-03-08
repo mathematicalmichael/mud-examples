@@ -26,7 +26,8 @@ def plot_decay_solution(solutions, model_generator, sigma, prefix,
     alpha_signal = 0.2
     alpha_points = 0.6
 #     num_meas_plot_list = [25, 50, 400]
-
+    fdir = '/'.join(prefix.split('/')[:-1])
+    check_dir(fdir)
     print("Plotting decay solution.")
     for num_meas_plot in solutions:
         filename = f'{prefix}_{num_meas_plot}_reference_solution.png'
@@ -86,8 +87,6 @@ def plot_decay_solution(solutions, model_generator, sigma, prefix,
         plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order], fontsize=fsize, loc='upper right')
         plt.tight_layout()
         if save:
-            fdir = filename.split('/')[0]
-            check_dir(fdir)
             plt.savefig(filename, bbox_inches='tight')
         # plt.show()
 

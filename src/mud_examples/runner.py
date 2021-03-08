@@ -96,19 +96,20 @@ def main(in_args):
             plot_scalar_poisson_summary(res=res,
                                         measurements=measurements,
                                         fsize=fsize,
-                                        prefix=f'pde_{inputdim}D/' + example,
+                                        prefix=f'figures/pde_{inputdim}D/' + example,
                                         lam_true=lam_true, save=save)
         else:
             # solution / sensors plotted by main_pde method
             pass
 
-        if len(measurements) > 1:
+        if len(measurements) > 1 and inputdim == 1:
             plot_experiment_measurements(measurements, res,
-                                         f'pde_{inputdim}D/' + example, fsize,
+                                         f'figures/pde_{inputdim}D/' + example, fsize,
                                          linewidth, save=save)
-        if len(tolerances) > 1:
+
+        if len(tolerances) > 1 and inputdim == 1:
             plot_experiment_equipment(tolerances, res,
-                                      f'pde_{inputdim}D/' + example, fsize,
+                                      f'figures/pde_{inputdim}D/' + example, fsize,
                                       linewidth, save=save)
     elif example == 'ode':
         lam_true = 0.5
@@ -122,13 +123,13 @@ def main(in_args):
 
         if len(time_ratios) > 1:
             plot_experiment_measurements(time_ratios, res,
-                                         'ode/' + example,
+                                         'figures/ode/' + example,
                                          fsize, linewidth,
                                          save=save, legend=True)
 
         if len(tolerances) > 1:
             plot_experiment_equipment(tolerances, res,
-                                      'ode/' + example, fsize, linewidth,
+                                      'figures/ode/' + example, fsize, linewidth,
                                       title=f"Variance of MUD Error\nfor t={1+2*np.median(time_ratios):1.3f}s",
                                       save=save)
 
@@ -156,7 +157,7 @@ def run_pde():
     """Recreates Poisson figures in MUD paper.
     """
     run_cmd = """--example pde --bayes --save \
-    --num-trials 20 -m 20 100 -t 0.2
+    --num-trials 20 -m 20 100 -t 0.1
     """.replace('    ','').replace('\n','').split(' ')
     main(run_cmd + sys.argv[1:])
 

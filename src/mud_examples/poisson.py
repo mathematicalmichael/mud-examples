@@ -425,9 +425,8 @@ def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='sca', fsize = 
     ref = pickle.load(data)
 
     sensors = ref['sensors']
-    qoi_ref = ref['data']
+    # qoi_ref = ref['data']
     coords, vals = ref['plot_u']
-    x, y = sensors[:,0], sensors[:,1]
 #     try:
 #         import fenics as fin
 #         from poisson import poissonModel
@@ -436,7 +435,7 @@ def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='sca', fsize = 
 #     except:
     plt.tricontourf(coords[:, 0], coords[:, 1], vals, levels=20, vmin=-0.5, vmax=0)
 
-    input_dim = ref['lam'].shape[1]
+    # input_dim = ref['lam'].shape[1]
     
     plt.title(f"Response Surface", fontsize=1.25*fsize)
     if num_sensors is not None:  # plot sensors
@@ -478,10 +477,13 @@ def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='sca', fsize = 
     plt.ylabel("$x_2$", fontsize=fsize)
 
     if example:
-        if 'data' in fname:  # TODO: clean this up
-            fdir= '/'.join(fname.split('/')[1:-1])
-        else:
-            fdir= '/'.join(fname.split('/')[:-1])
+        # if 'data' in fname:  # TODO: clean this up
+        #     fdir= '/'.join(fname.split('/')[1:-1])
+        # else:
+        #     fdir= '/'.join(fname.split('/')[:-1])
+        fdir = 'figures/' + fname.replace('.pkl','/')
+        # print(fdir)
+        check_dir(fdir)
         fname = f"{fdir}/{example}_surface.png"
         plt.savefig(fname, bbox_inches='tight')
         _logger.info(f"Saved {fname}")
@@ -698,10 +700,12 @@ class pdeProblem(object):
         lam = self.lam
         qoi = self.qoi
         qoi_ref = self.qoi_ref
-        dist = self.dist
+        # dist = self.dist
         g = self.g
         fname = self.fname.replace('.pkl', '')
-        fname = fname.replace('data/', '')
+        # fname = fname.replace('data/', '')
+        fname = 'figures/' + fname
+        check_dir(fname)
         closest_fit_index_out = np.argmin(np.linalg.norm(qoi - np.array(qoi_ref), axis=1))
         g_projected = list(lam[closest_fit_index_out, :])
         plt.figure(figsize=(10,10))
@@ -717,7 +721,7 @@ class pdeProblem(object):
             if sols.get(num_measurements, None) is None:
                 raise AttributeError(f"Solutions `sols` missing requested N={num_measurements}.")
             else:
-                prefix = f'{fname}_{example}_solutions_N{num_measurements}'
+                prefix = f'{fname}/{example}_solutions_N{num_measurements}'
                 plot_lam = np.array(sols[num_measurements])
                 if example == 'mud-alt':
                     qmap = '$Q_{%dD}^\\prime$'%lam.shape[1]
@@ -733,7 +737,7 @@ class pdeProblem(object):
                 plt.title(f'{soltype} Estimates for {qmap}, $N={num_measurements}$', fontsize=1.25*fsize)
         else:  # initial plot, first 100
 #             prefix = f'pde_{lam.shape[1]}{dist}/initial'
-            prefix = f'{fname}_{example}_initial_S{lam.shape[0]}'
+            prefix = f'{fname}/{example}_initial_S{lam.shape[0]}'
             plot_lam = lam[0:100, :]
             plt.title('Samples from Initial Density', fontsize=1.25*fsize)
 
@@ -812,7 +816,7 @@ def load_poisson_from_disk(fname):
             _logger.info("Loading from disk")
             data = open(fname, 'rb')
         ref = pickle.load(data)
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         _logger.info(f"load_poisson_from_disk - Failed to load {fname} from disk")
         raise FileNotFoundError(f"load_poisson_from_disk: File {fname} missing. Run `make_reproducible_without_fenics` first.")
     lam = ref['lam']

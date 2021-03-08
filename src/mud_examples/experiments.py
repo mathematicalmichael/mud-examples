@@ -146,10 +146,10 @@ def plot_experiment_measurements(measurements, res, prefix,
     if legend:
         plt.legend(fontsize=fsize * 0.8)
     # plt.ylabel('Absolute Error in MUD', fontsize=fsize)
-    title = "$\\mathrm{\\mathbb{E}}(|\\lambda^\\mathrm{MUD} - \\lambda^\\dagger|)$"  # noqa E501
+    title = "$\\mathrm{\\mathbb{E}}(|\\lambda^* - \\lambda^\\dagger|)$"  # noqa E501
     plt.title(title, fontsize=1.25 * fsize)
     if save:
-        fdir = ''.join(prefix.split('/')[::-1])
+        fdir = '/'.join(prefix.split('/')[:-1])
         check_dir(fdir)
         _logger.info("Saving measurement experiments: mean convergence.")
         plt.savefig(f'{prefix}_convergence_obs_mean.png', bbox_inches='tight')
@@ -177,7 +177,7 @@ def plot_experiment_measurements(measurements, res, prefix,
     if legend:
         plt.legend(fontsize=fsize * 0.8)
     # plt.ylabel('Absolute Error in MUD', fontsize=fsize)
-    plt.title("$\\mathrm{Var}(|\\lambda^\\mathrm{MUD} - \\lambda^\\dagger|)$",
+    plt.title("$\\mathrm{Var}(|\\lambda^* - \\lambda^\\dagger|)$",
               fontsize=1.25 * fsize)
     if save:
         _logger.info("Saving measurement experiments: variance convergence.")

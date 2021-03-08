@@ -129,6 +129,10 @@ def main_ode(num_trials=20,
         # TODO check for existence of save directory, grab subset of measurements properly.
         plot_decay_solution(solutions, generate_decay_model, fsize=fsize,
                             end_time=t_max, lam_true=lam_true, qoi_true=qoi_true,
-                            sigma=sigma, time_vector=sensors, prefix='ode/' + example)
+                            sigma=sigma, time_vector=sensors, prefix='figures/ode/' + example)
 
     return res
+
+
+if __name__ == '__main__':
+    main_ode()
