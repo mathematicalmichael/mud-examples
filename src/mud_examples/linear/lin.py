@@ -31,7 +31,6 @@ __license__ = "mit"
 _logger = logging.getLogger(__name__)  # TODO: make use of this instead of print
 
 
-
 def setup_logging(loglevel):
     """Setup basic logging
 
@@ -386,7 +385,6 @@ def main_rank(args):
     # plt.show()
 
 
-    
 def main_contours(args):
     """
     Main entrypoint for 2D Linear Rank-Deficient Example (Contour Plots)
