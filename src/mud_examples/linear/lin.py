@@ -18,7 +18,7 @@ from scipy.linalg import null_space
 from mud_examples.utils import make_2d_unit_mesh
 from mud_examples.parsers import parse_args
 # maybe should segment out these examples at some point.
-import mud_examples.lin.models as models
+import mud_examples.linear.models as models
 from mud_examples.utils import check_dir
 
 plt.rcParams['figure.figsize'] = 10, 10
