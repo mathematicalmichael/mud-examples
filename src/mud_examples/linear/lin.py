@@ -18,7 +18,7 @@ from scipy.linalg import null_space
 from mud_examples.utils import make_2d_unit_mesh
 from mud_examples.parsers import parse_args
 # maybe should segment out these examples at some point.
-from mud_examples.rand import randA_gauss, randA_list_svd, randA_outer, randP
+import mud_examples.lin.models as models
 from mud_examples.utils import check_dir
 
 plt.rcParams['figure.figsize'] = 10, 10
@@ -73,67 +73,60 @@ def main_dim(args):
 
     fsize = 42
 
-
     def numnonzero(x, tol=1E-4):
-        return len(x[abs(x)<tol])
-
+        return len(x[abs(x) < tol])
 
     # # Impact of Dimension for Various Choices of $\\Sigma_\text{init}$
-    # We sequentially incorporate $D=1, \dots , P$ dimensions into our QoI map and study the 2-norm between the true value that was used to generate the data and the analytical MUD/MAP points. 
-
+    # We sequentially incorporate $D=1, \dots , P$ dimensions into our QoI map and study the 2-norm between the true value that was used to generate the data and the analytical MUD/MAP points.
 
     # dim_output = dim_input
     dim_input, dim_output = 100, 100
     seed = 12
     np.random.seed(seed)
 
-
     # from sklearn.datasets import make_spd_matrix as make_spd
     # from sklearn.datasets import make_sparse_spd_matrix as make_cov
     # cov = np.eye(dim_input)
-    initial_cov = np.diag(np.sort(np.random.rand(dim_input))[::-1]+0.5)
+    initial_cov = np.diag(np.sort(np.random.rand(dim_input))[::-1] + 0.5)
 
-    plt.figure(figsize=(10,10))
-    initial_mean = np.zeros(dim_input).reshape(-1,1)
+    plt.figure(figsize=(10, 10))
+    initial_mean = np.zeros(dim_input).reshape(-1, 1)
     # initial_mean = np.random.randn(dim_input).reshape(-1,1)
-    randA = randA_gauss # choose which variety of generating map
-    A, b = randP(dim_input, randA=randA)
-    prefix='lin-dim-cov'
-    alpha_list = [10**(n) for n in np.linspace(-3,4,8)]
+    randA = models.randA_gauss  # choose which variety of generating map
+    A, b = models.randP(dim_input, randA=randA)
+    prefix = 'lin-dim-cov'
+    alpha_list = [10**(n) for n in np.linspace(-3, 4, 8)]
 
     # option to fix A and perturb lam_ref
 
-    lam_ref = np.random.randn(dim_input).reshape(-1,1)
+    lam_ref = np.random.randn(dim_input).reshape(-1, 1)
     d = A@lam_ref + b
-
 
     # %%time
     sols = compare_linear_sols_dim(lam_ref, A, b, alpha_list, initial_mean, initial_cov)
 
-
     # c = np.linalg.cond(A)*np.linalg.norm(lam_ref)
     c = np.linalg.norm(lam_ref)
     # c = 1
-    err_mud_list = [[np.linalg.norm(_m[0] - lam_ref)/c for _m in sols[alpha]] for alpha in alpha_list ] # output_dim+1 values of _m
-    err_map_list = [[np.linalg.norm(_m[1] - lam_ref)/c for _m in sols[alpha]] for alpha in alpha_list ]
-    err_pin_list = [[np.linalg.norm(_m[2] - lam_ref)/c for _m in sols[alpha]] for alpha in alpha_list ]
+    err_mud_list = [[np.linalg.norm(_m[0] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]  # output_dim+1 values of _m
+    err_map_list = [[np.linalg.norm(_m[1] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]
+    err_pin_list = [[np.linalg.norm(_m[2] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]
 
     # c = np.linalg.cond(A)
     c = np.linalg.norm(A)
-    err_Amud_list = [[np.linalg.norm(A@(_m[0] - lam_ref))/c for _m in sols[alpha]] for alpha in alpha_list ]
-    err_Amap_list = [[np.linalg.norm(A@(_m[1] - lam_ref))/c for _m in sols[alpha]] for alpha in alpha_list ]
-    err_Apin_list = [[np.linalg.norm(A@(_m[2] - lam_ref))/c for _m in sols[alpha]] for alpha in alpha_list ]
+    err_Amud_list = [[np.linalg.norm(A @ (_m[0] - lam_ref)) / c for _m in sols[alpha]] for alpha in alpha_list ]
+    err_Amap_list = [[np.linalg.norm(A @ (_m[1] - lam_ref)) / c for _m in sols[alpha]] for alpha in alpha_list ]
+    err_Apin_list = [[np.linalg.norm(A @ (_m[2] - lam_ref)) / c for _m in sols[alpha]] for alpha in alpha_list ]
 
     # measure # of components that agree
     # err_mud_list = [[numnonzero(_m[0] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list ]
     # err_map_list = [[numnonzero(_m[1] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list ]
     # err_pin_list = [[numnonzero(_m[2] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list ]
 
+    x, y = np.arange(1, dim_output, 1), err_mud_list[0][0:-1]
 
-    x, y = np.arange(1,dim_output,1), err_mud_list[0][0:-1]
-
-    slope, intercept = (np.linalg.pinv(np.vander(x, 2))@np.array(y).reshape(-1,1)).ravel()
-    regression = slope*x + intercept
+    slope, intercept = (np.linalg.pinv(np.vander(x, 2))@np.array(y).reshape(-1, 1)).ravel()
+    regression = slope * x + intercept
 
 
     # ---
@@ -141,7 +134,7 @@ def main_dim(args):
     # # Convergence Plot
 
     for idx, alpha in enumerate(alpha_list):
-        if (1+idx)%2 and alpha<=10:
+        if (1 + idx) % 2 and alpha <= 10:
             plt.annotate(f"$\\alpha$={alpha:1.2E}", (100, max(err_map_list[idx][-1], 0.01)), fontsize=24)
         _err_mud = err_mud_list[idx]
         _err_map = err_map_list[idx]
@@ -154,15 +147,15 @@ def main_dim(args):
     # plt.plot(x, regression, c='g', ls='-')
     # plt.xlim(0,dim_output)
     if 'id' in prefix:
-        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha I$", fontsize=1.25*fsize)
+        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha I$", fontsize=1.25 * fsize)
     else:
-        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \\Sigma$", fontsize=1.25*fsize)# plt.yscale('log')
+        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \\Sigma$", fontsize=1.25 * fsize)# plt.yscale('log')
     # plt.yscale('log')
     # plt.xscale('log')
     plt.ylim(0, 1.0)
     # plt.ylim(1E-4, 5E-2)
     # plt.ylabel("$\\frac{||\\lambda^\\dagger - \\lambda||}{||\\lambda^\\dagger||}$", fontsize=fsize*1.25)
-    plt.ylabel("Relative Error", fontsize=fsize*1.25)
+    plt.ylabel("Relative Error", fontsize=fsize * 1.25)
     plt.xlabel('Dimension of Output Space', fontsize=fsize)
     plt.legend(['mud', 'map', 'least squares'], fontsize=fsize)
     # plt.annotate(f'Slope={slope:1.4f}', (4,4/7), fontsize=32)
@@ -172,13 +165,11 @@ def main_dim(args):
 
     # plt.imshow(initial_cov)
 
-
     # # ## Surface Plot
 
     # X, Y = np.meshgrid(x,alpha_list)
     # ZU = np.array(err_mud_list)[:,1:100]
     # ZA = np.array(err_map_list)[:,1:100]
-
 
     # # import matplotlib.pyplot as plt
     # from mpl_toolkits.mplot3d import Axes3D
@@ -224,7 +215,6 @@ def main_dim(args):
     # # plt.show()
 
 
-    
 def main_rank(args):
     """
     Main entrypoint for High-Dim Linear Rank Example
@@ -254,33 +244,30 @@ def main_rank(args):
     check_dir(fdir)
 
     fsize = 42
-    plt.figure(figsize=(10,10))
+    plt.figure(figsize=(10, 10))
     # ---
 
     # # Impact of Rank(A) for Various Choices of $\\Sigma_\text{init}$
     # We sequentially incorporate $D=1, \dots , P$ dimensions into our QoI map and study the 2-norm between the true value that was used to generate the data and the analytical MUD/MAP points. 
 
-
     dim_input, dim_output = 100, 100
     seed = 12
     np.random.seed(seed)
 
-
     # from sklearn.datasets import make_spd_matrix as make_spd
     # from sklearn.datasets import make_sparse_spd_matrix as make_cov
     # cov = np.eye(dim_input)
-    initial_cov = np.diag(np.sort(np.random.rand(dim_input))[::-1]+0.5)
+    initial_cov = np.diag(np.sort(np.random.rand(dim_input))[::-1] + 0.5)
 
-
-    initial_mean = np.zeros(dim_input).reshape(-1,1)
+    initial_mean = np.zeros(dim_input).reshape(-1, 1)
     # initial_mean = np.random.randn(dim_input).reshape(-1,1)
-    A_list, b = randP(dim_input, randA=randA_list_svd)
+    randA = models.randA_list_svd
+    A_list, b = models.randP(dim_input, randA=randA)
     prefix = 'lin-rank-cov'
-    alpha_list = [10**(n) for n in np.linspace(-3,4,8)]
-
+    alpha_list = [10**(n) for n in np.linspace(-3, 4, 8)]
 
     # option to fix A and perturb lam_ref
-    lam_ref = np.random.randn(dim_input).reshape(-1,1)
+    lam_ref = np.random.randn(dim_input).reshape(-1, 1)
 
     # d = A@lam_ref + b
 
@@ -290,25 +277,22 @@ def main_rank(args):
 
     # c = np.linalg.cond(A)*np.linalg.norm(lam_ref)
     c = np.linalg.norm(lam_ref)
-    err_mud_list = [[np.linalg.norm(_m[0] - lam_ref)/c for _m in sols[alpha]] for alpha in alpha_list ] # output_dim+1 values of _m
-    err_map_list = [[np.linalg.norm(_m[1] - lam_ref)/c for _m in sols[alpha]] for alpha in alpha_list ]
-    err_pin_list = [[np.linalg.norm(_m[2] - lam_ref)/c for _m in sols[alpha]] for alpha in alpha_list ]
+    err_mud_list = [[np.linalg.norm(_m[0] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ] # output_dim+1 values of _m
+    err_map_list = [[np.linalg.norm(_m[1] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]
+    err_pin_list = [[np.linalg.norm(_m[2] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]
 
 
-    err_Amud_list = [[np.linalg.norm(sum(A_list[0:i+1])@(_m[0] - lam_ref))/np.linalg.norm(sum(A_list[0:i+1])) for i, _m in enumerate(sols[alpha])] for alpha in alpha_list ]
-    err_Amap_list = [[np.linalg.norm(sum(A_list[0:i+1])@(_m[1] - lam_ref))/np.linalg.norm(sum(A_list[0:i+1])) for i, _m in enumerate(sols[alpha])] for alpha in alpha_list ]
-    err_Apin_list = [[np.linalg.norm(sum(A_list[0:i+1])@(_m[2] - lam_ref))/np.linalg.norm(sum(A_list[0:i+1])) for i, _m in enumerate(sols[alpha])] for alpha in alpha_list ]
+    err_Amud_list = [[np.linalg.norm(sum(A_list[0:i+1])@(_m[0] - lam_ref)) / np.linalg.norm(sum(A_list[0:i+1])) for i, _m in enumerate(sols[alpha])] for alpha in alpha_list ]
+    err_Amap_list = [[np.linalg.norm(sum(A_list[0:i+1])@(_m[1] - lam_ref)) / np.linalg.norm(sum(A_list[0:i+1])) for i, _m in enumerate(sols[alpha])] for alpha in alpha_list ]
+    err_Apin_list = [[np.linalg.norm(sum(A_list[0:i+1])@(_m[2] - lam_ref)) / np.linalg.norm(sum(A_list[0:i+1])) for i, _m in enumerate(sols[alpha])] for alpha in alpha_list ]
 
     # measure # of components that agree
     # err_mud_list = [[numnonzero(_m[0] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list ]
     # err_map_list = [[numnonzero(_m[1] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list ]
     # err_pin_list = [[numnonzero(_m[2] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list ]
 
-
     # len(err_mud_list[0])
-
-
-    x, y = np.arange(1,1+dim_output,1), err_mud_list[0]
+    x, y = np.arange(1, 1+dim_output, 1), err_mud_list[0]
 
     slope, intercept = (np.linalg.pinv(np.vander(x, 2))@np.array(y).reshape(-1,1)).ravel()
     regression = slope*x + intercept

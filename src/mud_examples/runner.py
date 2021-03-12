@@ -15,7 +15,7 @@ from mud import __version__ as __mud_version__
 from mud_examples import __version__
 from mud_examples.parsers import parse_args
 from mud_examples.inv import main as main_inv
-from mud_examples.lin import main as main_lin
+from mud_examples.linear.lin import main as main_lin
 from mud_examples.ode import main_ode
 from mud_examples.pde import main_pde
 from mud_examples.experiments import (plot_experiment_equipment,
