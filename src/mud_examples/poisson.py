@@ -518,7 +518,9 @@ def make_mud_wrapper(domain, lam, qoi, qoi_true, indices=None, dist='u'):
         d = mud_problem(domain=domain, lam=lam, qoi=qoi, qoi_true=qoi_true, sd=sd, num_obs=num_obs, split=indices)
         if dist == 'n':  # uniform is set by default
             _logger.debug("Setting normal prior for MUD problem")
-            d.set_initial(ds.norm(loc=-2, scale=std_from_equipment(2, 0.9999)))
+            d.set_initial(ds.norm(loc=-2, scale=std_from_equipment(2, 0.95)))
+            d.set_predicted(weights=d._in)
+            # if samples come from normal, no weights set for predicted, last line only if there's a mismatch
         return d
     return mud_wrapper
 
@@ -536,6 +538,7 @@ def make_map_wrapper(domain, lam, qoi, qoi_true, dist='u', log=False):
             b.set_prior(ds.norm(loc=-2, scale=std_from_equipment(2, 0.95)))
         return b
     return map_wrapper
+
 
 # probably move to helpers or utils
 def band_qoi(sensors, num_qoi=1, axis=1):
@@ -652,9 +655,12 @@ class pdeProblem(object):
             fname = self.fname
             _logger.info(f"PDE problem loading from default {fname}.")
 
-        dist_from_fname = fname.strip('results').strip('res').strip('.pkl')
-        dist_from_fname = dist_from_fname.split('/')[-1][-1]  # attempting to infer distribution from filename
-        _logger.info(f"Inferring distribution from file name with {dist_from_fname}")
+        if self.dist is None:
+            dist_from_fname = fname.strip('results').strip('res').strip('.pkl')
+            dist_from_fname = dist_from_fname.split('/')[-1][-1]  # attempting to infer distribution from filename
+            _logger.info(f"Inferring distribution from file name with {dist_from_fname}")
+            self.dist = dist_from_fname
+
         domain, sensors, lam, qoi, qoi_ref, lam_ref, u, g = load_poisson_from_disk(fname)
         self.domain = domain
         self.sensors = sensors
@@ -664,7 +670,6 @@ class pdeProblem(object):
         self.qoi_ref = qoi_ref
         self.u = u
         self.g = g
-        self.dist = dist_from_fname
         
         _logger.info(f"lam: {self.lam.shape}, qoi: {self.qoi.shape}, dist: {self.dist}")
 

@@ -112,13 +112,16 @@ def main_pde(num_trials=20,
                 ps.plot_without_fenics(fname, num_sensors=100, mode='ver',
                                        num_qoi=input_dim, example=example)
             elif example == 'mud':
+                P.dist = dist
                 wrapper = P.mud_vector_horizontal()
                 ps.plot_without_fenics(fname, num_sensors=100, mode='hor',
                                        num_qoi=input_dim, example=example)
             elif example == 'map':
+                P.dist = dist
                 wrapper = P.map_scalar(log=False)
                 ps.plot_without_fenics(fname, num_sensors=100,
                                        num_qoi=input_dim, example=example)
+
         # adjust measurements to account for what we actually have simulated
         measurements = np.array(measurements)
         measurements = list(measurements[measurements <= P.qoi.shape[1]])
