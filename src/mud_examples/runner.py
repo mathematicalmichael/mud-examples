@@ -14,7 +14,7 @@ import numpy as np
 from mud import __version__ as __mud_version__
 from mud_examples import __version__
 from mud_examples.parsers import parse_args
-from mud_examples.inv import main as main_inv
+from mud_examples.monomial import main as main_monomial
 from mud_examples.linear.lin import main as main_lin
 from mud_examples.ode import main_ode
 from mud_examples.pde import main_pde
@@ -133,14 +133,13 @@ def main(in_args):
                                       title=f"Variance of MUD Error\nfor t={1+2*np.median(time_ratios):1.3f}s",
                                       save=save)
 
-
     elif example == 'lin':
         print("Running Linear Examples.")
         main_lin(in_args)
 
-    elif example == 'inv':
+    elif example == 'monomial':
         print("Running BIP vs SIP Comparison (1D).")
-        main_inv(in_args)
+        main_monomial(in_args)
 
     if args.save:
         with open('results.pkl', 'wb') as f:
@@ -202,14 +201,14 @@ def run_lin():
     main(run_cmd + sys.argv[1:])
 
 
-def run_inv():
+def run_monomial():
     """Recreates Contour figures in MUD paper.
-    >>> run_inv()
+    >>> run_monomial()
     Running BIP vs SIP Comparison (1D).
     >>> import os; os.system('rm -rf figures/')
     0
     """
-    run_cmd = """--example inv
+    run_cmd = """--example monomial
     """.replace('    ','').replace('\n','').split(' ')
     main(run_cmd + sys.argv[1:])
 
