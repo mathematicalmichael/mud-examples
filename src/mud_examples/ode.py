@@ -34,7 +34,7 @@ def main_ode(num_trials=20,
              lam_true=0.5,
              domain=[[0,1]],
              tolerances=[0.1],
-             time_ratios=[0.01, 0.05, 0.1, 0.25, 0.5, 1],
+             time_ratios=[0.01, 1],
              alt=False, bayes=True):
     """
     

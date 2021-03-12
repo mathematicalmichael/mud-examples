@@ -48,7 +48,6 @@ def setup_logging(loglevel):
                         format=logformat, datefmt="%Y-%m-%d %H:%M:%S")
 
 
-
 def main(in_args):
     """
     Main entrypoint for example-generation
@@ -65,8 +64,10 @@ def main(in_args):
     save         = args.save
     alt          = args.alt
     bayes        = args.bayes
-    prefix       = args.prefix
+    sample_dist  = args.sample_dist
     dist         = args.dist
+    loc          = args.loc
+    scale        = args.scale
 
     tolerances   = list(np.sort([ float(t) for t in args.sensor_tolerance ]))
 
@@ -89,8 +90,9 @@ def main(in_args):
                          tolerances=tolerances,
                          input_dim=inputdim,
                          alt=alt, bayes=bayes,
-                         dist=dist, prefix=prefix,
-                         measurements=measurements)
+                         dist=dist, sample_dist=sample_dist,
+                         measurements=measurements,
+                         loc=loc, scale=scale)
 
         if inputdim == 1:  # TODO: roll this plotting into main_pde, handle w/o fenics?
             plot_scalar_poisson_summary(res=res,
@@ -156,14 +158,14 @@ def run_pde():
     """Recreates Poisson figures in MUD paper.
 
     >>> run_pde()
-    Attempt run for measurements = [20, 100]
+    Attempt run for measurements = [100]
     Running example: mud
     Running example: map
     >>> import os; os.system('rm -rf figures/')
     0
     """
     run_cmd = """--example pde --bayes --save \
-    --num-trials 20 -m 20 100 -t 0.1
+    --num-trials 20
     """.replace('    ','').replace('\n','').split(' ')
     main(run_cmd + sys.argv[1:])
 
@@ -172,19 +174,19 @@ def run_ode():
     """Recreates Poisson figures in MUD paper.
 
     >>> run_ode()
-    Will run simulations for %T=[0.1, 0.25, 0.5, 1.0]
+    Will run simulations for %T=[0.1, 1.0]
     Running example: mud
-    Measurements: [20, 50, 100, 200]
+    Measurements: [20, 200]
     Plotting decay solution.
     Running example: map
-    Measurements: [20, 50, 100, 200]
+    Measurements: [20, 200]
     Plotting decay solution.
     Plotting experiments involving increasing # of measurements.
     >>> import os; os.system('rm -rf figures/')
     0
     """
     run_cmd = """--example ode --bayes --save \
-    --num-trials 20 -r 0.1 0.25 0.5 1 -t 0.1
+    --num-trials 20
     """.replace('    ','').replace('\n','').split(' ')
     main(run_cmd + sys.argv[1:])
 

@@ -259,7 +259,7 @@ def eval_boundary_piecewise(u, n, d=1):
     node_values = [u(0,i) for i in intervals]
     return piecewise_eval(intervals, node_values, d)
 
-       
+
 def piecewise_eval_from_vector(u, d=1):
     """
     Takes an iterable `u` with y-values (on interior of equispaced unit domain)
@@ -304,7 +304,7 @@ def copy_expression(expression):
 
 
 def get_boundary_markers_for_rect(mesh, width=1):
-    
+
     class BoundaryX0(fin.SubDomain):
         def inside(self, x, on_boundary):
             return on_boundary and fin.near(x[0], 0, 1E-14)
@@ -336,12 +336,13 @@ def get_boundary_markers_for_rect(mesh, width=1):
 
 
 def make_reproducible_without_fenics(example, lam_true=3, input_dim=2,
-                                     prefix='results', dist='u',
+                                     sample_dist='u',
                                      num_samples=None, num_measure=100):
     """
     (Currently) requires XML data to be on disk, simulates sensors
     and saves everything required to one pickle file.
     """
+    prefix = 'results'
     _logger.info("Running make_reproducible without fenics")
     # Either load or generate the data.
     try:  # TODO: generalize this path here... take as argument
@@ -508,34 +509,31 @@ def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='sca', fsize = 
 #     return ratio_eval
 
 
-def make_mud_wrapper(domain, lam, qoi, qoi_true, indices=None, dist='u'):
+def make_mud_wrapper(domain, lam, qoi, qoi_true, indices=None, sample_dist='u', dist=ds.norm, **kwargs):
     """
     Anonymous function
     """
-    if not isinstance(dist, str):
-        raise ValueError("`dist` must be of type `str`.")
+    if not isinstance(sample_dist, str):
+        raise ValueError("`sample_dist` must be of type `str`.")
     def mud_wrapper(num_obs, sd):
         d = mud_problem(domain=domain, lam=lam, qoi=qoi, qoi_true=qoi_true, sd=sd, num_obs=num_obs, split=indices)
-        if dist == 'n':  # uniform is set by default
-            _logger.debug("Setting normal prior for MUD problem")
-            d.set_initial(ds.norm(loc=-2, scale=std_from_equipment(2, 0.95)))
+        d.set_initial(dist(**kwargs))
+        if sample_dist == 'u':
+            _logger.debug("Using weighted KDE for MUD solution.")
             d.set_predicted(weights=d._in)
-            # if samples come from normal, no weights set for predicted, last line only if there's a mismatch
         return d
     return mud_wrapper
 
 
-def make_map_wrapper(domain, lam, qoi, qoi_true, dist='u', log=False):
+def make_map_wrapper(domain, lam, qoi, qoi_true, log=False, dist=ds.norm, **kwargs):
     """
     Anonymous function
     """
-    if not isinstance(dist, str):
-        raise ValueError("`dist` must be of type `str`.")
+    if not isinstance(sample_dist, str):
+        raise ValueError("`sample_dist` must be of type `str`.")
     def map_wrapper(num_obs, sd):
         b = map_problem(domain=domain, lam=lam, qoi=qoi, qoi_true=qoi_true, sd=sd, num_obs=num_obs, log=log)
-        if dist == 'n':  # uniform is set by default
-            _logger.debug("Setting normal prior for MAP problem")
-            b.set_prior(ds.norm(loc=-2, scale=std_from_equipment(2, 0.95)))
+        b.set_prior(dist(**kwargs))
         return b
     return map_wrapper
 
@@ -555,6 +553,17 @@ def band_qoi(sensors, num_qoi=1, axis=1):
     return qoi_indices
 
 
+def dist_from_fname(fname):
+    """
+    Function that infers distribution used to generate samples from the filename
+    It looks for a letter before `.pkl`, i.e. `..n.pkl` -> normal distribution.
+    """
+    dist_from_fname = fname.strip('results').strip('res').strip('.pkl')
+    dist_from_fname = dist_from_fname.split('/')[-1][-1]  # attempting to infer distribution from filename
+    _logger.info(f"Inferring distribution from file name with {dist_from_fname}")
+    return dist_from_fname
+
+
 class pdeProblem(object):
     def __init__(self, fname=None):
         self.fname = fname
@@ -567,6 +576,7 @@ class pdeProblem(object):
         self._u = None
         self._g = None
         self._dist = None
+        self._sample_dist = None
 
     @property
     def lam(self):
@@ -643,9 +653,17 @@ class pdeProblem(object):
 
     @dist.setter
     def dist(self, dist):
+        self._dist = dist
+
+    @property
+    def sample_dist(self):
+        return self._sample_dist
+
+    @sample_dist.setter
+    def sample_dist(self, dist):
         if dist not in ['u', 'n']:
             raise ValueError("distribution could not be inferred. Must be from ('u', 'n')")
-        self._dist = dist
+        self._sample_dist = dist
 
     def load(self, fname=None):
         if fname:
@@ -655,11 +673,7 @@ class pdeProblem(object):
             fname = self.fname
             _logger.info(f"PDE problem loading from default {fname}.")
 
-        if self.dist is None:
-            dist_from_fname = fname.strip('results').strip('res').strip('.pkl')
-            dist_from_fname = dist_from_fname.split('/')[-1][-1]  # attempting to infer distribution from filename
-            _logger.info(f"Inferring distribution from file name with {dist_from_fname}")
-            self.dist = dist_from_fname
+        self.sample_dist = dist_from_fname(fname)
 
         domain, sensors, lam, qoi, qoi_ref, lam_ref, u, g = load_poisson_from_disk(fname)
         self.domain = domain
@@ -670,34 +684,34 @@ class pdeProblem(object):
         self.qoi_ref = qoi_ref
         self.u = u
         self.g = g
-        
+
         _logger.info(f"lam: {self.lam.shape}, qoi: {self.qoi.shape}, dist: {self.dist}")
 
-    def map_scalar(self, log=False):
+    def map_scalar(self, log=True, **kwargs):
         _logger.info("Solving with MAP estimates.")
-        return make_map_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref, dist=self.dist, log=log)
+        return make_map_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref, dist=self.dist, log=log, **kwargs)
 
-    def mud_scalar(self):
+    def mud_scalar(self, **kwargs):
         _logger.info("Solving with scalar-valued MUD estimates.")
-        return make_mud_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref, dist=self.dist)
+        return make_mud_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref, dist=self.dist, sample_dist=self.sample_dist, **kwargs)
 
-    def mud_vector_horizontal(self, num_qoi=None):
+    def mud_vector_horizontal(self, num_qoi=None, **kwargs):
         if num_qoi is None:  # set output dimension = input dimension
             num_qoi = self.lam.shape[1]
         indices = band_qoi(self.sensors, num_qoi=num_qoi, axis=1)
         _logger.info("Solving with horizontal-split vector-valued MUD estimates.")
-        return make_mud_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref, indices, dist=self.dist)
+        return make_mud_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref, indices, dist=self.dist, sample_dist=self.sample_dist, **kwargs)
 
-    def mud_vector_vertical(self, num_qoi=None):
+    def mud_vector_vertical(self, num_qoi=None, **kwargs):
         if num_qoi is None:  # set output dimension = input dimension
             num_qoi = self.lam.shape[1]
         indices = band_qoi(self.sensors, num_qoi=num_qoi, axis=0)
         _logger.info("Solving with vertical-split vector-valued MUD estimates.")
-        return make_mud_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref, indices, dist=self.dist)
+        return make_mud_wrapper(self.domain, self.lam, self.qoi, self.qoi_ref, indices, dist=self.dist, sample_dist=self.sample_dist, **kwargs)
 
     def plot_initial(self, save=True, **kwargs):
         self.plot(save=save, **kwargs)
-        
+
     def plot_solutions(self, sols, num, save=True, **kwargs):
         self.plot(sols=sols, num_measurements=num, save=save, **kwargs)
 
