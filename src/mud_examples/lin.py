@@ -618,13 +618,13 @@ def contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C901
                          (initial_mean[0] + 0.001 * fsize, initial_mean[1] - 0.001 * fsize),
                          fontsize=fsize, backgroundcolor="w")
         else:
-            if param_ref is not None:
+            if compare:
                 plt.scatter(param_ref[0], param_ref[1],
                     label='$\\lambda^\\dagger$',
-                    color='k', s=msize, marker='*')
-            if compare:
+                    color='k', s=msize, marker='s')
+
                 plt.annotate('Truth',
-                         (param_ref[0] + 0.0005 * fsize, param_ref[1] + 0.0005 * fsize),
+                         (param_ref[0] + 0.00075 * fsize, param_ref[1] + 0.00075 * fsize),
                          fontsize=fsize, backgroundcolor="w")
 
         show_mud = omega > 0 or compare
