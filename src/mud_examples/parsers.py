@@ -73,15 +73,15 @@ def parse_args(args):
     parser.add_argument('--loc',
         dest="loc",
         help="Prior/Initial Distribution `loc` parameter (scipy.stats.distributions).",
-        default=-4,
-        type=int,
-        metavar="INT")
+        default=-4.0,
+        type=float,
+        metavar="FLOAT")
     parser.add_argument('--scale',
         dest="scale",
         help="Prior/Initial Distribution `scale` parameter (scipy.stats.distributions).",
-        default=4,
-        type=int,
-        metavar="INT")
+        default=4.0,
+        type=float,
+        metavar="FLOAT")
     parser.add_argument('--sample_dist',
         dest="sample_dist",
         help="Sample distribution (used for loading file) for evaluations of poisson model. default=`u`",

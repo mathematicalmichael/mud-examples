@@ -529,8 +529,6 @@ def make_map_wrapper(domain, lam, qoi, qoi_true, log=False, dist=ds.norm, **kwar
     """
     Anonymous function
     """
-    if not isinstance(sample_dist, str):
-        raise ValueError("`sample_dist` must be of type `str`.")
     def map_wrapper(num_obs, sd):
         b = map_problem(domain=domain, lam=lam, qoi=qoi, qoi_true=qoi_true, sd=sd, num_obs=num_obs, log=log)
         b.set_prior(dist(**kwargs))
