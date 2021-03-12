@@ -158,7 +158,7 @@ def run_pde():
     """Recreates Poisson figures in MUD paper.
 
     >>> run_pde()
-    Attempt run for measurements = [100]
+    Attempt run for measurements = [20, 100]
     Running example: mud
     Running example: map
     >>> import os; os.system('rm -rf figures/')

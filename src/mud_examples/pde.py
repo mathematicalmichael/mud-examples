@@ -49,10 +49,17 @@ def main_pde(num_trials=20,
     num_measure = max(measurements)
     if sample_dist == 'n' and dist == 'u':
         raise ValueError("Weighted kde only supports uniform samples.")
-
     if dist == 'n':
+        if 'loc' not in kwargs or 'scale' not in kwargs:
+            _logger.info("Using default location/scale parameters for normal distribution")
+            kwargs['loc'] = -2
+            kwargs['scale'] = 0.2
         dist = ds.norm
     elif dist == 'u':
+        if 'loc' not in kwargs or 'scale' not in kwargs:
+            _logger.info("Using default location/scale parameters for uniform distribution")
+            kwargs['loc'] = -4
+            kwargs['scale'] = 4
         dist = ds.uniform
     else:  # TODO SUPPORT BETA
         raise ValueError("`dist` must be `u` or `n`")
