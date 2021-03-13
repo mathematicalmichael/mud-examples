@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import argparse
+# import argparse
 import logging
-import os
+# import os
 import pickle
 import sys
-from pathlib import Path
+# from pathlib import Path
 
 import matplotlib
 
 import numpy as np
-from mud import __version__ as __mud_version__
-from mud_examples import __version__
+# from mud import __version__ as __mud_version__
+# from mud_examples import __version__
 from mud_examples.parsers import parse_args
 from mud_examples.monomial import main as main_monomial
 from mud_examples.linear.lin import main as main_lin
@@ -26,7 +26,7 @@ from mud_examples.plotting import plot_scalar_poisson_summary
 matplotlib.rcParams['mathtext.fontset'] = 'stix'
 matplotlib.rcParams['font.family'] = 'STIXGeneral'
 matplotlib.backend = 'Agg'
-matplotlib.rcParams['figure.figsize'] = 10,10
+matplotlib.rcParams['figure.figsize'] = (10, 10)
 matplotlib.rcParams['font.size'] = 16
 
 
@@ -135,7 +135,7 @@ def main(in_args):
                                       title=f"Variance of MUD Error\nfor t={1+2*np.median(time_ratios):1.3f}s",
                                       save=save)
 
-    elif example == 'lin':
+    elif example == 'linear':
         print("Running Linear Examples.")
         main_lin(in_args)
 
@@ -166,7 +166,7 @@ def run_pde():
     """
     run_cmd = """--example pde --bayes --save \
     --num-trials 20
-    """.replace('    ','').replace('\n','').split(' ')
+    """.replace('    ', '').replace('\n', '').split(' ')
     main(run_cmd + sys.argv[1:])
 
 
@@ -187,19 +187,19 @@ def run_ode():
     """
     run_cmd = """--example ode --bayes --save \
     --num-trials 20
-    """.replace('    ','').replace('\n','').split(' ')
+    """.replace('    ', '').replace('\n', '').split(' ')
     main(run_cmd + sys.argv[1:])
 
 
-def run_lin():
+def run_linear():
     """Recreates Contour figures in MUD paper.
-    >>> run_lin()
+    >>> run_linear()
     Running Linear Examples.
     >>> import os; os.system('rm -rf figures/')
     0
     """
-    run_cmd = """--example lin
-    """.replace('    ','').replace('\n','').split(' ')
+    run_cmd = """--example linear
+    """.replace('    ', '').replace('\n', '').split(' ')
     main(run_cmd + sys.argv[1:])
 
 
@@ -211,15 +211,15 @@ def run_monomial():
     0
     """
     run_cmd = """--example monomial
-    """.replace('    ','').replace('\n','').split(' ')
+    """.replace('    ', '').replace('\n', '').split(' ')
     main(run_cmd + sys.argv[1:])
 
 
 def run_all():
     """Recreates all figures in MUD paper.
     """
-    run_inv()
-    run_lin()
+    run_monomial()
+    run_linear()
     run_ode()
     run_pde()
 
