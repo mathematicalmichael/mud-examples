@@ -170,7 +170,7 @@ def main(args):
         r = evaluate_and_save_poisson(sample, outfile)
         results.append(r)
         _logger.debug(r)
-    
+
     pickle.dump(results, open(f'{outfile}.pkl','wb'))    
     _logger.info(f"Data generation completed, saved to {outfile}.pkl.")
 
@@ -343,6 +343,7 @@ def make_reproducible_without_fenics(example, lam_true=3, input_dim=2,
     and saves everything required to one pickle file.
     """
     prefix = 'results'
+    dist = sample_dist
     _logger.info("Running make_reproducible without fenics")
     # Either load or generate the data.
     try:  # TODO: generalize this path here... take as argument
@@ -368,12 +369,6 @@ def make_reproducible_without_fenics(example, lam_true=3, input_dim=2,
                 num_samples = len(model_list)
         except TypeError:
             raise ModuleNotFoundError("Try `conda install -c conda forge fenics`")
-#         fname = 'scripts/pde_2D/ref_results2u.pkl'
-#         
-#         _logger.warn("Need to generate data first.  Run scripts/generate_pde_data.sh")
-#         _logger.warn(f"Cannot find fenics runs. Attempting load of included {fname}")
-#         return fname
-#         raise FileNotFoundError("Need to generate data first. Run ./generate_pde_data.sh")
 
     fdir = f'pde_{input_dim}D'
     check_dir(fdir)
