@@ -198,7 +198,7 @@ def run():
 ############################################################
 
 
-def poissonModel(gamma=3,
+def poissonModel(gamma=-3,
                  mesh=None, width=1,
                  nx=36, ny=36):
     """
@@ -241,14 +241,18 @@ def poissonModel(gamma=3,
     return u
 
 
-def gamma_boundary_condition(gamma=3):
+def gamma_boundary_condition(gamma=-3):
     """
-    Cannot get this to instantiate successfully in another script
+    Defines boundary condition parameterized by either a scalar or list/iterable.
+    In the latter case, piecewise-interpolation on an equispaced grid over
+    the interior of (0, 1). In the former, the scalar defines the minimum displacement
+    value of the boundary condition.
     """
     if isinstance(gamma, int) or isinstance(gamma, float):  # 1-D case
-        # the function below will have a min at (2/7, -gamma) by design (scaling factor chosen via calculus)
+        # the function below will have a min at (2/7, gamma) by design
+        # (scaling factor chosen via calculus)
         lam = gamma * 823543 / 12500
-        expr = fin.Expression(f"pow(x[1], 2) * pow(x[1] - 1, 5) * {lam}", degree=3)
+        expr = fin.Expression(f"pow(x[1], 2) * pow(1 - x[1], 5) * {lam}", degree=3)
     else:  # Higher-D case
         expr = fin.Expression(piecewise_eval_from_vector(gamma, d=1), degree=1)
     return expr
@@ -283,7 +287,7 @@ def piecewise_eval_from_vector(u, d=1):
     """
     n = len(u)
     dx = 1 / (n + 1)
-    intervals = [i*dx for i in range(n+2)]
+    intervals = [i * dx for i in range(n + 2)]
     node_values = [0] + list(u) + [1]
     return piecewise_eval(intervals, node_values, d)
 
@@ -350,7 +354,7 @@ def get_boundary_markers_for_rect(mesh, width=1):
     return boundary_markers
 
 
-def make_reproducible_without_fenics(example, lam_true=3, input_dim=2,
+def make_reproducible_without_fenics(example='mud', lam_true=-3, input_dim=2,
                                      sample_dist='u', tol=0.9999,
                                      num_samples=None, num_measure=100):
     """
