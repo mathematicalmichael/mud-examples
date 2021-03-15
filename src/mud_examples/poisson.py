@@ -178,7 +178,7 @@ def main(args):
     # indexed list of samples we will evaluate through our poisson model
     sample_seed_list = list(zip(range(num_samples), randsamples))
 
-    outfile = str(round(tol * 1000)) + str(dim_input) + str(sample_dist)
+    outfile = str(round(np.floor(tol * 1000))) + '_' + str(sample_dist)
     results = []
     for sample in sample_seed_list:
         r = evaluate_and_save_poisson(sample, outfile)
@@ -364,12 +364,12 @@ def make_reproducible_without_fenics(example='mud', lam_true=-3, input_dim=2,
     dist = sample_dist
     if dist == 'u':
         tol = 1.0
-    prefix = str(round(tol * 1000))
+    prefix = str(round(np.floor(tol * 1000)))
 
     _logger.info("Running make_reproducible without fenics")
     # Either load or generate the data.
     try:  # TODO: generalize this path here... take as argument
-        model_list = pickle.load(open(f'{prefix}{input_dim}{dist}.pkl', 'rb'))
+        model_list = pickle.load(open(f'{prefix}_{input_dim}{dist}.pkl', 'rb'))
         if num_samples is None or num_samples > len(model_list):
             num_samples = len(model_list)
 
@@ -392,10 +392,10 @@ def make_reproducible_without_fenics(example='mud', lam_true=-3, input_dim=2,
 
     if input_dim == 1 and 'alt' in example:  # alternative measurement locations for more sensitivity / precision
         sensors = generate_sensors_pde(num_measure, ymax=0.95, xmax=0.25)
-        fname = f'{fdir}/ref_alt_{prefix}{input_dim}{dist}.pkl'
+        fname = f'{fdir}/ref_alt_{prefix}_{input_dim}{dist}.pkl'
     else:
         sensors = generate_sensors_pde(num_measure, ymax=0.95, xmax=0.95)
-        fname = f'{fdir}/ref_{prefix}{input_dim}{dist}.pkl'
+        fname = f'{fdir}/ref_{prefix}_{input_dim}{dist}.pkl'
 
     lam, qoi = load_poisson_from_fenics_run(sensors, model_list[0:num_samples], nx=36, ny=36)
     qoi_ref = poisson_sensor_model(sensors, gamma=lam_true, nx=36, ny=36)
