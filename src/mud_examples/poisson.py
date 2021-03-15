@@ -32,7 +32,7 @@ __author__ = "Mathematical Michael"
 __copyright__ = "Mathematical Michael"
 __license__ = "mit"
 
-_logger = logging.getLogger(__name__) # TODO: make use of this instead of print
+_logger = logging.getLogger(__name__)
 
 try:
     fin = LazyLoader('dolfin')
@@ -55,7 +55,7 @@ def parse_args(args):
         "--version",
         action="version",
         version=f"mud_examples {__version__}, mud {__mud_version__}")
-    parser.add_argument('-n', '--num_samples',
+    parser.add_argument('-s', '--num_samples',
         dest="num",
         help="Number of samples",
         default=1,
@@ -67,18 +67,24 @@ def parse_args(args):
         default='u',
         type=str,
         metavar="STR")
+    parser.add_argument('-m', '--mean',
+        dest="mean",
+        help="Sets mean for normal distribution.",
+        default=-2.0,
+        type=float,
+        metavar="FLOAT")
+    parser.add_argument('-t', '--tolerance',
+        dest="tolerance",
+        help="Sets std dev for normal distribution. Proportion of samples (default: 0.95) that fall within +/- 2 of the mean.",
+        default=0.95,
+        type=float,
+        metavar="FLOAT")
     parser.add_argument('-i', '--input_dim',
         dest="input_dim",
         help="Dimension of input space (default=2).",
         default=2,
         type=int,
         metavar="INT")
-    parser.add_argument('-t', '--tolerance',
-        dest="tolerance",
-        help="Parameter for normal distribution. Proportion of samples (default: 0.95)",
-        default=0.95,
-        type=float,
-        metavar="FLOAT")
     parser.add_argument('-b', '--beta-params',
         dest="beta_params",
         help="Parameters for beta distribution. (default = 1 1 )",
@@ -86,12 +92,6 @@ def parse_args(args):
         nargs='+',
         type=float,
         metavar="FLOAT FLOAT")
-    parser.add_argument('-p', '--prefix',
-        dest="prefix",
-        help="Output filename prefix (no extension)",
-        default='results',
-        type=str,
-        metavar="STR")
     parser.add_argument(
         "-v",
         "--verbose",
@@ -132,7 +132,8 @@ def main(args):
     _logger.debug("poisson.py data generation")
 
     num_samples = args.num
-    dist = args.dist
+    sample_dist = args.dist
+    mean = args.mean
     dim_input = args.input_dim
     beta_params = args.beta_params  # signals to use beta (first preference)
     tol = args.tolerance  # signals to use normal (beta must be empty), overrides uniform
@@ -141,30 +142,31 @@ def main(args):
 
     # perform random sampling according to command-line arguments
     if beta_params is None:
-        if dist == 'n':  # N(-3, sd), sd chosen so 100*tol % samples are in (-4, 0)
-            _logger.info(f"Generating samples from N(-3, sd), sd s.t. {100*tol}% are in (-4, 0).")
+        if sample_dist == 'n':  # N(-mean, sd), sd chosen so 100*tol % samples are +/- 2 around mean
+            _logger.info(f"Generating samples from N(-2, sd), sd s.t. {100*tol}% are in a ball of radius 2 around mean.")
             sd = std_from_equipment(2, tol)
-            randsamples = np.random.randn(num_samples, dim_input)*sd - 3
-        elif dist == 'u':  # U(-4, 0)
-            _logger.info(f"Generating samples from U(-4, 0).")
-            randsamples = -4*np.random.rand(num_samples, dim_input)
+            randsamples = np.random.randn(num_samples, dim_input) * sd + mean
+        elif sample_dist == 'u':  # U(-4, 0)
+            _logger.info("Generating samples from U(-4, 0).")
+            tol = 1.0
+            randsamples = -4 * np.random.rand(num_samples, dim_input)
         else:
             raise ValueError("Improper distribution choice, use `n` (normal) or `u` (uniform).")
 
     else:
         _logger.info("Using beta distribution since `beta_params` were passed.")
         beta_params = tuple(beta_params)
-        dist = 'b' + str(beta_params).replace(', ','_').replace('(','').replace(')','')
+        sample_dist = 'b' + str(beta_params).replace(', ', '_').replace('(', '').replace(')', '')
 
         if len(beta_params) != 2:
             raise ValueError("Beta distribution requires only two parameters.")
 
-        randsamples = -4*np.random.beta(*beta_params, size=(num_samples, dim_input))
+        randsamples = -4 * np.random.beta(*beta_params, size=(num_samples, dim_input))
 
     # indexed list of samples we will evaluate through our poisson model
     sample_seed_list = list(zip(range(num_samples), randsamples))
 
-    outfile = args.prefix + str(dim_input) + str(dist)
+    outfile = str(tol * 1000) + str(dim_input) + str(sample_dist)
     results = []
     for sample in sample_seed_list:
         r = evaluate_and_save_poisson(sample, outfile)
@@ -336,14 +338,17 @@ def get_boundary_markers_for_rect(mesh, width=1):
 
 
 def make_reproducible_without_fenics(example, lam_true=3, input_dim=2,
-                                     sample_dist='u',
+                                     sample_dist='u', tol=0.9999,
                                      num_samples=None, num_measure=100):
     """
     (Currently) requires XML data to be on disk, simulates sensors
     and saves everything required to one pickle file.
     """
-    prefix = 'results'
     dist = sample_dist
+    if dist == 'u':
+        tol = 1.0
+    prefix = str(tol * 1000)
+
     _logger.info("Running make_reproducible without fenics")
     # Either load or generate the data.
     try:  # TODO: generalize this path here... take as argument
@@ -355,14 +360,9 @@ def make_reproducible_without_fenics(example, lam_true=3, input_dim=2,
         _logger.error(f"make_reproducible: {e}")
         _logger.warning("Attempting data generation with system call.")
         # below has to match where we expected our git-controlled file to be... TODO: generalize to data/
-        curdir = os.getcwd().split('/')[-1]
-        if curdir == 'scripts':
+        # curdir = os.getcwd().split('/')[-1]
             fpath = f'{prefix}'
-        elif curdir == 'mud-examples':
-            fpath = f'scripts/{prefix}'
-        else:
-            fpath = f'{prefix}'
-        os.system(f'generate_poisson_data -v -n 10 -i {input_dim} -p {fpath} -d {dist}')
+        os.system(f'generate_poisson_data -v -s 100 -i {input_dim} -d {dist}')
         try:
             model_list = pickle.load(open(f'{fpath}{input_dim}{dist}.pkl', 'rb'))
             if num_samples is None or num_samples > len(model_list):
