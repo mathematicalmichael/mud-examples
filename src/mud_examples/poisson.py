@@ -178,7 +178,7 @@ def main(args):
     # indexed list of samples we will evaluate through our poisson model
     sample_seed_list = list(zip(range(num_samples), randsamples))
 
-    outfile = str(round(np.floor(tol * 1000))) + '_' + str(input_dim) + str(sample_dist)
+    outfile = str(round(np.floor(tol * 1000))) + '_' + str(dim_input) + str(sample_dist)
     results = []
     for sample in sample_seed_list:
         r = evaluate_and_save_poisson(sample, outfile)
