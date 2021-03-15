@@ -52,44 +52,56 @@ def parse_args(args):
     parser = argparse.ArgumentParser(
         description="Poisson Problem")
     parser.add_argument(
+        "-V",
         "--version",
         action="version",
         version=f"mud_examples {__version__}, mud {__mud_version__}")
-    parser.add_argument('-s', '--num_samples',
+    parser.add_argument(
+        "-s",
+        "--num_samples",
         dest="num",
         help="Number of samples",
         default=1,
         type=int,
         metavar="INT")
-    parser.add_argument('-d', '--distribution',
+    parser.add_argument(
+        "-d", "--distribution",
         dest="dist",
         help="Distribution. `n` (normal), `u` (uniform, default)",
-        default='u',
+        default="u",
         type=str,
         metavar="STR")
-    parser.add_argument('-m', '--mean',
+    parser.add_argument(
+        "-m",
+        "--mean",
         dest="mean",
         help="Sets mean for normal distribution.",
         default=-2.0,
         type=float,
         metavar="FLOAT")
-    parser.add_argument('-t', '--tolerance',
+    parser.add_argument(
+        "-t",
+        "--tolerance",
         dest="tolerance",
         help="Sets std dev for normal distribution. Proportion of samples (default: 0.95) that fall within +/- 2 of the mean.",
         default=0.95,
         type=float,
         metavar="FLOAT")
-    parser.add_argument('-i', '--input_dim',
+    parser.add_argument(
+        "-i",
+        "--input_dim",
         dest="input_dim",
         help="Dimension of input space (default=2).",
         default=2,
         type=int,
         metavar="INT")
-    parser.add_argument('-b', '--beta-params',
+    parser.add_argument(
+        "-b",
+        "--beta-params",
         dest="beta_params",
         help="Parameters for beta distribution. (default = 1 1 )",
         default=None,
-        nargs='+',
+        nargs="+",
         type=float,
         metavar="FLOAT FLOAT")
     parser.add_argument(
@@ -181,7 +193,8 @@ def run():
     """Entry point for console_scripts
     """
     main(sys.argv[1:])
-    
+
+
 ############################################################
 
 
@@ -194,7 +207,7 @@ def poissonModel(gamma=3,
     """
     # Create mesh and define function space
     if mesh is None:
-        mesh = fin.RectangleMesh(fin.Point(0,0), fin.Point(width, 1), nx, ny)
+        mesh = fin.RectangleMesh(fin.Point(0, 0), fin.Point(width, 1), nx, ny)
 
     V = fin.FunctionSpace(mesh, "Lagrange", 1)
     u = fin.TrialFunction(V)
@@ -232,11 +245,11 @@ def gamma_boundary_condition(gamma=3):
     """
     Cannot get this to instantiate successfully in another script
     """
-    if isinstance(gamma, int) or isinstance(gamma, float): # 1-D case
+    if isinstance(gamma, int) or isinstance(gamma, float):  # 1-D case
         # the function below will have a min at (2/7, -gamma) by design (scaling factor chosen via calculus)
-        lam=gamma*823543/12500
+        lam = gamma * 823543 / 12500
         expr = fin.Expression(f"pow(x[1], 2) * pow(x[1] - 1, 5) * {lam}", degree=3)
-    else: # Higher-D case
+    else:  # Higher-D case
         expr = fin.Expression(piecewise_eval_from_vector(gamma, d=1), degree=1)
     return expr
 
@@ -247,7 +260,7 @@ def poisson_sensor_model(sensors, gamma, nx, ny, mesh=None):
     """
     assert sensors.shape[1] == 2, "pass with shape (num_sensors, 2)"
     u = poissonModel(gamma=gamma, mesh=mesh, nx=nx, ny=ny)
-    return [u(xi,yi) for xi,yi in sensors]
+    return [u(xi, yi) for xi, yi in sensors]
 
 
 def eval_boundary_piecewise(u, n, d=1):
@@ -256,9 +269,9 @@ def eval_boundary_piecewise(u, n, d=1):
     for another expression based on evaluating a piecewise-linear approximation.
     The mesh is equispaced into n intervals.
     """
-    dx=1/(n+1)
-    intervals = [i*dx for i in range(n+2)]
-    node_values = [u(0,i) for i in intervals]
+    dx = 1 / (n + 1)
+    intervals = [i * dx for i in range(n + 2)]
+    node_values = [u(0, i) for i in intervals]
     return piecewise_eval(intervals, node_values, d)
 
 
@@ -269,7 +282,7 @@ def piecewise_eval_from_vector(u, d=1):
     based on evaluating a piecewise-linear approximation through these points.
     """
     n = len(u)
-    dx = 1/(n+1)
+    dx = 1 / (n + 1)
     intervals = [i*dx for i in range(n+2)]
     node_values = [0] + list(u) + [1]
     return piecewise_eval(intervals, node_values, d)
@@ -277,26 +290,26 @@ def piecewise_eval_from_vector(u, d=1):
 
 def piecewise_eval(xvals, yvals, d=1):
     s = ''
-    for i in range(1,len(xvals)):
-        start = xvals[i-1]
+    for i in range(1, len(xvals)):
+        start = xvals[i - 1]
         end = xvals[i]
-        diff = start-end
+        diff = start - end
         s += f' ((x[{d}] >= {start}) && (x[{d}] < {end}))*'
         s += f'({yvals[i-1]}*((x[{d}]-{end})/{diff}) + (1 - ((x[{d}]-{end})/{diff}))*{yvals[i]} ) +'
     return s[1:-1]
 
 
 def eval_boundary(u, n):
-    dx=1/(n+1)
-    invals = [i*dx for i in range(n+2)]
-    outvals = [u(0,i) for i in invals][1:-1]
+    dx = 1 / (n + 1)
+    invals = [i * dx for i in range(n + 2)]
+    outvals = [u(0, i) for i in invals][1:-1]
     return invals[1:-1], outvals
 
 
-def expressionNorm(u,v,n=100):
-    u = eval_boundary(u, n)[1] 
+def expressionNorm(u, v, n=100):
+    u = eval_boundary(u, n)[1]
     v = eval_boundary(v, n)[1]
-    return np.linalg.norm(np.array(u) - np.array(v))/n
+    return np.linalg.norm(np.array(u) - np.array(v)) / n
 
 
 def copy_expression(expression):
@@ -361,7 +374,7 @@ def make_reproducible_without_fenics(example, lam_true=3, input_dim=2,
         _logger.warning("Attempting data generation with system call.")
         # below has to match where we expected our git-controlled file to be... TODO: generalize to data/
         # curdir = os.getcwd().split('/')[-1]
-            fpath = f'{prefix}'
+        fpath = f'{prefix}'
         os.system(f'generate_poisson_data -v -s 100 -i {input_dim} -d {dist}')
         try:
             model_list = pickle.load(open(f'{fpath}{input_dim}{dist}.pkl', 'rb'))
@@ -385,19 +398,19 @@ def make_reproducible_without_fenics(example, lam_true=3, input_dim=2,
 
     pn = poissonModel(gamma=lam_true)
     c = pn.function_space().mesh().coordinates()
-    v = [pn(c[i,0], c[i,1]) for i in range(len(c))]
+    v = [pn(c[i, 0], c[i, 1]) for i in range(len(c))]
 
     g = gamma_boundary_condition(lam_true)
     g_mesh = np.linspace(0, 1, 1000)
-    g_plot = [g(0,y) for y in g_mesh]
+    g_plot = [g(0, y) for y in g_mesh]
     ref = {'sensors': sensors,
-           'lam': lam, 
-           'qoi': qoi, 
-           'truth': lam_true, 
+           'lam': lam,
+           'qoi': qoi,
+           'truth': lam_true,
            'data': qoi_ref,
-           'plot_u': (c,v),
+           'plot_u': (c, v),
            'plot_g': (g_mesh, g_plot)
-          }
+           }
 
     with open(fname, 'wb') as f:
         pickle.dump(ref, f)
@@ -406,8 +419,10 @@ def make_reproducible_without_fenics(example, lam_true=3, input_dim=2,
     return fname
 
 
-def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='sca', fsize = 36, example=None):
-    plt.figure(figsize=(10,10))
+def plot_without_fenics(fname, num_sensors=None,
+                        num_qoi=2, mode='sca',
+                        fsize=36, example=None):
+    plt.figure(figsize=(10, 10))
     mode = mode.lower()
     colors = ['xkcd:red', 'xkcd:black', 'xkcd:orange', 'xkcd:blue', 'xkcd:green']
 
@@ -432,41 +447,39 @@ def plot_without_fenics(fname, num_sensors=None, num_qoi=2, mode='sca', fsize = 
     plt.tricontourf(coords[:, 0], coords[:, 1], vals, levels=20, vmin=-0.5, vmax=0)
 
     # input_dim = ref['lam'].shape[1]
-    
-    plt.title(f"Response Surface", fontsize=1.25*fsize)
+
+    plt.title("Response Surface", fontsize=1.25 * fsize)
     if num_sensors is not None:  # plot sensors
-        intervals = np.linspace(0, 1, num_qoi+2)[1:-1]
+        intervals = np.linspace(0, 1, num_qoi + 2)[1:-1]
         if mode == 'sca':
             qoi_indices = band_qoi(sensors, 1, axis=1)
             _intervals = np.array(intervals[1:]) + \
-                           ( np.array(intervals[:-1]) - \
-                           np.array(intervals[1:]) ) / 2
+                (np.array(intervals[:-1]) - np.array(intervals[1:])) / 2
 
         elif mode == 'hor':
             qoi_indices = band_qoi(sensors, num_qoi, axis=1)
             # partitions equidistant between sensors
             _intervals = np.array(intervals[1:]) + \
-                           ( np.array(intervals[:-1]) - \
-                           np.array(intervals[1:]) ) / 2
+                (np.array(intervals[:-1]) - np.array(intervals[1:])) / 2
 
         elif mode == 'ver':
             qoi_indices = band_qoi(sensors, num_qoi, axis=0)
             # partitions equidistant on x_1 = (0, 1)
-            _intervals = np.linspace(0, 1, num_qoi+1)[1:]
+            _intervals = np.linspace(0, 1, num_qoi + 1)[1:]
         else:
             raise ValueError("Unsupported mode type. Select from ('sca', 'ver', 'hor'). ")
         for i in range(0, len(qoi_indices)):
-            _q = qoi_indices[i][qoi_indices[i] < num_sensors ]
-            plt.scatter(sensors[_q,0], sensors[_q,1], s=100, color=colors[i%2])
+            _q = qoi_indices[i][qoi_indices[i] < num_sensors]
+            plt.scatter(sensors[_q, 0], sensors[_q, 1], s=100, color=colors[i % 2])
             if i < num_qoi - 1:
                 if mode == 'hor':
                     plt.axhline(_intervals[i], lw=3, c='k')
                 elif mode == 'ver':
                     plt.axvline(_intervals[i], lw=3, c='k')
 
-        plt.scatter([0]*num_qoi, intervals, s=500, marker='^', c='w')
-    plt.xlim(0,1)
-    plt.ylim(0,1)
+        plt.scatter([0] * num_qoi, intervals, s=500, marker='^', c='w')
+    plt.xlim(0, 1)
+    plt.ylim(0, 1)
 #     plt.xticks([])
 #     plt.yticks([])
     plt.xlabel("$x_1$", fontsize=fsize)
@@ -510,6 +523,7 @@ def make_mud_wrapper(domain, lam, qoi, qoi_true, indices=None, sample_dist='u', 
     """
     if not isinstance(sample_dist, str):
         raise ValueError("`sample_dist` must be of type `str`.")
+
     def mud_wrapper(num_obs, sd):
         d = mud_problem(domain=domain, lam=lam, qoi=qoi, qoi_true=qoi_true, sd=sd, num_obs=num_obs, split=indices)
         d.set_initial(dist(**kwargs))
@@ -533,11 +547,12 @@ def make_map_wrapper(domain, lam, qoi, qoi_true, log=False, dist=ds.norm, **kwar
 
 # probably move to helpers or utils
 def band_qoi(sensors, num_qoi=1, axis=1):
-    intervals = np.linspace(0, 1, num_qoi+2)[1:-1]
+    intervals = np.linspace(0, 1, num_qoi + 2)[1:-1]
     if axis == 1:
-        _intervals = np.array(intervals[1:]) + ( np.array(intervals[:-1]) - np.array(intervals[1:]) ) / 2
+        _intervals = np.array(intervals[1:]) + \
+            (np.array(intervals[:-1]) - np.array(intervals[1:])) / 2
     elif axis == 0:
-        _intervals = np.linspace(0, 1, num_qoi+1)[1:]
+        _intervals = np.linspace(0, 1, num_qoi + 1)[1:]
     else:
         raise ValueError("axis must be 0 or 1 since the example is in 2D")
     _intervals = [0] + list(_intervals) + [1]
@@ -720,14 +735,13 @@ class pdeProblem(object):
         check_dir(fname)
         closest_fit_index_out = np.argmin(np.linalg.norm(qoi - np.array(qoi_ref), axis=1))
         g_projected = list(lam[closest_fit_index_out, :])
-        plt.figure(figsize=(10,10))
+        plt.figure(figsize=(10, 10))
 
         g_mesh, g_plot = g
-        intervals = list(np.linspace(0, 1, lam.shape[1]+2)[1:-1])
+        intervals = list(np.linspace(0, 1, lam.shape[1] + 2)[1:-1])
         # fin.plot(u_plot, mesh=mesh, lw=5, c='k', label="$g$")
         plt.plot(g_mesh, g_plot, lw=5, c='k', label="$g$")
-        plt.plot([0]+intervals+[1], [0]+g_projected+[0], lw=5, c='green', alpha=0.6, ls='--', label='$\\hat{g}$', zorder=5)
-
+        plt.plot([0] + intervals + [1], [0] + g_projected + [0], lw=5, c='green', alpha=0.6, ls='--', label='$\\hat{g}$', zorder=5)
 
         if sols is not None:
             if sols.get(num_measurements, None) is None:
@@ -736,10 +750,10 @@ class pdeProblem(object):
                 prefix = f'{fname}/{example}_solutions_N{num_measurements}'
                 plot_lam = np.array(sols[num_measurements])
                 if example == 'mud-alt':
-                    qmap = '$Q_{%dD}^\\prime$'%lam.shape[1]
+                    qmap = '$Q_{%dD}^\\prime$' % lam.shape[1]
                     soltype = 'MUD'
                 elif example == 'mud':
-                    qmap = '$Q_{%dD}$'%lam.shape[1]
+                    qmap = '$Q_{%dD}$' % lam.shape[1]
                     soltype = 'MUD'
                 elif example == 'map':
                     qmap = '$Q_{1D}$'
@@ -748,19 +762,16 @@ class pdeProblem(object):
                     raise ValueError("Unsupported example type.")
                 plt.title(f'{soltype} Estimates for {qmap}, $N={num_measurements}$', fontsize=1.25*fsize)
         else:  # initial plot, first 100
-#             prefix = f'pde_{lam.shape[1]}{dist}/initial'
+            # prefix = f'pde_{lam.shape[1]}{dist}/initial'
             prefix = f'{fname}/{example}_initial_S{lam.shape[0]}'
             plot_lam = lam[0:100, :]
-            plt.title('Samples from Initial Density', fontsize=1.25*fsize)
+            plt.title('Samples from Initial Density', fontsize=1.25 * fsize)
 
         for _lam in plot_lam:
-            plt.plot([0]+intervals+[1], [0]+list(_lam)+[0], lw=1, c='purple', alpha=0.2)
-
+            plt.plot([0] + intervals + [1], [0] + list(_lam) + [0], lw=1, c='purple', alpha=0.2)
 
         plt.xlabel("$x_2$", fontsize=fsize)
         plt.ylabel("$g(x, \\lambda)$", fontsize=fsize)
-
-
 
         # label min(g)
         # plt.axvline(2/7, alpha=0.4, ls=':')
