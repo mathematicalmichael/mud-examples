@@ -113,8 +113,9 @@ def main_pde(num_trials=20,
                 
                 try:  # available data in package
                     _logger.info("Trying packaged data.")
-                    fname = 'data/' + fname
-                    P.load(fname)
+                    pkgfname = 'data/' + fname
+                    P.load(pkgfname)
+                    fname = pkgfname  # if successful, overwrite filename
 #                     curdir = os.getcwd().split('/')[-1]
 #                     if curdir == 'scripts':
 #                         raise FileNotFoundError("already within scripts directory.")
@@ -123,12 +124,13 @@ def main_pde(num_trials=20,
 #                     P.load(fname)
                 except FileNotFoundError:
                     _logger.info("Failed to load requested data from disk or packaged datasets.")
-                    fname = ps.make_reproducible_without_fenics('mud', lam_true,
+                    fname_out = ps.make_reproducible_without_fenics('mud', lam_true,
                                                                 input_dim=input_dim,
                                                                 num_samples=None,
                                                                 num_measure=num_measure,
                                                                 sample_tol=sample_tol,
                                                                 sample_dist=sample_dist)
+                    assert fname == fname_out  # check we saved the right file
                     try:
                         P.load(fname)
                     except FileNotFoundError as e:
