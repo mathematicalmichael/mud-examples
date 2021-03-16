@@ -150,9 +150,13 @@ def main(args):
     dim_input = args.input_dim
     beta_params = args.beta_params  # signals to use beta (first preference)
     tol = args.tolerance  # signals to use normal (beta must be empty), overrides uniform
-    if tol < 0 or tol >= 1:
-        raise ValueError("tolerance must be in (0, 1)")
-
+    if sample_dist == 'n':
+        if tol < 0 or tol >= 1:
+            raise ValueError("tolerance must be in (0, 1)")
+    elif sample_dist == 'u':
+        tol = 1.0
+    else:
+        raise ValueError("Unsupported value for sample_dist.")
     # perform random sampling according to command-line arguments
     if beta_params is None:
         if sample_dist == 'n':  # N(-mean, sd), sd chosen so 100*tol % samples are +/- 2 around mean
