@@ -368,6 +368,14 @@ def make_reproducible_without_fenics(example='mud', lam_true=-3, input_dim=2,
     """
     if sample_dist == 'u':
         sample_tol = 1.0
+    elif sample_dist == 'n':
+        if sample_tol < 0 or sample_tol >= 1:
+            raise ValueError("Sample tolerance must be in (0, 1) when using normal distributions.")
+    else:
+        raise ValueError("Unsupported argument for `sample_dist`.")
+
+    if lam_true < -4 or lam_true > 0:
+        raise ValueError("True value must be in (-4, 0).")
     prefix = str(round(np.floor(sample_tol * 1000)))
     _logger.info("Running make_reproducible without fenics")
     # Either load or generate the data.
@@ -377,11 +385,13 @@ def make_reproducible_without_fenics(example='mud', lam_true=-3, input_dim=2,
             num_samples = len(model_list)
 
     except FileNotFoundError as e:
+        if num_samples is None:
+            num_samples = 50
         _logger.error(f"make_reproducible: {e}")
         _logger.warning("Attempting data generation with system call.")
         # below has to match where we expected our git-controlled file to be... TODO: generalize to data/
         # curdir = os.getcwd().split('/')[-1]
-        os.system(f'generate_poisson_data -v -s 100 -i {input_dim} -d {sample_dist} -t {sample_tol}')
+        os.system(f'generate_poisson_data -v -s {num_samples} -i {input_dim} -d {sample_dist} -t {sample_tol}')
         try:
             model_list = pickle.load(open(f'{prefix}_{input_dim}{sample_dist}.pkl', 'rb'))
             if num_samples is None or num_samples > len(model_list):
@@ -610,7 +620,7 @@ class pdeProblem(object):
             raise AttributeError("domain not yet set.")
         min_val, max_val = -4, 0  # problem-specific
         if (lam_ref < min_val) or (lam_ref > max_val):
-            raise ValueError("lam_ref must be inside domain.")
+            raise ValueError("lam_ref must be inside domain (-4, 0).")
         self._lam_ref = lam_ref
 
     @property
