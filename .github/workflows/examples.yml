@@ -76,7 +76,7 @@ jobs:
 
       - name: Tests without packaged files
         run: |
-          rm src/mud_examples/data/*
+          rm src/mud_examples/data/pde_2D/*
           pytest
 
       - name: CodeCov.io Report
