@@ -82,7 +82,7 @@ def main(in_args):
 
     _logger.info("Running...")
     if example == 'pde':
-        lam_true = 3.0
+        lam_true = -3.0
         res = main_pde(num_trials=num_trials,
                          fsize=fsize,
                          seed=seed,
