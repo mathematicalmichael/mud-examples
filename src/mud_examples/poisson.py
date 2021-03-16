@@ -65,7 +65,8 @@ def parse_args(args):
         type=int,
         metavar="INT")
     parser.add_argument(
-        "-d", "--distribution",
+        "-d",
+        "--distribution",
         dest="dist",
         help="Distribution. `n` (normal), `u` (uniform, default)",
         default="u",
@@ -81,7 +82,7 @@ def parse_args(args):
         metavar="FLOAT")
     parser.add_argument(
         "-t",
-        "--tolerance",
+        "--sample-tolerance",
         dest="tolerance",
         help="Sets std dev for normal distribution. Proportion of samples (default: 0.95) that fall within +/- 2 of the mean.",
         default=0.95,
@@ -149,9 +150,13 @@ def main(args):
     dim_input = args.input_dim
     beta_params = args.beta_params  # signals to use beta (first preference)
     tol = args.tolerance  # signals to use normal (beta must be empty), overrides uniform
-    if tol < 0 or tol >= 1:
-        raise ValueError("tolerance must be in (0, 1)")
-
+    if sample_dist == 'n':
+        if tol < 0 or tol >= 1:
+            raise ValueError("tolerance must be in (0, 1)")
+    elif sample_dist == 'u':
+        tol = 1.0
+    else:
+        raise ValueError("Unsupported value for sample_dist.")
     # perform random sampling according to command-line arguments
     if beta_params is None:
         if sample_dist == 'n':  # N(-mean, sd), sd chosen so 100*tol % samples are +/- 2 around mean
@@ -178,7 +183,7 @@ def main(args):
     # indexed list of samples we will evaluate through our poisson model
     sample_seed_list = list(zip(range(num_samples), randsamples))
 
-    outfile = str(tol * 1000) + str(dim_input) + str(sample_dist)
+    outfile = str(round(np.floor(tol * 1000))) + '_' + str(dim_input) + str(sample_dist)
     results = []
     for sample in sample_seed_list:
         r = evaluate_and_save_poisson(sample, outfile)
@@ -198,7 +203,7 @@ def run():
 ############################################################
 
 
-def poissonModel(gamma=3,
+def poissonModel(gamma=-3,
                  mesh=None, width=1,
                  nx=36, ny=36):
     """
@@ -241,14 +246,18 @@ def poissonModel(gamma=3,
     return u
 
 
-def gamma_boundary_condition(gamma=3):
+def gamma_boundary_condition(gamma=-3):
     """
-    Cannot get this to instantiate successfully in another script
+    Defines boundary condition parameterized by either a scalar or list/iterable.
+    In the latter case, piecewise-interpolation on an equispaced grid over
+    the interior of (0, 1). In the former, the scalar defines the minimum displacement
+    value of the boundary condition.
     """
     if isinstance(gamma, int) or isinstance(gamma, float):  # 1-D case
-        # the function below will have a min at (2/7, -gamma) by design (scaling factor chosen via calculus)
+        # the function below will have a min at (2/7, gamma) by design
+        # (scaling factor chosen via calculus)
         lam = gamma * 823543 / 12500
-        expr = fin.Expression(f"pow(x[1], 2) * pow(x[1] - 1, 5) * {lam}", degree=3)
+        expr = fin.Expression(f"pow(x[1], 2) * pow(1 - x[1], 5) * {lam}", degree=3)
     else:  # Higher-D case
         expr = fin.Expression(piecewise_eval_from_vector(gamma, d=1), degree=1)
     return expr
@@ -283,7 +292,7 @@ def piecewise_eval_from_vector(u, d=1):
     """
     n = len(u)
     dx = 1 / (n + 1)
-    intervals = [i*dx for i in range(n+2)]
+    intervals = [i * dx for i in range(n + 2)]
     node_values = [0] + list(u) + [1]
     return piecewise_eval(intervals, node_values, d)
 
@@ -350,34 +359,41 @@ def get_boundary_markers_for_rect(mesh, width=1):
     return boundary_markers
 
 
-def make_reproducible_without_fenics(example, lam_true=3, input_dim=2,
-                                     sample_dist='u', tol=0.9999,
+def make_reproducible_without_fenics(example='mud', lam_true=-3, input_dim=2,
+                                     sample_dist='u', sample_tol=0.95,
                                      num_samples=None, num_measure=100):
     """
     (Currently) requires XML data to be on disk, simulates sensors
     and saves everything required to one pickle file.
     """
-    dist = sample_dist
-    if dist == 'u':
-        tol = 1.0
-    prefix = str(tol * 1000)
+    if sample_dist == 'u':
+        sample_tol = 1.0
+    elif sample_dist == 'n':
+        if sample_tol < 0 or sample_tol >= 1:
+            raise ValueError("Sample tolerance must be in (0, 1) when using normal distributions.")
+    else:
+        raise ValueError("Unsupported argument for `sample_dist`.")
 
+    if lam_true < -4 or lam_true > 0:
+        raise ValueError("True value must be in (-4, 0).")
+    prefix = str(round(np.floor(sample_tol * 1000)))
     _logger.info("Running make_reproducible without fenics")
     # Either load or generate the data.
     try:  # TODO: generalize this path here... take as argument
-        model_list = pickle.load(open(f'{prefix}{input_dim}{dist}.pkl', 'rb'))
+        model_list = pickle.load(open(f'{prefix}_{input_dim}{sample_dist}.pkl', 'rb'))
         if num_samples is None or num_samples > len(model_list):
             num_samples = len(model_list)
 
     except FileNotFoundError as e:
+        if num_samples is None:
+            num_samples = 50
         _logger.error(f"make_reproducible: {e}")
         _logger.warning("Attempting data generation with system call.")
         # below has to match where we expected our git-controlled file to be... TODO: generalize to data/
         # curdir = os.getcwd().split('/')[-1]
-        fpath = f'{prefix}'
-        os.system(f'generate_poisson_data -v -s 100 -i {input_dim} -d {dist}')
+        os.system(f'generate_poisson_data -v -s {num_samples} -i {input_dim} -d {sample_dist} -t {sample_tol}')
         try:
-            model_list = pickle.load(open(f'{fpath}{input_dim}{dist}.pkl', 'rb'))
+            model_list = pickle.load(open(f'{prefix}_{input_dim}{sample_dist}.pkl', 'rb'))
             if num_samples is None or num_samples > len(model_list):
                 num_samples = len(model_list)
         except TypeError:
@@ -388,10 +404,10 @@ def make_reproducible_without_fenics(example, lam_true=3, input_dim=2,
 
     if input_dim == 1 and 'alt' in example:  # alternative measurement locations for more sensitivity / precision
         sensors = generate_sensors_pde(num_measure, ymax=0.95, xmax=0.25)
-        fname = f'{fdir}/ref_alt_{prefix}{input_dim}{dist}.pkl'
+        fname = f'{fdir}/ref_alt_{prefix}_{input_dim}{sample_dist}.pkl'
     else:
         sensors = generate_sensors_pde(num_measure, ymax=0.95, xmax=0.95)
-        fname = f'{fdir}/ref_{prefix}{input_dim}{dist}.pkl'
+        fname = f'{fdir}/ref_{prefix}_{input_dim}{sample_dist}.pkl'
 
     lam, qoi = load_poisson_from_fenics_run(sensors, model_list[0:num_samples], nx=36, ny=36)
     qoi_ref = poisson_sensor_model(sensors, gamma=lam_true, nx=36, ny=36)
@@ -490,7 +506,7 @@ def plot_without_fenics(fname, num_sensors=None,
         #     fdir= '/'.join(fname.split('/')[1:-1])
         # else:
         #     fdir= '/'.join(fname.split('/')[:-1])
-        fdir = 'figures/' + fname.replace('.pkl','/')
+        fdir = 'figures/' + fname.replace('.pkl', '')
         # print(fdir)
         check_dir(fdir)
         fname = f"{fdir}/{example}_surface.png"
@@ -602,9 +618,9 @@ class pdeProblem(object):
     def lam_ref(self, lam_ref):
         if self.domain is None:
             raise AttributeError("domain not yet set.")
-        min_val, max_val = 0, 4  # problem-specific
+        min_val, max_val = -4, 0  # problem-specific
         if (lam_ref < min_val) or (lam_ref > max_val):
-            raise ValueError("lam_ref must be inside domain.")
+            raise ValueError("lam_ref must be inside domain (-4, 0).")
         self._lam_ref = lam_ref
 
     @property
@@ -693,7 +709,7 @@ class pdeProblem(object):
         self.u = u
         self.g = g
 
-        _logger.info(f"lam: {self.lam.shape}, qoi: {self.qoi.shape}, dist: {self.dist}")
+        _logger.info(f"lam: {self.lam.shape}, qoi: {self.qoi.shape}, dist: {self.sample_dist}")
 
     def map_scalar(self, log=True, **kwargs):
         _logger.info("Solving with MAP estimates.")

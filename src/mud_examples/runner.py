@@ -68,31 +68,37 @@ def main(in_args):
     dist         = args.dist
     loc          = args.loc
     scale        = args.scale
+    sample_tol   = args.tolerance
+    ratio_meas   = args.ratio_measure
+    sensor_prec  = args.precision
+    num_measure  = args.num_measure
 
-    tolerances   = list(np.sort([ float(t) for t in args.sensor_tolerance ]))
+    tolerances   = list(np.sort([float(t) for t in sensor_prec]))
 
     if example == 'pde':
-        measurements = list(np.sort([ int(n) for n in args.num_measure ]))
+        measurements = list(np.sort([int(n) for n in num_measure]))
         if len(measurements) == 0:
             measurements = [100]
     else:
-        time_ratios  = list(np.sort([ float(r) for r in args.ratio_measure ]))
+        time_ratios  = list(np.sort([float(r) for r in ratio_meas]))
         if len(time_ratios) == 0:
             time_ratios = [1.0]
 
     _logger.info("Running...")
     if example == 'pde':
-        lam_true = 3.0
+        lam_true = -3.0
         res = main_pde(num_trials=num_trials,
-                         fsize=fsize,
-                         seed=seed,
-                         lam_true=lam_true,
-                         tolerances=tolerances,
-                         input_dim=inputdim,
-                         alt=alt, bayes=bayes,
-                         dist=dist, sample_dist=sample_dist,
-                         measurements=measurements,
-                         loc=loc, scale=scale)
+                       fsize=fsize,
+                       seed=seed,
+                       lam_true=lam_true,
+                       tolerances=tolerances,
+                       input_dim=inputdim,
+                       alt=alt, bayes=bayes,
+                       dist=dist,
+                       sample_dist=sample_dist,
+                       sample_tol=sample_tol,
+                       measurements=measurements,
+                       loc=loc, scale=scale)
 
         if inputdim == 1:  # TODO: roll this plotting into main_pde, handle w/o fenics?
             plot_scalar_poisson_summary(res=res,
@@ -113,6 +119,7 @@ def main(in_args):
             plot_experiment_equipment(tolerances, res,
                                       f'figures/pde_{inputdim}D/' + example, fsize,
                                       linewidth, save=save)
+
     elif example == 'ode':
         lam_true = 0.5
         res = main_ode(num_trials=num_trials,
