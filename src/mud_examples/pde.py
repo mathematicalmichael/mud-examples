@@ -34,6 +34,7 @@ def main_pde(num_trials=20,
              lam_true=3.0,
              input_dim=2,
              dist='u', sample_dist='u',
+             sample_tol=0.95,
              alt=True, bayes=True, **kwargs):
     """
     **kwargs are used for the setting of the initial distribution.
@@ -48,12 +49,15 @@ def main_pde(num_trials=20,
     res = []
     num_measure = max(measurements)
     if sample_dist == 'n' and dist == 'u':
-        raise ValueError("Weighted kde only supports uniform samples.")
+        raise ValueError("Weighted kde only supports uniform samples. Set `--dist n`.")
     if dist == 'n':
-        if 'loc' not in kwargs or 'scale' not in kwargs:
-            _logger.info("Using default location/scale parameters for normal distribution")
+        if 'loc' not in kwargs:
+            _logger.info("Using default location parameter for normal distribution")
             kwargs['loc'] = -2
+        if 'scale' not in kwargs:
+            _logger.info("Using default scale parameter for normal distribution")
             kwargs['scale'] = 0.2
+
         dist = ds.norm
     elif dist == 'u':
         if 'loc' not in kwargs or 'scale' not in kwargs:
@@ -64,7 +68,7 @@ def main_pde(num_trials=20,
     else:  # TODO SUPPORT BETA
         raise ValueError("`dist` must be `u` or `n`")
 
-    sd_vals     = [ std_from_equipment(tolerance=tol, probability=0.99) for tol in tolerances ]
+    sd_vals     = [std_from_equipment(tolerance=tol, probability=0.99) for tol in tolerances]
     sigma       = sd_vals[-1] # sorted, pick largest
     _logger.info(f'Using std. dev {sigma}')
     example_list = [ 'mud' ]
@@ -83,20 +87,26 @@ def main_pde(num_trials=20,
         # mud and mud alt have same sensors in higher dimensional examples
         # in 1d, the alternative approach is to change sensor placement, which requires
         # loading a separate file.
+        if sample_dist == 'u':
+            sample_tol = 1.0
+        prefix = str(round(np.floor(sample_tol * 1000)))
+
         if example == 'mud-alt' and input_dim == 1:
-            fname = f'{fdir}/ref_alt_results{input_dim}{sample_dist}.pkl'
+            fname = f'{fdir}/ref_alt_{prefix}_{input_dim}{sample_dist}.pkl'
             try:
                 P.load(fname)
             except FileNotFoundError:
                 # attempt to load xml results from disk.
                 fname = ps.make_reproducible_without_fenics('mud-alt', lam_true, input_dim=1,
-                                                            num_samples=None, num_measure=num_measure,
+                                                            num_samples=None,
+                                                            num_measure=num_measure,
+                                                            sample_tol=sample_tol,
                                                             sample_dist=sample_dist)
                 P.load(fname)
             wrapper = P.mud_scalar()
             ps.plot_without_fenics(fname, num_sensors=100, num_qoi=1, example=example)
         else:
-            fname = f'{fdir}/ref_results{input_dim}{sample_dist}.pkl'
+            fname = f'{fdir}/ref_{prefix}_{input_dim}{sample_dist}.pkl'
             try:
                 P.load(fname)
             except FileNotFoundError:
@@ -113,8 +123,11 @@ def main_pde(num_trials=20,
 #                     P.load(fname)
                 except FileNotFoundError:
                     _logger.info("Failed to load requested data from disk or packaged datasets.")
-                    fname = ps.make_reproducible_without_fenics('mud', lam_true, input_dim=input_dim,
-                                                                num_samples=None, num_measure=num_measure,
+                    fname = ps.make_reproducible_without_fenics('mud', lam_true,
+                                                                input_dim=input_dim,
+                                                                num_samples=None,
+                                                                num_measure=num_measure,
+                                                                sample_tol=sample_tol,
                                                                 sample_dist=sample_dist)
                     try:
                         P.load(fname)

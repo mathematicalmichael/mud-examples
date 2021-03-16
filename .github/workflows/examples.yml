@@ -74,9 +74,9 @@ jobs:
           pip install -e .[test]
           pytest
 
-      - name: Tests without packaged file
+      - name: Tests without packaged files
         run: |
-          rm src/mud_examples/data/pde_2D/*
+          rm src/mud_examples/data/*
           pytest
 
       - name: CodeCov.io Report
