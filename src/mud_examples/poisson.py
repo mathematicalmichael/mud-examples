@@ -381,7 +381,7 @@ def make_reproducible_without_fenics(example='mud', lam_true=-3, input_dim=2,
         fpath = f'{prefix}'
         os.system(f'generate_poisson_data -v -s 100 -i {input_dim} -d {dist}')
         try:
-            model_list = pickle.load(open(f'{fpath}{input_dim}{dist}.pkl', 'rb'))
+            model_list = pickle.load(open(f'{fpath}_{input_dim}{dist}.pkl', 'rb'))
             if num_samples is None or num_samples > len(model_list):
                 num_samples = len(model_list)
         except TypeError:
