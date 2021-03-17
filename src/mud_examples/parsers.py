@@ -31,9 +31,10 @@ def parse_args(args):
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('-e', '--example',       default='ode', type=str)
     parser.add_argument('-m', '--num-measure',   default=[20, 100],  type=int, nargs='+')
-    parser.add_argument('-r', '--ratio-measure', default=[1],  type=float, nargs='+')
+    parser.add_argument('-r', '--ratio-measure', default=[0.1, 1],  type=float, nargs='+')
     parser.add_argument('--num-trials',    default=20,    type=int)
-    parser.add_argument('-t', '--sensor-tolerance',  default=[0.1], type=float, nargs='+')
+    parser.add_argument('-t', '--sample-tolerance',  default=0.95, dest="tolerance", type=float)
+    parser.add_argument('-p', '--sensor-precision',  default=[0.1], dest="precision", type=float, nargs='+')
     parser.add_argument('-s', '--seed',          default=21)
     parser.add_argument('-lw', '--linewidth',    default=5)
     parser.add_argument('--fsize',               default=32, type=int)
@@ -51,13 +52,17 @@ def parse_args(args):
 #         default=100,
 #         type=int,
 #         metavar="INT")
-    parser.add_argument('-i', '--input_dim',
+    parser.add_argument(
+        '-i',
+        '--input_dim',
         dest="input_dim",
         help="Dimension of input space (default=2).",
         default=2,
         type=int,
         metavar="INT")
-    parser.add_argument('-d', '--distribution',
+    parser.add_argument(
+        '-d',
+        '--distribution',
         dest="dist",
         help="Distribution. `n` (normal), `u` (uniform, default)",
         default='u',
@@ -70,10 +75,25 @@ def parse_args(args):
 #         nargs='+',
 #         type=float,
 #         metavar="FLOAT FLOAT")
-    parser.add_argument('-p', '--prefix',
-        dest="prefix",
-        help="Output filename prefix (no extension)",
-        default='results',
+    parser.add_argument(
+        '--loc',
+        dest="loc",
+        help="Prior/Initial Distribution `loc` parameter (scipy.stats.distributions).",
+        default=-4.0,
+        type=float,
+        metavar="FLOAT")
+    parser.add_argument(
+        '--scale',
+        dest="scale",
+        help="Prior/Initial Distribution `scale` parameter (scipy.stats.distributions).",
+        default=4.0,
+        type=float,
+        metavar="FLOAT")
+    parser.add_argument(
+        '--sample-dist',
+        dest="sample_dist",
+        help="Sample distribution (used for loading file) for evaluations of poisson model. default=`u`",
+        default='u',
         type=str,
         metavar="STR")
     parser.add_argument(

@@ -19,7 +19,7 @@ ode:
 
 # adding res2u.pkl below will generate all results.
 pde2u:
-	mud_run_pde -d u --prefix results
+	mud_run_pde -d u
 	@echo "Generated files in ./pde_2D/"
 
 pde2n:
