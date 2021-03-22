@@ -26,17 +26,22 @@ matplotlib.rcParams['figure.figsize'] = 10,10
 matplotlib.rcParams['font.size'] = 16
 
 
-def main_pde(num_trials=20,
-             tolerances=[0.1],
-             measurements=[20, 100, 500],
-             fsize=32,
-             seed=21,
-             lam_true=-3.0,
-             input_dim=2,
-             dist='u', sample_dist='u',
-             num_samples=None,
-             sample_tol=0.95,
-             alt=True, bayes=True, **kwargs):
+def main_pde(
+        num_trials=20,
+        tolerances=[0.1],
+        measurements=[20, 100, 500],
+        fsize=32,
+        seed=21,
+        lam_true=-3.0,
+        input_dim=2,
+        dist='u',
+        sample_dist='u',
+        num_samples=None,
+        sample_tol=0.95,
+        alt=True,
+        bayes=True,
+        **kwargs
+        ):
     """
     **kwargs are used for the setting of the initial distribution.
     >>> res = main_pde(num_trials=3)
@@ -112,12 +117,14 @@ def main_pde(num_trials=20,
                 P.load(fname)
             except FileNotFoundError:
                 # attempt to load xml results from disk.
-                fname = ps.make_reproducible_without_fenics('mud-alt', lam_true,
-                                                            input_dim=input_dim,
-                                                            num_samples=num_samples,
-                                                            num_measure=num_measure,
-                                                            sample_tol=sample_tol,
-                                                            sample_dist=sample_dist)
+                fname = ps.make_reproducible_without_fenics(
+                    'mud-alt', lam_true,
+                    input_dim=input_dim,
+                    num_samples=num_samples,
+                    num_measure=num_measure,
+                    sample_tol=sample_tol,
+                    sample_dist=sample_dist,
+                    )
                 P.load(fname)
             wrapper = P.mud_scalar()
             ps.plot_without_fenics(fname, num_sensors=100, num_qoi=1, example=example)
@@ -126,7 +133,6 @@ def main_pde(num_trials=20,
             try:
                 P.load(fname)
             except FileNotFoundError:
-                
                 try:  # available data in package
                     _logger.info("Trying packaged data.")
                     pkgfname = 'data/' + fname
@@ -140,12 +146,14 @@ def main_pde(num_trials=20,
 #                     P.load(fname)
                 except FileNotFoundError:
                     _logger.info("Failed to load requested data from disk or packaged datasets.")
-                    fname_out = ps.make_reproducible_without_fenics('mud', lam_true,
-                                                                    input_dim=input_dim,
-                                                                    num_measure=num_measure,
-                                                                    num_samples=num_samples,
-                                                                    sample_tol=sample_tol,
-                                                                    sample_dist=sample_dist)
+                    fname_out = ps.make_reproducible_without_fenics(
+                        'mud', lam_true,
+                        input_dim=input_dim,
+                        num_measure=num_measure,
+                        num_samples=num_samples,
+                        sample_tol=sample_tol,
+                        sample_dist=sample_dist
+                        )
                     assert fname == fname_out  # check we saved the right file
                     try:
                         P.load(fname)
@@ -174,11 +182,13 @@ def main_pde(num_trials=20,
         measurements = list(measurements[measurements <= P.qoi.shape[1]])
         _logger.info("Increasing Measurements Study")
         _logger.info(f"Will run simulations for N={measurements}")
-        experiments, solutions = experiment_measurements(num_measurements=measurements,
-                                                 sd=sigma,
-                                                 num_trials=num_trials,
-                                                 seed=seed,
-                                                 fun=wrapper)
+        experiments, solutions = experiment_measurements(
+            num_measurements=measurements,
+            sd=sigma,
+            num_trials=num_trials,
+            seed=seed,
+            fun=wrapper,
+            )
 
         means, variances = extract_statistics(solutions, lam_true)
         regression_mean, slope_mean = fit_log_linear_regression(measurements, means)
@@ -189,11 +199,13 @@ def main_pde(num_trials=20,
         num_sensors = min(100, num_measure)
         if len(tolerances) > 1:
             _logger.info("Increasing Measurement Precision Study")
-            sd_means, sd_vars = experiment_equipment(num_trials=num_trials,
-                                                  num_measure=num_sensors,
-                                                  sd_vals=sd_vals,
-                                                  reference_value=lam_true,
-                                                  fun=wrapper)
+            sd_means, sd_vars = experiment_equipment(
+                num_trials=num_trials,
+                num_measure=num_sensors,
+                sd_vals=sd_vals,
+                reference_value=lam_true,
+                fun=wrapper
+                )
 
             regression_err_mean, slope_err_mean = fit_log_linear_regression(tolerances, sd_means)
             regression_err_vars, slope_err_vars = fit_log_linear_regression(tolerances, sd_vars)

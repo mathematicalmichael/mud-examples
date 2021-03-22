@@ -87,25 +87,31 @@ def main(in_args):
     _logger.info("Running...")
     if example == 'pde':
         lam_true = -3.0
-        res = main_pde(num_trials=num_trials,
-                       fsize=fsize,
-                       seed=seed,
-                       lam_true=lam_true,
-                       tolerances=tolerances,
-                       input_dim=inputdim,
-                       alt=alt, bayes=bayes,
-                       dist=dist,
-                       sample_dist=sample_dist,
-                       sample_tol=sample_tol,
-                       measurements=measurements,
-                       loc=loc, scale=scale)
+        res = main_pde(
+            num_trials=num_trials,
+            fsize=fsize,
+            seed=seed,
+            lam_true=lam_true,
+            tolerances=tolerances,
+            input_dim=inputdim,
+            alt=alt, bayes=bayes,
+            dist=dist,
+            sample_dist=sample_dist,
+            sample_tol=sample_tol,
+            measurements=measurements,
+            loc=loc,
+            scale=scale,
+            )
 
         if inputdim == 1:  # TODO: roll this plotting into main_pde, handle w/o fenics?
-            plot_scalar_poisson_summary(res=res,
-                                        measurements=measurements,
-                                        fsize=fsize,
-                                        prefix=f'figures/pde_{inputdim}D/' + example,
-                                        lam_true=lam_true, save=save)
+            plot_scalar_poisson_summary(
+                res=res,
+                measurements=measurements,
+                fsize=fsize,
+                prefix=f'figures/pde_{inputdim}D/' + example,
+                lam_true=lam_true,
+                save=save,
+                )
         else:
             # solution / sensors plotted by main_pde method
             pass
@@ -122,13 +128,15 @@ def main(in_args):
 
     elif example == 'ode':
         lam_true = 0.5
-        res = main_ode(num_trials=num_trials,
-                         fsize=fsize,
-                         seed=seed,
-                         lam_true=lam_true,
-                         tolerances=tolerances,
-                         alt=alt, bayes=bayes,
-                         time_ratios=time_ratios)
+        res = main_ode(
+            num_trials=num_trials,
+            fsize=fsize,
+            seed=seed,
+            lam_true=lam_true,
+            tolerances=tolerances,
+            alt=alt, bayes=bayes,
+            time_ratios=time_ratios
+            )
 
         if len(time_ratios) > 1:
             plot_experiment_measurements(res,
@@ -229,6 +237,7 @@ def run_all():
     run_linear()
     run_ode()
     run_pde()
+
 
 ############################################################
 
