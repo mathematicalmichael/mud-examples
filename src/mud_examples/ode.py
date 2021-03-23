@@ -91,11 +91,13 @@ def main_ode(num_trials=20,
             raise ValueError("Unknown example type")
 
         _logger.info("Increasing Measurements Quantity Study")
-        experiments, solutions = experiment_measurements(num_measurements=measurements,
-                                                 sd=sigma,
-                                                 num_trials=num_trials,
-                                                 seed=seed,
-                                                 fun=wrapper)
+        experiments, solutions = experiment_measurements(
+            num_measurements=measurements,
+            sd=sigma,
+            num_trials=num_trials,
+            seed=seed,
+            fun=wrapper,
+            )
 
         means, variances = extract_statistics(solutions, lam_true)
         regression_mean, slope_mean = fit_log_linear_regression(measurements, means)
@@ -105,14 +107,16 @@ def main_ode(num_trials=20,
 
         num_sensors = num_measure
         if len(tolerances) > 1:
-            
             _logger.info("Increasing Measurement Precision Study")
-            sd_means, sd_vars = experiment_equipment(num_trials=num_trials,
-                                                  num_measure=num_sensors,
-                                                  sd_vals=sd_vals,
-                                                  reference_value=lam_true,
-                                                  fun=wrapper)
+            experiments, solutions = experiment_equipment(
+                sd_vals=sd_vals,
+                num_measure=num_sensors,
+                num_trials=num_trials,
+                seed=seed,
+                fun=wrapper,
+                )
 
+            sd_means, sd_vars = extract_statistics(solutions, lam_true)
             regression_err_mean, slope_err_mean = fit_log_linear_regression(tolerances, sd_means)
             regression_err_vars, slope_err_vars = fit_log_linear_regression(tolerances, sd_vars)
             _re = (regression_err_mean, slope_err_mean,
@@ -125,7 +129,7 @@ def main_ode(num_trials=20,
         _in = (lam, qoi, sensors, qoi_true, experiments, solutions)
         _rm = (regression_mean, slope_mean, regression_vars, slope_vars, means, variances)
         example_name = example.upper()
-        res.append((example_name, _in, _rm, _re))
+        res.append((example_name, _in, _rm, _re, ''))
 
         # TODO check for existence of save directory, grab subset of measurements properly.
         plot_decay_solution(solutions, generate_decay_model, fsize=fsize,

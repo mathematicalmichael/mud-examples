@@ -55,7 +55,7 @@ def main(in_args):
     args = parse_args(in_args)
     setup_logging(args.loglevel)
     np.random.seed(args.seed)
-    example      = args.example
+    example      = args.example.lower()
     num_trials   = args.num_trials
     fsize        = args.fsize
     linewidth    = args.linewidth
@@ -87,68 +87,78 @@ def main(in_args):
     _logger.info("Running...")
     if example == 'pde':
         lam_true = -3.0
-        res = main_pde(num_trials=num_trials,
-                       fsize=fsize,
-                       seed=seed,
-                       lam_true=lam_true,
-                       tolerances=tolerances,
-                       input_dim=inputdim,
-                       alt=alt, bayes=bayes,
-                       dist=dist,
-                       sample_dist=sample_dist,
-                       sample_tol=sample_tol,
-                       measurements=measurements,
-                       loc=loc, scale=scale)
+        res = main_pde(
+            num_trials=num_trials,
+            fsize=fsize,
+            seed=seed,
+            lam_true=lam_true,
+            tolerances=tolerances,
+            input_dim=inputdim,
+            alt=alt, bayes=bayes,
+            dist=dist,
+            sample_dist=sample_dist,
+            sample_tol=sample_tol,
+            measurements=measurements,
+            loc=loc,
+            scale=scale,
+            )
 
         if inputdim == 1:  # TODO: roll this plotting into main_pde, handle w/o fenics?
-            plot_scalar_poisson_summary(res=res,
-                                        measurements=measurements,
-                                        fsize=fsize,
-                                        prefix=f'figures/pde_{inputdim}D/' + example,
-                                        lam_true=lam_true, save=save)
+            plot_scalar_poisson_summary(
+                res=res,
+                measurements=measurements,
+                fsize=fsize,
+                prefix=f'figures/pde_{inputdim}D/' + example,
+                lam_true=lam_true,
+                save=save,
+                )
         else:
             # solution / sensors plotted by main_pde method
             pass
 
-        if len(measurements) > 1 and inputdim == 1:
+        if len(measurements) > 1:
             plot_experiment_measurements(res,
-                                         f'figures/pde_{inputdim}D/' + example, fsize,
+                                         example, fsize,
                                          linewidth, save=save)
 
-        if len(tolerances) > 1 and inputdim == 1:
+        if len(tolerances) > 1:
             plot_experiment_equipment(tolerances, res,
-                                      f'figures/pde_{inputdim}D/' + example, fsize,
+                                      example, fsize,
                                       linewidth, save=save)
 
     elif example == 'ode':
         lam_true = 0.5
-        res = main_ode(num_trials=num_trials,
-                         fsize=fsize,
-                         seed=seed,
-                         lam_true=lam_true,
-                         tolerances=tolerances,
-                         alt=alt, bayes=bayes,
-                         time_ratios=time_ratios)
+        res = main_ode(
+            num_trials=num_trials,
+            fsize=fsize,
+            seed=seed,
+            lam_true=lam_true,
+            tolerances=tolerances,
+            alt=alt, bayes=bayes,
+            time_ratios=time_ratios
+            )
 
         if len(time_ratios) > 1:
             plot_experiment_measurements(res,
-                                         'figures/ode/' + example,
+                                         'ode/' + example,
                                          fsize, linewidth,
                                          save=save, legend=True)
 
         if len(tolerances) > 1:
             plot_experiment_equipment(tolerances, res,
-                                      'figures/ode/' + example, fsize, linewidth,
+                                      'ode/' + example, fsize, linewidth,
                                       title=f"Variance of MUD Error\nfor t={1+2*np.median(time_ratios):1.3f}s",
                                       save=save)
 
-    elif example == 'linear':
+    elif example in ['linear', 'lin']:
         print("Running Linear Examples.")
         main_lin(in_args)
 
-    elif example == 'monomial':
+    elif example in ['monomial', 'mon']:
         print("Running BIP vs SIP Comparison (1D).")
         main_monomial(in_args)
+    else:
+        raise ValueError("Unsupported example requested.")
 
     if args.save:
         with open('results.pkl', 'wb') as f:
@@ -165,9 +175,10 @@ def run_pde():
     """Recreates Poisson figures in MUD paper.
 
     >>> run_pde()
-    Attempt run for measurements = [20, 100]
+    Attempt run for measurements = [25, 50, 100, 200, 400]
     Running example: mud
     Running example: map
+    Plotting experiments involving increasing # of measurements.
     >>> import os; os.system('rm -rf figures/')
     0
     """
@@ -181,12 +192,12 @@ def run_ode():
     """Recreates Poisson figures in MUD paper.
 
     >>> run_ode()
-    Will run simulations for %T=[0.1, 1.0]
+    Will run simulations for %T=[0.125, 0.25, 0.5, 1.0]
     Running example: mud
-    Measurements: [20, 200]
+    Measurements: [25, 50, 100, 200]
     Plotting decay solution.
     Running example: map
-    Measurements: [20, 200]
+    Measurements: [25, 50, 100, 200]
     Plotting decay solution.
     Plotting experiments involving increasing # of measurements.
     >>> import os; os.system('rm -rf figures/')
@@ -229,6 +240,7 @@ def run_all():
     run_linear()
     run_ode()
     run_pde()
+
 
 ############################################################
 

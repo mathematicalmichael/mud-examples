@@ -99,7 +99,7 @@ def plot_scalar_poisson_summary(res, measurements, prefix, lam_true, fsize=32, s
 
     _logger.info("Fenics plotting for 1D example: Plotting surface...")
     for _res in res:
-        _prefix, _in, _rm, _re = _res
+        _example, _in, _rm, _re, _fname = _res
         lam, qoi, sensors, qoi_true, experiments, solutions = _in
         gamma = lam
         plot_num_measure = min(100, max(measurements))
@@ -140,7 +140,7 @@ def plot_scalar_poisson_summary(res, measurements, prefix, lam_true, fsize=32, s
         # ax_yDist.set(xlabel='count')
         ax_yDist.tick_params(labelleft=False, labelbottom=False)
         if save:
-            plt.savefig(f'{_prefix}_qoi_response.png', bbox_inches='tight')
+            plt.savefig(f'{_example}_qoi_response.png', bbox_inches='tight')
         #plt.show()
 
         plt.figure(figsize=(10,10))
@@ -148,7 +148,7 @@ def plot_scalar_poisson_summary(res, measurements, prefix, lam_true, fsize=32, s
         plt.hist(ranked_slopes, bins=np.linspace(-1.25,0,25), density=True)
         plt.xlabel("Slope", fontsize=fsize)
         if save:
-            plt.savefig(f'{_prefix}_sensitivity_qoi.png', bbox_inches='tight')
+            plt.savefig(f'{_example}_sensitivity_qoi.png', bbox_inches='tight')
         else:
             plt.show()
 
@@ -168,7 +168,7 @@ def plot_scalar_poisson_summary(res, measurements, prefix, lam_true, fsize=32, s
         plt.xlabel('$x_1$', fontsize=fsize)
         plt.ylabel('$x_2$', fontsize=fsize)
         if save:
-            plt.savefig(f'{_prefix}_reference_solution.png', bbox_inches='tight')
+            plt.savefig(f'{_example}_reference_solution.png', bbox_inches='tight')
         else:
             plt.show()
 
