@@ -29,23 +29,61 @@ def parse_args(args):
         """
 
     parser = argparse.ArgumentParser(description=desc)
-    parser.add_argument('-e', '--example',       default='ode', type=str)
-    parser.add_argument('-m', '--num-measure',   default=[20, 100],  type=int, nargs='+')
-    parser.add_argument('-r', '--ratio-measure', default=[0.1, 1],  type=float, nargs='+')
-    parser.add_argument('--num-trials',    default=20,    type=int)
-    parser.add_argument('-t', '--sample-tolerance',  default=0.95, dest="tolerance", type=float)
-    parser.add_argument('-p', '--sensor-precision',  default=[0.1], dest="precision", type=float, nargs='+')
-    parser.add_argument('-s', '--seed',          default=21)
-    parser.add_argument('-lw', '--linewidth',    default=5)
-    parser.add_argument('--fsize',               default=32, type=int)
-    parser.add_argument('--bayes', action='store_true')
-    parser.add_argument('--alt', action='store_true')
-    parser.add_argument('--save', action='store_true')
-
     parser.add_argument(
+        "-V",
         "--version",
         action="version",
-        version=f"mud_examples {__version__}, mud {__mud_version__}")
+        version=f"mud_examples {__version__}, mud {__mud_version__}"
+        )
+    parser.add_argument(
+        '-e',
+        '--example',
+        help="Which example to run (ode, pde, lin).",
+        default='ode',
+        type=str,
+        metavar="STR"
+        )
+    parser.add_argument(
+        '-m',
+        '--num-measure',
+        help="Dimension of input space (default=2).",
+        default=[25, 50, 100, 200, 400],
+        type=int,
+        nargs='+',
+        )
+    parser.add_argument(
+        '-r',
+        '--ratio-measure',
+        help="Dimension of input space (default=2).",
+        default=[0.125, 0.25, 0.5, 1],
+        type=float,
+        nargs='+',
+        )
+    parser.add_argument(
+        '--num-trials',
+        help="Dimension of input space (default=2).",
+        default=20,
+        type=int,
+        )
+    parser.add_argument(
+        '-t',
+        '--sample-tolerance',
+        help="Dimension of input space (default=2).",
+        default=0.95,
+        dest="tolerance",
+        type=float,
+        )
+    parser.add_argument(
+        '-p',
+        '--sensor-precision',
+        help="Dimension of input space (default=2).",
+        default=[0.1],
+        dest="precision",
+        metavar="FLOAT",
+        type=float,
+        nargs='+'
+        )
+
 #     parser.add_argument('-n', '--num_samples',
 #         dest="num",
 #         help="Number of samples",
@@ -79,15 +117,17 @@ def parse_args(args):
         '--loc',
         dest="loc",
         help="Prior/Initial Distribution `loc` parameter (scipy.stats.distributions).",
-        default=-4.0,
+        default=[-4.0, -4.0],
         type=float,
+        nargs='+',
         metavar="FLOAT")
     parser.add_argument(
         '--scale',
         dest="scale",
         help="Prior/Initial Distribution `scale` parameter (scipy.stats.distributions).",
-        default=4.0,
+        default=[4.0, 4.0],
         type=float,
+        nargs='+',
         metavar="FLOAT")
     parser.add_argument(
         '--sample-dist',
@@ -110,4 +150,46 @@ def parse_args(args):
         help="set loglevel to DEBUG",
         action="store_const",
         const=logging.DEBUG)
+
+    parser.add_argument(
+        '-s',
+        '--seed',
+        help="Dimension of input space (default=2).",
+        default=21,
+        type=int,
+        )
+    parser.add_argument(
+        '-lw',
+        '--linewidth',
+        help="Dimension of input space (default=2).",
+        default=5,
+        )
+    parser.add_argument(
+        '--fsize',
+        help="Dimension of input space (default=2).",
+        default=32,
+        type=int,
+        metavar="INT",
+        )
+    parser.add_argument(
+        '--bayes',
+        action='store_true',
+        help="Run comparison against Bayesian Maximum A-Posteriori (MAP) estimate.",
+        )
+    parser.add_argument(
+        '--alt',
+        action='store_true',
+        help="""
+        Run comparison with alternative experimental design in 1-D,
+        alternative QoI map in N-D for MUD estimate.
+        """,
+        )
+    parser.add_argument(
+        '--save',
+        '--save-results',
+        action='store_true',
+        help="Save all results (including) `mud` objects to `./results.pkl`.",
+        )
+
+
     return parser.parse_args(args)

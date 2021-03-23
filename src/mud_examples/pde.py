@@ -89,7 +89,7 @@ def main_pde(
         raise ValueError("`dist` must be `u` or `n`")
 
     sd_vals     = [std_from_equipment(tolerance=tol, probability=0.99) for tol in tolerances]
-    sigma       = sd_vals[-1] # sorted, pick largest
+    sigma       = sd_vals[-1]  # sorted, pick largest
     _logger.info(f'Using std. dev {sigma}')
     example_list = [ 'mud' ]
     if alt:
@@ -102,7 +102,7 @@ def main_pde(
         P = ps.pdeProblem()
         # in 1d this is a change in sensor location
         # in ND, change in how we partition sensors (vertical vs horizontal)
-        fdir = f'pde_{input_dim}D' # expectation from make_reproducible_without_fenics
+        fdir = f'pde_{input_dim}D'  # expectation from make_reproducible_without_fenics
 
         # mud and mud alt have same sensors in higher dimensional examples
         # in 1d, the alternative approach is to change sensor placement, which requires
@@ -163,6 +163,7 @@ def main_pde(
 
             P.dist = dist
             P.sample_dist = sample_dist
+            fdir = P.fname.replace('.pkl', '')
             # plots show only one hundred sensors to avoid clutter
             if example == 'mud-alt':
                 wrapper = P.mud_vector_vertical(**kwargs)
@@ -177,6 +178,11 @@ def main_pde(
                 ps.plot_without_fenics(fname, num_sensors=100,
                                        num_qoi=input_dim, example=example)
 
+        if input_dim > 1:
+            _logger.info("Input dim > 1, setting `lam_true` to projection (closest fit from all model evaluations).")
+            closest_fit_index_out = np.argmin(np.linalg.norm(P.qoi - np.array(P.qoi_ref), axis=1))
+            g_projected = P.lam[closest_fit_index_out, :].ravel()
+            lam_true = g_projected
         # adjust measurements to account for what we actually have simulated
         measurements = np.array(measurements)
         measurements = list(measurements[measurements <= P.qoi.shape[1]])
@@ -199,14 +205,15 @@ def main_pde(
         num_sensors = min(100, num_measure)
         if len(tolerances) > 1:
             _logger.info("Increasing Measurement Precision Study")
-            sd_means, sd_vars = experiment_equipment(
-                num_trials=num_trials,
-                num_measure=num_sensors,
+            experiments, solutions = experiment_equipment(
                 sd_vals=sd_vals,
-                reference_value=lam_true,
-                fun=wrapper
+                num_measure=num_sensors,
+                num_trials=num_trials,
+                seed=seed,
+                fun=wrapper,
                 )
 
+            sd_means, sd_vars = extract_statistics(solutions, lam_true)
             regression_err_mean, slope_err_mean = fit_log_linear_regression(tolerances, sd_means)
             regression_err_vars, slope_err_vars = fit_log_linear_regression(tolerances, sd_vars)
             _re = (regression_err_mean, slope_err_mean,
@@ -217,7 +224,7 @@ def main_pde(
 
         _in = (P.lam, P.qoi, P.sensors, P.qoi_ref, experiments, solutions)
         _rm = (regression_mean, slope_mean, regression_vars, slope_vars, means, variances)
-        res.append((example, _in, _rm, _re))
+        res.append((example, _in, _rm, _re, fdir))
 
         if input_dim > 1:
             if example == 'mud':
@@ -225,7 +232,6 @@ def main_pde(
             for m in measurements:
                 P.plot_solutions(solutions, m, example=example)
 #             P.plot_solutions(solutions, 100, example=example, save=True)
-
     return res
 
 
