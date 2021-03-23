@@ -761,7 +761,7 @@ class pdeProblem(object):
 
         if sols is not None:
             if sols.get(num_measurements, None) is None:
-                raise AttributeError(f"Solutions `sols` missing requested N={num_measurements}.")
+                raise AttributeError(f"Solutions `sols` missing requested N={num_measurements}. `sols`={sols!r}")
             else:
                 prefix = f'{fname}/{example}_solutions_N{num_measurements}'
                 plot_lam = np.array(sols[num_measurements])

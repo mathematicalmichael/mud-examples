@@ -229,9 +229,10 @@ def main_pde(
         if input_dim > 1:
             if example == 'mud':
                 P.plot_initial()
-            for m in measurements:
-                P.plot_solutions(solutions, m, example=example)
-#             P.plot_solutions(solutions, 100, example=example, save=True)
+            if len(measurements) > 1:  # FIXME: make plots reflect level of std.
+                for m in measurements:
+                    P.plot_solutions(solutions, m, example=example)  # assumes keys = num_measurements. broken for tolerance comparison.
+    #             P.plot_solutions(solutions, 100, example=example, save=True)
     return res
 
 
