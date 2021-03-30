@@ -536,46 +536,71 @@ def main_meas(args):
     # # Impact of Number of Measurements for Various Choices of $\\Sigma_\text{init}$
 
     # dim_output = dim_input
-    dim_input, dim_output = 100, 100
-    seed = 12
-    np.random.seed(seed)
+    dim_input, dim_output = 20, 20
+    # seed = 12
+    # np.random.seed(seed)
 
     initial_cov = np.diag(np.sort(np.random.rand(dim_input))[::-1] + 0.5)
 
     plt.figure(figsize=(10, 10))
     initial_mean = np.zeros(dim_input).reshape(-1, 1)
     # initial_mean = np.random.randn(dim_input).reshape(-1,1)
-    randA = models.randA_gauss  # choose which variety of generating map
-    num_qoi = dim_output
     # num_obs_list = np.arange(1, 101).tolist()
-    num_obs_list = [100] * dim_output
-    std_list = [0.1] * dim_output
+
     lam_ref = np.random.randn(dim_input).reshape(-1, 1)
-    operator_list, data_list, std_list = models.createRandomLinearProblem(
-        lam_ref,
-        num_qoi,
-        num_obs_list,
-        std_list,
-        dist='normal',
-        repeated=True
-        )
-    A, b = transform_linear_setup(operator_list, data_list, std_list)
 
     prefix = 'lin-meas-cov'
     alpha_list = [10**(n) for n in np.linspace(-3, 4, 8)]
 
     # d = A @ lam_ref + b
+    # A = np.zeros((dim_input, dim_output))
+    # std = 0.1
 
-    sols = compare_linear_sols(do_nothing, lam_ref, A, b, alpha_list, initial_mean, initial_cov)
-    # c = np.linalg.cond(A)*np.linalg.norm(lam_ref)
-    c = np.linalg.norm(lam_ref)
-    # c = 1
-    err_mud_list = [[np.linalg.norm(_m[0] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]  # output_dim+1 values of _m
-    err_map_list = [[np.linalg.norm(_m[1] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]
-    err_pin_list = [[np.linalg.norm(_m[2] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]
+    # dim_output = A.shape[1]  # FIXME HACK - just ignore A, b
+    # std = b
+    measurements = 50
+    std  = 1
+    num_obs_list = [measurements] * dim_output
+    std_list = [std] * dim_output
+    # np.random.seed(21)
 
-    x, y = np.arange(1, dim_output, 1), err_mud_list[0][0:-1]
+    MUD, MAP, PIN = [], [], []
+    num_trials = 5
+    for _ in range(num_trials):
+        operator_list, data_list, std_list = models.createRandomLinearProblem(
+            lam_ref,
+            dim_output,
+            num_obs_list,
+            std_list,
+            dist='normal',
+            repeated=True,
+            )
 
+        sols = compare_linear_sols(transform_measurements, lam_ref, operator_list, data_list, alpha_list, initial_mean, initial_cov)
+        # c = np.linalg.cond(A)*np.linalg.norm(lam_ref)
+        c = np.linalg.norm(lam_ref)
+        # c = 1
+        err_mud_list = [[np.linalg.norm(_m[0] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]  # output_dim+1 values of _m
+        err_map_list = [[np.linalg.norm(_m[1] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]
+        err_pin_list = [[np.linalg.norm(_m[2] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]
+
+        # which component of the input space?
+        j = 0 
+        # err_mud_list = [[_m[0][j] for _m in sols[alpha]] for alpha in alpha_list ]  # output_dim+1 values of _m
+        # err_map_list = [[_m[1][j] for _m in sols[alpha]] for alpha in alpha_list ]
+        # err_pin_list = [[_m[2][j] for _m in sols[alpha]] for alpha in alpha_list ]
+        print(len(err_mud_list[0]))
+        MUD.append(err_mud_list)
+        MAP.append(err_map_list)
+        PIN.append(err_pin_list)
+
+    err_mud_list = np.array(MUD).var(axis=0)
+    err_map_list = np.array(MAP).var(axis=0)
+    err_pin_list = np.array(PIN).var(axis=0)
+
+    print(np.array(MUD).shape)
+    print(err_mud_list.shape)
+    x = np.arange(1, measurements + 1, 1)
 
     # ---
 
@@ -588,19 +613,19 @@ def main_meas(args):
         _err_map = err_map_list[idx]
         _err_pin = err_pin_list[idx]
 
-        plt.plot(x, _err_mud[:-1], label='MUD', c='k', lw=10)
-        plt.plot(x, _err_map[:-1], label='MAP', c='r', ls='--', lw=5)
-        plt.plot(x, _err_pin[:-1], label='LSQ', c='xkcd:light blue', ls='-', lw=5)
+        plt.plot(x, _err_mud, label='MUD', c='k', lw=10)
+        plt.plot(x, _err_map, label='MAP', c='r', ls='--', lw=5)
+        plt.plot(x, _err_pin, label='LSQ', c='xkcd:light blue', ls='-', lw=5)
 
     # plt.plot(x, regression, c='g', ls='-')
     # plt.xlim(0,dim_output)
     plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \\Sigma$", fontsize=1.25 * fsize)
-    # plt.yscale('log')
+    plt.yscale('log')
     # plt.xscale('log')
-    plt.ylim(0, 1.0)
+    # plt.ylim(0, 1.0)
     # plt.ylim(1E-4, 5E-2)
     # plt.ylabel("$\\frac{||\\lambda^\\dagger - \\lambda||}{||\\lambda^\\dagger||}$", fontsize=fsize*1.25)
-    plt.ylabel("Relative Error", fontsize=fsize * 1.25)
+    plt.ylabel("Variance", fontsize=fsize * 1.25)
     plt.xlabel('Number of Measurements', fontsize=fsize)
     plt.legend(['MUD', 'MAP', 'Least Squares'], fontsize=fsize)
     if save:
@@ -637,8 +662,6 @@ def run_meas():
 
 
 ############################################################
-
-
 
 
 def contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C901
@@ -853,14 +876,18 @@ def transform_dim_out(lam_ref, A, b, dim):
     return _A, _b, _d
 
 
-def do_nothing(lam_ref, A, b, dim):
-    if isinstance(A, list) or isinstance(A, tuple):
-        raise AttributeError("A must be a matrix, not a list or tuple.")
+def transform_measurements(lam_ref, operator_list, data_list, measurements):
+    dim_output = len(operator_list)
+    std = 1
+    std_list = [std] * dim_output
 
-    _A = A#[:dim, :]
-    _b = b#[:dim, :]
-    _d = _A@lam_ref + _b
-    return _A, _b, _d
+    _oper_list = [A[:measurements, :] for A in operator_list]
+    _data_list = [b[:measurements, :] for b in data_list]
+
+    A, b = transform_linear_setup(_oper_list, _data_list, std_list)
+
+    d = A@lam_ref + b
+    return A, b, d
 
 
 def compare_linear_sols_rank_list(lam_ref, A, b,
@@ -887,26 +914,31 @@ def compare_linear_sols(transform, lam_ref, A, b,
     of the anonymous function `transform`'s return.
     """
     sols = {}
-    if isinstance(alpha, list) or isinstance(alpha, tuple):
+    if isinstance(alpha, (list, tuple)):
         alpha_list = alpha
     else:
         alpha_list = [alpha]
 
+    if isinstance(A, np.ndarray):
+        dim_in = A.shape[1]
+    else:
+        dim_in = len(A)
+
     if mean is None:
-        mean = np.zeros(A.shape[1])
-    
+        mean = np.zeros(dim_in)
+
     if cov is None:
-        cov = np.eye(A.shape[1])
+        cov = np.eye(dim_in)
 
     _logger.info("alpha = {}".format(alpha_list))
-    if isinstance(A, list):  # svd approach returns list
-        dim_output = A[0].shape[0]
+    if isinstance(A, list):  # svd approach returns list (max dim output), so does measurement study (max meas)
+        max_iteration = A[0].shape[0]
     else:
-        dim_output = A.shape[0]
+        max_iteration = A.shape[0]
 
     for alpha in alpha_list:
         sols[alpha] = []
-        for _out in range(1, dim_output+1, 1):
+        for _out in range(1, max_iteration+1, 1):
             _A, _b, _d = transform(lam_ref, A, b, _out)
             _mud, _map, _pin = compare_mud_map_pin(_A, _b, _d, mean, alpha*cov)
             sols[alpha].append((_mud, _map, _pin))
@@ -915,4 +947,4 @@ def compare_linear_sols(transform, lam_ref, A, b,
 
 
 if __name__ == "__main__":
-    run()
+    run_meas()
