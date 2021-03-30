@@ -25,8 +25,8 @@ def createRandomLinearMap(dim_input, dim_output,
 def createNoisyReferenceData(M, reference_point, std):
     dim_input  = len(reference_point)                            # noqa: E221
     dim_output = M.shape[0]
-    assert M.shape[1] == dim_input, "Mperator/Data dimension mismatch"
-    if isinstance(std, int) or isinstance(std, float):
+    assert M.shape[1] == dim_input, "Operator/Data dimension mismatch"
+    if isinstance(std, (int, float)):
         std    = np.array([std] * dim_output)                    # noqa: E221
 
     ref_input  = np.array(list(reference_point)).reshape(-1, 1)  # noqa: E221
@@ -56,12 +56,12 @@ def createRandomLinearProblem(reference_point, num_qoi,
     """
     Wrapper around `createRandomLinearQoI` to generalize to multiple QoI maps.
     """
-    if isinstance(std_list, int) or isinstance(std_list, float):
+    if isinstance(std_list, (int, float)):
         std_list = [std_list] * num_qoi
     else:
         assert len(std_list) == num_qoi
 
-    if isinstance(num_obs_list, int) or isinstance(num_obs_list, float):
+    if isinstance(num_obs_list, (int, float)):
         num_obs_list = [num_obs_list] * num_qoi
     else:
         assert len(num_obs_list) == num_qoi

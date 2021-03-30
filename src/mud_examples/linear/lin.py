@@ -536,7 +536,7 @@ def main_meas(args):
     # # Impact of Number of Measurements for Various Choices of $\\Sigma_\text{init}$
 
     # dim_output = dim_input
-    dim_input, dim_output = 20, 20
+    dim_input, dim_output = 2, 1
     # seed = 12
     # np.random.seed(seed)
 
@@ -585,18 +585,17 @@ def main_meas(args):
         err_pin_list = [[np.linalg.norm(_m[2] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]
 
         # which component of the input space?
-        j = 0 
+        # j = 0 
         # err_mud_list = [[_m[0][j] for _m in sols[alpha]] for alpha in alpha_list ]  # output_dim+1 values of _m
         # err_map_list = [[_m[1][j] for _m in sols[alpha]] for alpha in alpha_list ]
         # err_pin_list = [[_m[2][j] for _m in sols[alpha]] for alpha in alpha_list ]
-        print(len(err_mud_list[0]))
         MUD.append(err_mud_list)
         MAP.append(err_map_list)
         PIN.append(err_pin_list)
 
-    err_mud_list = np.array(MUD).var(axis=0)
-    err_map_list = np.array(MAP).var(axis=0)
-    err_pin_list = np.array(PIN).var(axis=0)
+    err_mud_list = np.array(MUD).mean(axis=0)
+    err_map_list = np.array(MAP).mean(axis=0)
+    err_pin_list = np.array(PIN).mean(axis=0)
 
     print(np.array(MUD).shape)
     print(err_mud_list.shape)
@@ -847,10 +846,10 @@ def contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C901
     # plt.show()
 
 
-def compare_mud_map_pin(A, b, d, mean, cov):
-    mud_pt = mud_sol(A, b, d, mean, cov)
-    map_pt = map_sol(A, b, d, mean, cov)
-    pin_pt = (np.linalg.pinv(A)@(d-b)).reshape(-1,1)
+def compare_mud_map_pin(A, b, y, mean, cov):
+    mud_pt = mud_sol(A, b, y, mean, cov)
+    map_pt = map_sol(A, b, y, mean, cov)
+    pin_pt = (np.linalg.pinv(A) @ (y - b)).reshape(-1, 1)
     return mud_pt, map_pt, pin_pt
 
 
@@ -891,7 +890,7 @@ def transform_measurements(lam_ref, operator_list, data_list, measurements):
 
 
 def compare_linear_sols_rank_list(lam_ref, A, b,
-                             alpha=1, mean=None, cov=None):
+                                  alpha=1, mean=None, cov=None):
     """
     Input and output dimensions fixed, varying rank 1..dim_output.
     """
@@ -908,7 +907,7 @@ def compare_linear_sols_dim(lam_ref, A, b,
 
 
 def compare_linear_sols(transform, lam_ref, A, b,
-                            alpha=1, mean=None, cov=None):
+                        alpha=1, mean=None, cov=None):
     """
     Input dimension fixed, varying according to the output
     of the anonymous function `transform`'s return.
@@ -938,9 +937,9 @@ def compare_linear_sols(transform, lam_ref, A, b,
 
     for alpha in alpha_list:
         sols[alpha] = []
-        for _out in range(1, max_iteration+1, 1):
-            _A, _b, _d = transform(lam_ref, A, b, _out)
-            _mud, _map, _pin = compare_mud_map_pin(_A, _b, _d, mean, alpha*cov)
+        for _out in range(1, max_iteration + 1, 1):
+            _A, _b, _y = transform(lam_ref, A, b, _out)
+            _mud, _map, _pin = compare_mud_map_pin(_A, _b, _y, mean, alpha * cov)
             sols[alpha].append((_mud, _map, _pin))
 
     return sols
