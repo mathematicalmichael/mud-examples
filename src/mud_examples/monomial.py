@@ -121,7 +121,7 @@ def main(args):
                              linewidth=4, label='Posterior')
         plt.xlim([-1, 1])
         if num_data > 1:
-            plt.annotate(f'$N={num_data}$', (-0.75, 5))
+            plt.annotate(f'$N={num_data}$', (-0.75, 5), fontsize=leg_fsize)
             plt.ylim([0, 28])  # fix axis height for comparisons
 
         plt.xticks(fontsize=tick_fsize)
@@ -149,7 +149,7 @@ def main(args):
 
         plt.xlim([-1, 1])
         if num_data > 1:
-            plt.annotate(f'$N={num_data}$', (-0.75, 5))
+            plt.annotate(f'$N={num_data}$', (-0.75, 5), fontsize=leg_fsize)
             plt.ylim([0, 20])  # fix axis height for comparisons
         plt.xticks(fontsize=tick_fsize)
         plt.yticks(fontsize=tick_fsize)

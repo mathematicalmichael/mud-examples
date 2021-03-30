@@ -12,6 +12,7 @@ from matplotlib import cm
 # from mud import __version__ as __mud_version__
 from mud.funs import map_sol, mud_sol
 from mud.norm import full_functional, norm_data, norm_input, norm_predicted
+from mud.util import transform_linear_setup
 from scipy.linalg import null_space
 
 # from mud_examples import __version__
@@ -139,9 +140,9 @@ def main_dim(args):
         _err_map = err_map_list[idx]
         _err_pin = err_pin_list[idx]
 
-        plt.plot(x, _err_mud[:-1], label='mud', c='k', lw=10)
-        plt.plot(x, _err_map[:-1], label='map', c='r', ls='--', lw=5)
-        plt.plot(x, _err_pin[:-1], label='lsq', c='xkcd:light blue', ls='-', lw=5)
+        plt.plot(x, _err_mud[:-1], label='MUD', c='k', lw=10)
+        plt.plot(x, _err_map[:-1], label='MAP', c='r', ls='--', lw=5)
+        plt.plot(x, _err_pin[:-1], label='LSQ', c='xkcd:light blue', ls='-', lw=5)
 
     # plt.plot(x, regression, c='g', ls='-')
     # plt.xlim(0,dim_output)
@@ -156,7 +157,7 @@ def main_dim(args):
     # plt.ylabel("$\\frac{||\\lambda^\\dagger - \\lambda||}{||\\lambda^\\dagger||}$", fontsize=fsize*1.25)
     plt.ylabel("Relative Error", fontsize=fsize * 1.25)
     plt.xlabel('Dimension of Output Space', fontsize=fsize)
-    plt.legend(['mud', 'map', 'least squares'], fontsize=fsize)
+    plt.legend(['MUD', 'MAP', 'Least Squares'], fontsize=fsize)
     # plt.annotate(f'Slope={slope:1.4f}', (4,4/7), fontsize=32)
     plt.savefig(f'{fdir}/{prefix}-convergence.png', bbox_inches='tight')
     plt.close()
@@ -320,7 +321,8 @@ def main_rank(args):
     # plt.xscale('log')
     plt.ylim(0, 1.0)
     # plt.ylim(1E-4, 5E-2)
-    plt.ylabel("$\\frac{||\\lambda^\\dagger - \\lambda||}{||\\lambda^\\dagger||}$", fontsize=fsize*1.25)
+    # plt.ylabel("$\\frac{||\\lambda^\\dagger - \\lambda||}{||\\lambda^\\dagger||}$", fontsize=fsize*1.25)
+    plt.ylabel("Relative Error", fontsize=fsize*1.25)
     plt.xlabel('Rank(A)', fontsize=fsize)
     plt.legend(['MUD', 'MAP', 'Least Squares'], fontsize=fsize)
     # plt.annotate(f'Slope={slope:1.4f}', (4,4/7), fontsize=32)
@@ -498,6 +500,120 @@ def main_contours(args):
                         figname=out_file)
 
 
+def main_meas(args):
+    """
+    Main entrypoint for High-Dim Linear Measurement Example
+    """
+    args = parse_args(args)
+    setup_logging(args.loglevel)
+    np.random.seed(args.seed)
+#     example       = args.example
+#     num_trials   = args.num_trials
+#     fsize        = args.fsize
+#     linewidth    = args.linewidth
+#     seed         = args.seed
+    # dim_input     = args.input_dim
+    # save         = args.save
+#     alt          = args.alt
+#     bayes        = args.bayes
+#     prefix       = args.prefix
+#     dist         = args.dist
+
+    presentation = False
+    save = True
+
+    if not presentation:
+        plt.rcParams['mathtext.fontset'] = 'stix'
+        plt.rcParams['font.family'] = 'STIXGeneral'
+    fdir = 'figures/lin'
+    check_dir(fdir)
+
+    fsize = 42
+
+    def numnonzero(x, tol=1E-4):
+        return len(x[abs(x) < tol])
+
+    # # Impact of Number of Measurements for Various Choices of $\\Sigma_\text{init}$
+
+    # dim_output = dim_input
+    dim_input, dim_output = 100, 100
+    seed = 12
+    np.random.seed(seed)
+
+    initial_cov = np.diag(np.sort(np.random.rand(dim_input))[::-1] + 0.5)
+
+    plt.figure(figsize=(10, 10))
+    initial_mean = np.zeros(dim_input).reshape(-1, 1)
+    # initial_mean = np.random.randn(dim_input).reshape(-1,1)
+    randA = models.randA_gauss  # choose which variety of generating map
+    num_qoi = dim_output
+    # num_obs_list = np.arange(1, 101).tolist()
+    num_obs_list = [100] * dim_output
+    std_list = [0.1] * dim_output
+    lam_ref = np.random.randn(dim_input).reshape(-1, 1)
+    operator_list, data_list, std_list = models.createRandomLinearProblem(
+        lam_ref,
+        num_qoi,
+        num_obs_list,
+        std_list,
+        dist='normal',
+        repeated=True
+        )
+    A, b = transform_linear_setup(operator_list, data_list, std_list)
+
+    prefix = 'lin-meas-cov'
+    alpha_list = [10**(n) for n in np.linspace(-3, 4, 8)]
+
+    # d = A @ lam_ref + b
+
+    sols = compare_linear_sols(do_nothing, lam_ref, A, b, alpha_list, initial_mean, initial_cov)
+    # c = np.linalg.cond(A)*np.linalg.norm(lam_ref)
+    c = np.linalg.norm(lam_ref)
+    # c = 1
+    err_mud_list = [[np.linalg.norm(_m[0] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]  # output_dim+1 values of _m
+    err_map_list = [[np.linalg.norm(_m[1] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]
+    err_pin_list = [[np.linalg.norm(_m[2] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]
+
+    x, y = np.arange(1, dim_output, 1), err_mud_list[0][0:-1]
+
+
+    # ---
+
+    # # Convergence Plot
+
+    for idx, alpha in enumerate(alpha_list):
+        if (1 + idx) % 2 and alpha <= 10:
+            plt.annotate(f"$\\alpha$={alpha:1.2E}", (100, max(err_map_list[idx][-1], 0.01)), fontsize=24)
+        _err_mud = err_mud_list[idx]
+        _err_map = err_map_list[idx]
+        _err_pin = err_pin_list[idx]
+
+        plt.plot(x, _err_mud[:-1], label='MUD', c='k', lw=10)
+        plt.plot(x, _err_map[:-1], label='MAP', c='r', ls='--', lw=5)
+        plt.plot(x, _err_pin[:-1], label='LSQ', c='xkcd:light blue', ls='-', lw=5)
+
+    # plt.plot(x, regression, c='g', ls='-')
+    # plt.xlim(0,dim_output)
+    plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \\Sigma$", fontsize=1.25 * fsize)
+    # plt.yscale('log')
+    # plt.xscale('log')
+    plt.ylim(0, 1.0)
+    # plt.ylim(1E-4, 5E-2)
+    # plt.ylabel("$\\frac{||\\lambda^\\dagger - \\lambda||}{||\\lambda^\\dagger||}$", fontsize=fsize*1.25)
+    plt.ylabel("Relative Error", fontsize=fsize * 1.25)
+    plt.xlabel('Number of Measurements', fontsize=fsize)
+    plt.legend(['MUD', 'MAP', 'Least Squares'], fontsize=fsize)
+    if save:
+        plt.savefig(f'{fdir}/{prefix}-convergence.png', bbox_inches='tight')
+        plt.close()
+    else:
+        plt.show()
+        plt.close()
+
+
+    # # plt.show()
+
+
 def main(args):
     """
     Main entrypoint for example-generation
@@ -505,12 +621,20 @@ def main(args):
     main_contours(args)
     main_rank(args)
     main_dim(args)
+    main_meas(args)
 
 
 def run():
     """Entry point for console_scripts
     """
     main(sys.argv[1:])
+
+
+def run_meas():
+    """Entry point for console_scripts
+    """
+    main_meas(sys.argv[1:])
+
 
 ############################################################
 
@@ -725,6 +849,16 @@ def transform_dim_out(lam_ref, A, b, dim):
 
     _A = A[:dim, :]
     _b = b[:dim, :]
+    _d = _A@lam_ref + _b
+    return _A, _b, _d
+
+
+def do_nothing(lam_ref, A, b, dim):
+    if isinstance(A, list) or isinstance(A, tuple):
+        raise AttributeError("A must be a matrix, not a list or tuple.")
+
+    _A = A#[:dim, :]
+    _b = b#[:dim, :]
     _d = _A@lam_ref + _b
     return _A, _b, _d
 
