@@ -536,7 +536,7 @@ def main_meas(args):
     # # Impact of Number of Measurements for Various Choices of $\\Sigma_\text{init}$
 
     # dim_output = dim_input
-    dim_input, dim_output = 2, 1
+    dim_input, dim_output = 2, 2
     # seed = 12
     # np.random.seed(seed)
 
@@ -580,22 +580,22 @@ def main_meas(args):
         # c = np.linalg.cond(A)*np.linalg.norm(lam_ref)
         c = np.linalg.norm(lam_ref)
         # c = 1
-        err_mud_list = [[np.linalg.norm(_m[0] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]  # output_dim+1 values of _m
-        err_map_list = [[np.linalg.norm(_m[1] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]
-        err_pin_list = [[np.linalg.norm(_m[2] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]
+        # err_mud_list = [[np.linalg.norm(_m[0] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]  # output_dim+1 values of _m
+        # err_map_list = [[np.linalg.norm(_m[1] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]
+        # err_pin_list = [[np.linalg.norm(_m[2] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]
 
         # which component of the input space?
-        # j = 0 
-        # err_mud_list = [[_m[0][j] for _m in sols[alpha]] for alpha in alpha_list ]  # output_dim+1 values of _m
-        # err_map_list = [[_m[1][j] for _m in sols[alpha]] for alpha in alpha_list ]
-        # err_pin_list = [[_m[2][j] for _m in sols[alpha]] for alpha in alpha_list ]
+        j = 0
+        err_mud_list = [[_m[0][j] for _m in sols[alpha]] for alpha in alpha_list ]  # output_dim+1 values of _m
+        err_map_list = [[_m[1][j] for _m in sols[alpha]] for alpha in alpha_list ]
+        err_pin_list = [[_m[2][j] for _m in sols[alpha]] for alpha in alpha_list ]
         MUD.append(err_mud_list)
         MAP.append(err_map_list)
         PIN.append(err_pin_list)
 
-    err_mud_list = np.array(MUD).mean(axis=0)
-    err_map_list = np.array(MAP).mean(axis=0)
-    err_pin_list = np.array(PIN).mean(axis=0)
+    err_mud_list = np.array(MUD).var(axis=0)
+    err_map_list = np.array(MAP).var(axis=0)
+    err_pin_list = np.array(PIN).var(axis=0)
 
     print(np.array(MUD).shape)
     print(err_mud_list.shape)
@@ -860,7 +860,7 @@ def transform_rank_list(lam_ref, A, b, rank):
     """
     _A = sum(A[0:rank])
     _b = b
-    _d = _A@lam_ref + _b
+    _d = _A @ lam_ref + _b
     assert np.linalg.matrix_rank(_A) == rank, "Unexpected rank mismatch"
     return _A, _b, _d
 
