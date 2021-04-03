@@ -536,11 +536,12 @@ def main_meas(args):
     # # Impact of Number of Measurements for Various Choices of $\\Sigma_\text{init}$
 
     # dim_output = dim_input
-    dim_input, dim_output = 2, 2
+    dim_input, dim_output = 50, 20
     # seed = 12
     # np.random.seed(seed)
 
-    initial_cov = np.diag(np.sort(np.random.rand(dim_input))[::-1] + 0.5)
+    # initial_cov = np.diag(np.sort(np.random.rand(dim_input))[::-1] + 0.5)
+    initial_cov = np.eye(dim_input)
 
     plt.figure(figsize=(10, 10))
     initial_mean = np.zeros(dim_input).reshape(-1, 1)
@@ -566,18 +567,20 @@ def main_meas(args):
     # np.random.seed(21)
 
     MUD, MAP, PIN = [], [], []
-    num_trials = 100
+    num_trials = 10
     for _ in range(num_trials):
         operator_list, data_list, std_list = models.createRandomLinearProblem(
             lam_ref,
             dim_output,
             num_obs_list,
             std_list,
-            dist='uniform',
+            dist='norm',
             repeated=True,
             )
 
         sols = compare_linear_sols(transform_measurements, lam_ref, operator_list, data_list, alpha_list, initial_mean, initial_cov)
+        # print(sols)
+        # break
         # c = np.linalg.cond(A)*np.linalg.norm(lam_ref)
         # c = np.linalg.norm(lam_ref)
         c = 1
@@ -590,23 +593,41 @@ def main_meas(args):
         # err_mud_list = [[_m[0][j] for _m in sols[alpha]] for alpha in alpha_list ]  # output_dim+1 values of _m
         # err_map_list = [[_m[1][j] for _m in sols[alpha]] for alpha in alpha_list ]
         # err_pin_list = [[_m[2][j] for _m in sols[alpha]] for alpha in alpha_list ]
+
         err_mud_list = [[_m[0] for _m in sols[alpha]] for alpha in alpha_list ]  # output_dim+1 values of _m
         err_map_list = [[_m[1] for _m in sols[alpha]] for alpha in alpha_list ]
         err_pin_list = [[_m[2] for _m in sols[alpha]] for alpha in alpha_list ]
+
+        # A_list = []
+        # b_list = []
+        # for m in range(measurements):
+        #     _oper_list = [M[:m, :] for M in operator_list]
+        #     _data_list = [y[:m, :] for y in data_list]
+
+        #     A, b = transform_linear_setup(_oper_list, _data_list, std_list)
+        #     A_list.append(A)
+        #     b_list.append(b)
+
+        # err_Amud_list = [[np.linalg.norm(A_list[i]@(_m[0] - lam_ref)) / np.linalg.norm(A_list[i]) for i, _m in enumerate(sols[alpha])] for alpha in alpha_list ]
+        # err_Amap_list = [[np.linalg.norm(A_list[i]@(_m[1] - lam_ref)) / np.linalg.norm(A_list[i]) for i, _m in enumerate(sols[alpha])] for alpha in alpha_list ]
+        # err_Apin_list = [[np.linalg.norm(A_list[i]@(_m[2] - lam_ref)) / np.linalg.norm(A_list[i]) for i, _m in enumerate(sols[alpha])] for alpha in alpha_list ]
+
         MUD.append(err_mud_list)
         MAP.append(err_map_list)
         PIN.append(err_pin_list)
-
-    MUD = np.array(MUD).var(axis=(0, 3, 4))
-    MAP = np.array(MAP).var(axis=(0, 3, 4))
-    PIN = np.array(PIN).var(axis=(0, 3, 4))
+    print(np.array(MUD).shape)
+    MUD = np.array(MUD).var(axis=0).mean(axis=2)
+    MAP = np.array(MAP).var(axis=0).mean(axis=2)
+    PIN = np.array(PIN).var(axis=0).mean(axis=2)
+    # MUD = np.array(MUD).var(axis=(0, 3, 4))
+    # MAP = np.array(MAP).var(axis=(0, 3, 4))
+    # PIN = np.array(PIN).var(axis=(0, 3, 4))
     # shape is trials, alpha, measurements, dim_input, 1
 
     with open('mud_pts.pkl', 'wb') as f:
         import pickle
         pickle.dump(MUD, f)
 
-    print(np.array(MUD).shape)
     # print(err_mud_list.shape)
     x = np.arange(1, measurements + 1, 1)
 
@@ -624,6 +645,7 @@ def main_meas(args):
         _err_map = MAP[idx]
         _err_pin = PIN[idx]
 
+
         plt.plot(x, _err_mud, label='MUD', c='k', lw=10)
         # plt.plot(x, _err_map, label='MAP', c='r', ls='--', lw=5)
         plt.plot(x, _err_pin, label='Least Squares', c='xkcd:light blue', ls='-', lw=5)
@@ -632,7 +654,7 @@ def main_meas(args):
     # plt.xlim(0,dim_output)
     plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \\Sigma$", fontsize=1.25 * fsize)
     plt.yscale('log')
-    # plt.xscale('log')
+    plt.xscale('log')
     # plt.ylim(0, 2.0)
     # plt.ylim(1E-4, 5E-2)
     # plt.ylabel("$\\frac{||\\lambda^\\dagger - \\lambda||}{||\\lambda^\\dagger||}$", fontsize=fsize*1.25)
@@ -891,13 +913,13 @@ def transform_measurements(lam_ref, operator_list, data_list, measurements):
     dim_output = len(operator_list)
     std = 0.1
     std_list = [std] * dim_output
-    _oper_list = [M[:measurements, :] for M in operator_list]
+    _oper_list = operator_list
     _data_list = [y[:measurements, :] for y in data_list]
 
     A, b = transform_linear_setup(_oper_list, _data_list, std_list)
 
     # d = A @ lam_ref + b
-    d =  np.zeros(dim_output).reshape(-1, 1)
+    d = np.zeros(dim_output).reshape(-1, 1)
     return A, b, d
 
 
@@ -944,6 +966,8 @@ def compare_linear_sols(transform, lam_ref, A, b,
     _logger.info("alpha = {}".format(alpha_list))
     if isinstance(A, list):  # svd approach returns list (max dim output), so does measurement study (max meas)
         max_iteration = A[0].shape[0]
+        if max_iteration == 1:
+            max_iteration = 100  # repeated measurement map is 1xp, this is a dirty override.
     else:
         max_iteration = A.shape[0]
 

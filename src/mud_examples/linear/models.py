@@ -16,16 +16,18 @@ def createRandomLinearMap(dim_input, dim_output,
     else:
         M     = np.random.rand(dim_output, dim_input)   # noqa: E221
     if repeated:  # just use first row
-        M     = np.array(list(M[0, :]) * dim_output)    # noqa: E221
-        M     = M.reshape(dim_output, dim_input)        # noqa: E221
+        # M     = np.array(list(M[0, :]) * dim_output)    # noqa: E221
+        # M     = M.reshape(dim_output, dim_input)        # noqa: E221
+        M     = M[0, :].reshape(1, dim_input)
 
     return M
 
 
-def createNoisyReferenceData(M, reference_point, std):
+def createNoisyReferenceData(M, reference_point, std, num_observations):
     dim_input  = len(reference_point)                            # noqa: E221
-    dim_output = M.shape[0]
+    dim_output = num_observations
     assert M.shape[1] == dim_input, "Operator/Data dimension mismatch"
+    assert M.shape[0] == 1 or M.shape[0] == num_observations, "Operator/Data dimension mismatch"
     if isinstance(std, (int, float)):
         std    = np.array([std] * dim_output)                    # noqa: E221
 
@@ -46,7 +48,7 @@ def createRandomLinearPair(reference_point, num_observations, std,
     """
     dim_input = len(reference_point)
     M         = createRandomLinearMap(dim_input, num_observations, dist, repeated)  # noqa: E221, E501
-    data      = createNoisyReferenceData(M, reference_point, std)                   # noqa: E221, E501
+    data      = createNoisyReferenceData(M, reference_point, std, num_observations)                   # noqa: E221, E501
     return M, data
 
 
