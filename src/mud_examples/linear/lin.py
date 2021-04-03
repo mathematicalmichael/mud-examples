@@ -536,12 +536,12 @@ def main_meas(args):
     # # Impact of Number of Measurements for Various Choices of $\\Sigma_\text{init}$
 
     # dim_output = dim_input
-    dim_input, dim_output = 50, 20
+    dim_input, dim_output = 50, 25
     # seed = 12
     # np.random.seed(seed)
 
-    # initial_cov = np.diag(np.sort(np.random.rand(dim_input))[::-1] + 0.5)
-    initial_cov = np.eye(dim_input)
+    initial_cov = np.diag(np.sort(np.random.rand(dim_input))[::-1] + 0.5)
+    # initial_cov = np.eye(dim_input)
 
     plt.figure(figsize=(10, 10))
     initial_mean = np.zeros(dim_input).reshape(-1, 1)
@@ -589,8 +589,11 @@ def main_meas(args):
         repeated=True,
         )
 
+    for o in operator_list:
+        print(o.shape)
+    print(len(operator_list))
     MUD = np.zeros((dim_input, len(Ns), num_trials))
-
+    M = np.array(operator_list).reshape(dim_output, dim_input)
     for j, N in enumerate(Ns):
         A = A_N(M, Ns[j], sigma)
         for i in range(num_trials):
