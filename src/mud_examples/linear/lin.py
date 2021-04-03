@@ -551,114 +551,71 @@ def main_meas(args):
     lam_ref = np.random.randn(dim_input).reshape(-1, 1)
 
     prefix = 'lin-meas-cov'
-    # alpha_list = [10**(n) for n in np.linspace(-3, 4, 8)]
-    # alpha_list = [10**(n) for n in [-3, 3]]
-    alpha_list = [1]
-    # d = A @ lam_ref + b
-    # A = np.zeros((dim_input, dim_output))
-    # std = 0.1
 
-    # dim_output = A.shape[1]  # FIXME HACK - just ignore A, b
-    # std = b
     measurements = 100
-    std  = 0.1
-    num_obs_list = [measurements] * dim_output
-    std_list = [std] * dim_output
+    sigma  = 0.1
+    num_obs_list = [measurements] * dim_output  # max measurements to simulate
+    std_list = [sigma] * dim_output
     # np.random.seed(21)
+    Ns = np.arange(1, 100, 1).tolist()
+    num_trials = 20
+    # for _ in range(num_trials):
 
-    MUD, MAP, PIN = [], [], []
-    num_trials = 10
-    for _ in range(num_trials):
-        operator_list, data_list, std_list = models.createRandomLinearProblem(
-            lam_ref,
-            dim_output,
-            num_obs_list,
-            std_list,
-            dist='norm',
-            repeated=True,
-            )
+    def A_N(M, N, sigma):
+        A = np.sqrt(N) / sigma * M
+        return A
 
-        sols = compare_linear_sols(transform_measurements, lam_ref, operator_list, data_list, alpha_list, initial_mean, initial_cov)
-        # print(sols)
-        # break
-        # c = np.linalg.cond(A)*np.linalg.norm(lam_ref)
-        # c = np.linalg.norm(lam_ref)
-        c = 1
-        # err_mud_list = [[np.linalg.norm(_m[0] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]  # output_dim+1 values of _m
-        # err_map_list = [[np.linalg.norm(_m[1] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]
-        # err_pin_list = [[np.linalg.norm(_m[2] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]
+    # def Cov_pred(A):
+    #     return A @ A.T
 
-        # which component of the input space?
-        # j = 1
-        # err_mud_list = [[_m[0][j] for _m in sols[alpha]] for alpha in alpha_list ]  # output_dim+1 values of _m
-        # err_map_list = [[_m[1][j] for _m in sols[alpha]] for alpha in alpha_list ]
-        # err_pin_list = [[_m[2][j] for _m in sols[alpha]] for alpha in alpha_list ]
+    def d_N(M, N, lam, noise):
+        d = M @ lam + noise.rvs(N)
+        return d
 
-        err_mud_list = [[_m[0] for _m in sols[alpha]] for alpha in alpha_list ]  # output_dim+1 values of _m
-        err_map_list = [[_m[1] for _m in sols[alpha]] for alpha in alpha_list ]
-        err_pin_list = [[_m[2] for _m in sols[alpha]] for alpha in alpha_list ]
+    def b_N(N, d, sigma):
+        b = -1 / np.sqrt(N) * np.sum(d, axis=1) / sigma
+        return b
 
-        # A_list = []
-        # b_list = []
-        # for m in range(measurements):
-        #     _oper_list = [M[:m, :] for M in operator_list]
-        #     _data_list = [y[:m, :] for y in data_list]
+    import scipy.stats as stats
 
-        #     A, b = transform_linear_setup(_oper_list, _data_list, std_list)
-        #     A_list.append(A)
-        #     b_list.append(b)
+    M = np.random.normal(size=(dim_output, dim_input))
+    noise = stats.norm(loc=0, scale=sigma)
+    operator_list, data_list, std_list = models.createRandomLinearProblem(
+        lam_ref,
+        dim_output,
+        num_obs_list,
+        std_list,
+        dist='norm',
+        repeated=True,
+        )
 
-        # err_Amud_list = [[np.linalg.norm(A_list[i]@(_m[0] - lam_ref)) / np.linalg.norm(A_list[i]) for i, _m in enumerate(sols[alpha])] for alpha in alpha_list ]
-        # err_Amap_list = [[np.linalg.norm(A_list[i]@(_m[1] - lam_ref)) / np.linalg.norm(A_list[i]) for i, _m in enumerate(sols[alpha])] for alpha in alpha_list ]
-        # err_Apin_list = [[np.linalg.norm(A_list[i]@(_m[2] - lam_ref)) / np.linalg.norm(A_list[i]) for i, _m in enumerate(sols[alpha])] for alpha in alpha_list ]
+    MUD = np.zeros((dim_input, len(Ns), num_trials))
 
-        MUD.append(err_mud_list)
-        MAP.append(err_map_list)
-        PIN.append(err_pin_list)
-    print(np.array(MUD).shape)
-    MUD = np.array(MUD).var(axis=0).mean(axis=2)
-    MAP = np.array(MAP).var(axis=0).mean(axis=2)
-    PIN = np.array(PIN).var(axis=0).mean(axis=2)
-    # MUD = np.array(MUD).var(axis=(0, 3, 4))
-    # MAP = np.array(MAP).var(axis=(0, 3, 4))
-    # PIN = np.array(PIN).var(axis=(0, 3, 4))
-    # shape is trials, alpha, measurements, dim_input, 1
+    for j, N in enumerate(Ns):
+        A = A_N(M, Ns[j], sigma)
+        for i in range(num_trials):
+            d = d_N(M, Ns[j], lam_ref, noise)
+            b = b_N(Ns[j], d, sigma)
+            # A, _, _ = transform_measurements(lam_ref, operator_list, data_list, N, std_list)
+            MUD[:, j, i] = mud_sol(A, b, cov=initial_cov)
 
-    with open('mud_pts.pkl', 'wb') as f:
-        import pickle
-        pickle.dump(MUD, f)
-
-    # print(err_mud_list.shape)
-    x = np.arange(1, measurements + 1, 1)
+    # with open('mud_pts.pkl', 'wb') as f:
+    #     import pickle
+    #     pickle.dump(MUD, f)
 
     # ---
 
-    # # Convergence Plot
+    mud_var = MUD.var(axis=2).mean(axis=0)
+    plt.plot(Ns, mud_var, label='MUD', c='k', lw=10)
+    # plt.plot(x, MAP, label='MAP', c='r', ls='--', lw=5)
+    # plt.plot(x, PIN, label='Least Squares', c='xkcd:light blue', ls='-', lw=5)
 
-    for idx, alpha in enumerate(alpha_list):
-        # if (1 + idx) % 2 and alpha <= 10:
-        #     plt.annotate(f"$\\alpha$={alpha:1.2E}", (100, max(err_map_list[idx][-1], 0.01)), fontsize=24)
-        # _err_mud = np.var([MUD[i][idx] for i in range(num_trials)], axis=(0, 2))  ## measurements x dim_input x (0, 1)
-        # _err_map = np.var([MAP[i][idx] for i in range(num_trials)], axis=(0, 2))
-        # _err_pin = np.var([PIN[i][idx] for i in range(num_trials)], axis=(0, 2))
-        _err_mud = MUD[idx]
-        _err_map = MAP[idx]
-        _err_pin = PIN[idx]
-
-
-        plt.plot(x, _err_mud, label='MUD', c='k', lw=10)
-        # plt.plot(x, _err_map, label='MAP', c='r', ls='--', lw=5)
-        plt.plot(x, _err_pin, label='Least Squares', c='xkcd:light blue', ls='-', lw=5)
-
-    # plt.plot(x, regression, c='g', ls='-')
-    # plt.xlim(0,dim_output)
-    plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \\Sigma$", fontsize=1.25 * fsize)
+    plt.title("Precision of MUD Estimates", fontsize=1.25 * fsize)
     plt.yscale('log')
     plt.xscale('log')
-    # plt.ylim(0, 2.0)
-    # plt.ylim(1E-4, 5E-2)
+
     # plt.ylabel("$\\frac{||\\lambda^\\dagger - \\lambda||}{||\\lambda^\\dagger||}$", fontsize=fsize*1.25)
-    plt.ylabel("Variance", fontsize=fsize * 1.25)
+    plt.ylabel("Average Variance", fontsize=fsize * 1.25)
     plt.xlabel('Number of Measurements', fontsize=fsize)
     plt.legend(['MUD', 'Least Squares'], fontsize=fsize)
     if save:
@@ -667,9 +624,6 @@ def main_meas(args):
     else:
         plt.show()
         plt.close()
-
-
-    # # plt.show()
 
 
 def main(args):
@@ -909,10 +863,8 @@ def transform_dim_out(lam_ref, A, b, dim):
     return _A, _b, _d
 
 
-def transform_measurements(lam_ref, operator_list, data_list, measurements):
+def transform_measurements(lam_ref, operator_list, data_list, measurements, std_list):
     dim_output = len(operator_list)
-    std = 0.1
-    std_list = [std] * dim_output
     _oper_list = operator_list
     _data_list = [y[:measurements, :] for y in data_list]
 
