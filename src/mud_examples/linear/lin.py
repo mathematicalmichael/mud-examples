@@ -552,12 +552,14 @@ def main_meas(args):
 
     prefix = 'lin-meas-cov'
 
-    measurements = 100
-    sigma  = 0.1
-    num_obs_list = [measurements] * dim_output  # max measurements to simulate
+    Ns = [10, 50, 100, 500, 1000]
+
+    sigma  = 1E-1
+    num_obs_list = [max(Ns)] * dim_output  # max measurements to simulate
     std_list = [sigma] * dim_output
     # np.random.seed(21)
-    Ns = np.arange(1, 100, 1).tolist()
+    # Ns = np.arange(1, 100, 1).tolist()
+    
     num_trials = 20
     # for _ in range(num_trials):
 
@@ -568,18 +570,16 @@ def main_meas(args):
     # def Cov_pred(A):
     #     return A @ A.T
 
-    def d_N(M, N, lam, noise):
-        d = M @ lam + noise.rvs(N)
+    def d_N(M, lam, n):
+        d = M @ lam + n
+        assert len(d.ravel()) == len(n.ravel()), f"Shape mismatch noise={n.shape}, data={d.shape}"
         return d
 
     def b_N(N, d, sigma):
-        b = -1 / np.sqrt(N) * np.sum(d, axis=1) / sigma
+        b = -1 / np.sqrt(N) * np.sum(np.divide(d, sigma), axis=1)
         return b
 
-    import scipy.stats as stats
-
-    M = np.random.normal(size=(dim_output, dim_input))
-    noise = stats.norm(loc=0, scale=sigma)
+    # M = np.random.normal(size=(dim_output, dim_input))
     operator_list, data_list, std_list = models.createRandomLinearProblem(
         lam_ref,
         dim_output,
@@ -589,22 +589,47 @@ def main_meas(args):
         repeated=True,
         )
 
-    for o in operator_list:
-        print(o.shape)
+        # A_list = []
+         # b_list = []
+         # for m in Ns:
+         #     _oper_list = [M[:m, :] for M in operator_list]
+         #     _data_list = [y[:m, :] for y in data_list]
+
+         #     A, b = transform_linear_setup(_oper_list, _data_list, std_list)
+         #     A_list.append(A)
+         #     b_list.append(b)
+
+    print(data_list[0].shape)
+    # operator list has dim_output 1xdim_input matrices
     print(len(operator_list))
+    print('start')
     MUD = np.zeros((dim_input, len(Ns), num_trials))
     M = np.array(operator_list).reshape(dim_output, dim_input)
+    noise_draw = [np.random.randn(dim_output, max(Ns)) * sigma for _ in range(num_trials)]
     for j, N in enumerate(Ns):
-        A = A_N(M, Ns[j], sigma)
+        A = A_N(M, N, sigma)
         for i in range(num_trials):
-            d = d_N(M, Ns[j], lam_ref, noise)
-            b = b_N(Ns[j], d, sigma)
-            # A, _, _ = transform_measurements(lam_ref, operator_list, data_list, N, std_list)
+            d = d_N(M, lam_ref, noise_draw[i][:, 0:N])
+            
+            # print(d.shape)  # dim_output x num_measurements
+            # print(noise_draw[i][j, 0:N].shape, data_list[0][0:N].shape)
+            _data_list = [y[0:N] + noise_draw[i][j, 0:N] for j, y in enumerate(data_list)]
+            _d = np.array(_data_list).reshape(N, dim_output).T
+            # _data_list = [d[i, :] for i in range(dim_output)]
+            b = b_N(N, d, sigma)
+            A, b = transform_linear_setup(operator_list, _data_list, std_list)  # definitely works.
+
+            # _A, _b, _ = transform_measurements(operator_list, data_list, N, std_list)
+            # b = b.ravel()
+            # _b = _b.reshape(-1, 1)
+
+            # print(_b.mean(), b.mean(), _b.shape, b.shape)
             MUD[:, j, i] = mud_sol(A, b, cov=initial_cov)
 
-    # with open('mud_pts.pkl', 'wb') as f:
-    #     import pickle
-    #     pickle.dump(MUD, f)
+    with open('mud_pts.pkl', 'wb') as f:
+        import pickle
+        pickle.dump([d, _d], f)
+        print('err:', (d - _d).mean())
 
     # ---
 
@@ -616,7 +641,7 @@ def main_meas(args):
     plt.title("Precision of MUD Estimates", fontsize=1.25 * fsize)
     plt.yscale('log')
     plt.xscale('log')
-
+    # plt.ylim(1E-8, 1E-5)
     # plt.ylabel("$\\frac{||\\lambda^\\dagger - \\lambda||}{||\\lambda^\\dagger||}$", fontsize=fsize*1.25)
     plt.ylabel("Average Variance", fontsize=fsize * 1.25)
     plt.xlabel('Number of Measurements', fontsize=fsize)
@@ -866,16 +891,15 @@ def transform_dim_out(lam_ref, A, b, dim):
     return _A, _b, _d
 
 
-def transform_measurements(lam_ref, operator_list, data_list, measurements, std_list):
-    dim_output = len(operator_list)
-    _oper_list = operator_list
-    _data_list = [y[:measurements, :] for y in data_list]
+# def transform_measurements(operator_list, data_list, measurements, std_list):
+#     dim_output = len(operator_list)
+#     _oper_list = operator_list
+#     _data_list = [y[:measurements, :] for y in data_list]
 
-    A, b = transform_linear_setup(_oper_list, _data_list, std_list)
+#     A, b = transform_linear_setup(_oper_list, _data_list, std_list)
 
-    # d = A @ lam_ref + b
-    d = np.zeros(dim_output).reshape(-1, 1)
-    return A, b, d
+#     d = np.zeros(dim_output).reshape(-1, 1)
+#     return A, b, d
 
 
 def compare_linear_sols_rank_list(lam_ref, A, b,
