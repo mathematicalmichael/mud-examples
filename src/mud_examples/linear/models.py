@@ -39,7 +39,7 @@ def createNoisyReferenceData(M, reference_point, std, num_data=None):
     noise      = np.diag(std) @ np.random.randn(num_data, 1)     # noqa: E221
     if ref_data.shape[0] == 1:
         ref_data = float(ref_data)
-    data       = ref_data + 0*noise                                # noqa: E221
+    data       = ref_data + noise                                # noqa: E221
     return data.ravel()
 
 

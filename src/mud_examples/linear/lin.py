@@ -536,7 +536,7 @@ def main_meas(args):
     # # Impact of Number of Measurements for Various Choices of $\\Sigma_\text{init}$
 
     # dim_output = dim_input
-    dim_input, dim_output = 50, 25
+    dim_input, dim_output = 20, 1
     # seed = 12
     # np.random.seed(seed)
 
@@ -552,23 +552,18 @@ def main_meas(args):
 
     prefix = 'lin-meas-cov'
 
-    Ns = [10, 50, 100, 500, 1000]
+    # Ns = [10, 50, 100, 500, 1000]
 
     sigma  = 1E-1
-    num_obs_list = [max(Ns)] * dim_output  # max measurements to simulate
-    std_list = [sigma] * dim_output
     # np.random.seed(21)
-    # Ns = np.arange(1, 100, 1).tolist()
-    
-    num_trials = 20
+    Ns = np.arange(1, 1000, 1).tolist()
+
+    num_trials = 50
     # for _ in range(num_trials):
 
     def A_N(M, N, sigma):
         A = np.sqrt(N) / sigma * M
         return A
-
-    # def Cov_pred(A):
-    #     return A @ A.T
 
     def d_N(M, lam, n):
         d = M @ lam + n
@@ -580,69 +575,37 @@ def main_meas(args):
         return b
 
     # M = np.random.normal(size=(dim_output, dim_input))
-    operator_list, data_list, std_list = models.createRandomLinearProblem(
+    operator_list, data_list, _ = models.createRandomLinearProblem(
         lam_ref,
         dim_output,
-        num_obs_list,
-        std_list,
+        [max(Ns)] * dim_output,  # want to iterate over increasing measurements
+        [0] * dim_output,  # noiseless data bc we want to simulate multiple trials
         dist='norm',
         repeated=True,
         )
-
-        # A_list = []
-         # b_list = []
-         # for m in Ns:
-         #     _oper_list = [M[:m, :] for M in operator_list]
-         #     _data_list = [y[:m, :] for y in data_list]
-
-         #     A, b = transform_linear_setup(_oper_list, _data_list, std_list)
-         #     A_list.append(A)
-         #     b_list.append(b)
 
     print(data_list[0].shape)
     # operator list has dim_output 1xdim_input matrices
     print(len(operator_list))
     print('start')
     MUD = np.zeros((dim_input, len(Ns), num_trials))
-    M = np.array(operator_list).reshape(dim_output, dim_input)
+    # M = np.array(operator_list).reshape(dim_output, dim_input)
     noise_draw = [np.random.randn(dim_output, max(Ns)) * sigma for _ in range(num_trials)]
     for j, N in enumerate(Ns):
-        A = A_N(M, N, sigma)
+        # _A = A_N(M, N, sigma)
         for i in range(num_trials):
-            d = d_N(M, lam_ref, noise_draw[i][:, 0:N])
-            
-            # print(d.shape)  # dim_output x num_measurements
-            # print(noise_draw[i][j, 0:N].shape, data_list[0][0:N].shape)
-            _data_list = [y[0:N] + noise_draw[i][j, 0:N] for j, y in enumerate(data_list)]
-            _d = np.array(_data_list).reshape(N, dim_output).T
-            # _data_list = [d[i, :] for i in range(dim_output)]
-            b = b_N(N, d, sigma)
-            A, b = transform_linear_setup(operator_list, _data_list, std_list)  # definitely works.
-
-            # _A, _b, _ = transform_measurements(operator_list, data_list, N, std_list)
-            # b = b.ravel()
-            # _b = _b.reshape(-1, 1)
-
-            # print(_b.mean(), b.mean(), _b.shape, b.shape)
+            # _b = b_N(N, d_N(M, lam_ref, noise_draw[i][:, 0:N]), sigma)
+            # A, b = transform_linear_setup(operator_list, data_list, sigma)
+            A, b, _ = transform_measurements(operator_list, data_list, N, sigma, noise_draw[i])
             MUD[:, j, i] = mud_sol(A, b, cov=initial_cov)
-
-    with open('mud_pts.pkl', 'wb') as f:
-        import pickle
-        pickle.dump([d, _d], f)
-        print('err:', (d - _d).mean())
-
     # ---
 
     mud_var = MUD.var(axis=2).mean(axis=0)
     plt.plot(Ns, mud_var, label='MUD', c='k', lw=10)
-    # plt.plot(x, MAP, label='MAP', c='r', ls='--', lw=5)
-    # plt.plot(x, PIN, label='Least Squares', c='xkcd:light blue', ls='-', lw=5)
 
     plt.title("Precision of MUD Estimates", fontsize=1.25 * fsize)
     plt.yscale('log')
     plt.xscale('log')
-    # plt.ylim(1E-8, 1E-5)
-    # plt.ylabel("$\\frac{||\\lambda^\\dagger - \\lambda||}{||\\lambda^\\dagger||}$", fontsize=fsize*1.25)
     plt.ylabel("Average Variance", fontsize=fsize * 1.25)
     plt.xlabel('Number of Measurements', fontsize=fsize)
     plt.legend(['MUD', 'Least Squares'], fontsize=fsize)
@@ -891,15 +854,15 @@ def transform_dim_out(lam_ref, A, b, dim):
     return _A, _b, _d
 
 
-# def transform_measurements(operator_list, data_list, measurements, std_list):
-#     dim_output = len(operator_list)
-#     _oper_list = operator_list
-#     _data_list = [y[:measurements, :] for y in data_list]
-
-#     A, b = transform_linear_setup(_oper_list, _data_list, std_list)
-
-#     d = np.zeros(dim_output).reshape(-1, 1)
-#     return A, b, d
+def transform_measurements(operator_list, data_list, measurements, std_list, noise):
+    dim_output = len(operator_list)
+    N = measurements
+    _oper_list = [M for M in operator_list]
+    _d = np.array([y[0:N] for y in data_list]) + noise[:, 0:N]
+    _data_list = _d.tolist()
+    A, b = transform_linear_setup(_oper_list, _data_list, std_list)
+    d = np.zeros(dim_output).reshape(-1, 1)
+    return A, b, d
 
 
 def compare_linear_sols_rank_list(lam_ref, A, b,
