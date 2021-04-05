@@ -5,12 +5,13 @@ import logging
 # import os
 import sys
 
+import scipy as sp
 # from mud_examples.runner import setup_logging
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import cm
 # from mud import __version__ as __mud_version__
-from mud.funs import map_sol, mud_sol
+from mud.funs import map_sol, mud_sol, updated_cov
 from mud.norm import full_functional, norm_data, norm_input, norm_predicted
 from mud.util import transform_linear_setup
 from scipy.linalg import null_space
@@ -536,12 +537,12 @@ def main_meas(args):
     # # Impact of Number of Measurements for Various Choices of $\\Sigma_\text{init}$
 
     # dim_output = dim_input
-    dim_input, dim_output = 20, 1
+    dim_input, dim_output = 100, 20
     # seed = 12
     # np.random.seed(seed)
 
-    initial_cov = np.diag(np.sort(np.random.rand(dim_input))[::-1] + 0.5)
-    # initial_cov = np.eye(dim_input)
+    # initial_cov = np.diag(np.sort(np.random.rand(dim_input))[::-1] + 0.5)
+    initial_cov = np.eye(dim_input)
 
     plt.figure(figsize=(10, 10))
     initial_mean = np.zeros(dim_input).reshape(-1, 1)
@@ -556,7 +557,119 @@ def main_meas(args):
 
     sigma  = 1E-1
     # np.random.seed(21)
-    Ns = np.arange(1, 1000, 1).tolist()
+    Ns = np.arange(10, 2001, 50).tolist()
+    # Ns = [10, 50, 100, 500, 1000, 5000, 10000]
+
+    num_trials = 10
+    # for _ in range(num_trials):
+
+    operator_list, data_list, _ = models.createRandomLinearProblem(
+        lam_ref,
+        dim_output,
+        [max(Ns)] * dim_output,  # want to iterate over increasing measurements
+        [0] * dim_output,  # noiseless data bc we want to simulate multiple trials
+        dist='norm',
+        repeated=True,
+        )
+
+    MUD = np.zeros((dim_input, len(Ns), num_trials))
+    UP = np.zeros((dim_input, len(Ns), num_trials))
+    noise_draw = [np.random.randn(dim_output, max(Ns)) * sigma for _ in range(num_trials)]
+
+    for i in range(num_trials):
+        for j, N in enumerate(Ns):
+            A, b, _ = transform_measurements(operator_list, data_list, N, sigma, noise_draw[i])
+            MUD[:, j, i] = mud_sol(A, b, cov=initial_cov)
+            up_cov = updated_cov(A, initial_cov)
+            up_sdvals = sp.linalg.svdvals(up_cov)
+            # print(up_sdvals.shape, dim_input, up_cov.shape)
+            UP[:, j, i] = up_sdvals
+
+    mud_var = MUD.var(axis=2).mean(axis=0)
+    lines = [':', '-', '--']
+    up_cov = UP.mean(axis=2)  # they're all the same - no dependence on data.
+    
+    for p in range(dim_input):
+        plt.plot(Ns, up_cov[p, :], label=f"SV {p}", alpha=0.4, lw=5, ls=lines[p%len(lines)])
+    # up_cov = UP
+    # for i in range(num_trials):
+    #     for p in range(dim_input):
+    #         plt.plot(Ns, up_cov[p, :, i], label=f"SV {p}", alpha=0.4, lw=5, ls=lines[p%len(lines)])
+
+    plt.plot(Ns, mud_var, label='MUD', c='k', lw=10)
+    print(mud_var)
+    # plt.title("Precision of MUD Estimates", fontsize=1.25 * fsize)
+    plt.yscale('log')
+    plt.xscale('log')
+    plt.ylabel("Singular Values of $\\Sigma_{up}$", fontsize=fsize * 1.25)
+    plt.xlabel('Number of Measurements', fontsize=fsize)
+    # plt.legend()
+    if save:
+        plt.savefig(f'{fdir}/{prefix}-convergence.png', bbox_inches='tight')
+        plt.close()
+    else:
+        plt.show()
+        plt.close()
+
+
+def main_meas_var(args):
+    """
+    Main entrypoint for High-Dim Linear Measurement Example
+    """
+    args = parse_args(args)
+    setup_logging(args.loglevel)
+    np.random.seed(args.seed)
+#     example       = args.example
+#     num_trials   = args.num_trials
+#     fsize        = args.fsize
+#     linewidth    = args.linewidth
+#     seed         = args.seed
+    # dim_input     = args.input_dim
+    # save         = args.save
+#     alt          = args.alt
+#     bayes        = args.bayes
+#     prefix       = args.prefix
+#     dist         = args.dist
+
+    presentation = False
+    save = True
+
+    if not presentation:
+        plt.rcParams['mathtext.fontset'] = 'stix'
+        plt.rcParams['font.family'] = 'STIXGeneral'
+    fdir = 'figures/lin'
+    check_dir(fdir)
+
+    fsize = 42
+
+    def numnonzero(x, tol=1E-4):
+        return len(x[abs(x) < tol])
+
+    # # Impact of Number of Measurements for Various Choices of $\\Sigma_\text{init}$
+
+    # dim_output = dim_input
+    dim_input, dim_output = 4, 2
+    # seed = 12
+    # np.random.seed(seed)
+
+    # initial_cov = np.diag(np.sort(np.random.rand(dim_input))[::-1] + 0.5)
+    initial_cov = np.eye(dim_input)
+
+    plt.figure(figsize=(10, 10))
+    initial_mean = np.zeros(dim_input).reshape(-1, 1)
+    # initial_mean = np.random.randn(dim_input).reshape(-1,1)
+    # num_obs_list = np.arange(1, 101).tolist()
+
+    lam_ref = np.random.randn(dim_input).reshape(-1, 1)
+
+    prefix = 'lin-meas-cov'
+
+    # Ns = [10, 50, 100, 500, 1000]
+
+    sigma  = 1E-1
+    # np.random.seed(21)
+    Ns = np.arange(10, 2001, 50).tolist()
+    # Ns = [10, 50, 100, 500, 1000, 5000, 10000]
 
     num_trials = 50
     # for _ in range(num_trials):
@@ -584,10 +697,7 @@ def main_meas(args):
         repeated=True,
         )
 
-    print(data_list[0].shape)
     # operator list has dim_output 1xdim_input matrices
-    print(len(operator_list))
-    print('start')
     MUD = np.zeros((dim_input, len(Ns), num_trials))
     # M = np.array(operator_list).reshape(dim_output, dim_input)
     noise_draw = [np.random.randn(dim_output, max(Ns)) * sigma for _ in range(num_trials)]
@@ -598,24 +708,23 @@ def main_meas(args):
             # A, b = transform_linear_setup(operator_list, data_list, sigma)
             A, b, _ = transform_measurements(operator_list, data_list, N, sigma, noise_draw[i])
             MUD[:, j, i] = mud_sol(A, b, cov=initial_cov)
-    # ---
 
     mud_var = MUD.var(axis=2).mean(axis=0)
-    plt.plot(Ns, mud_var, label='MUD', c='k', lw=10)
 
-    plt.title("Precision of MUD Estimates", fontsize=1.25 * fsize)
+    # plt.title("Precision of MUD Estimates", fontsize=1.25 * fsize)
     plt.yscale('log')
     plt.xscale('log')
-    plt.ylabel("Average Variance", fontsize=fsize * 1.25)
+    plt.ylabel("Singular Values of $\\Sigma_{up}$", fontsize=fsize * 1.25)
+    # plt.ylabel("Average Variance", fontsize=fsize * 1.25)
     plt.xlabel('Number of Measurements', fontsize=fsize)
-    plt.legend(['MUD', 'Least Squares'], fontsize=fsize)
+    plt.legend()
+    # plt.legend(['MUD', 'Least Squares'], fontsize=fsize)
     if save:
         plt.savefig(f'{fdir}/{prefix}-convergence.png', bbox_inches='tight')
         plt.close()
     else:
         plt.show()
         plt.close()
-
 
 def main(args):
     """
@@ -857,7 +966,7 @@ def transform_dim_out(lam_ref, A, b, dim):
 def transform_measurements(operator_list, data_list, measurements, std_list, noise):
     dim_output = len(operator_list)
     N = measurements
-    _oper_list = [M for M in operator_list]
+    _oper_list = [M[0:N,:] for M in operator_list]
     _d = np.array([y[0:N] for y in data_list]) + noise[:, 0:N]
     _data_list = _d.tolist()
     A, b = transform_linear_setup(_oper_list, _data_list, std_list)
