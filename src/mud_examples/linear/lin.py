@@ -537,12 +537,12 @@ def main_meas(args):
     # # Impact of Number of Measurements for Various Choices of $\\Sigma_\text{init}$
 
     # dim_output = dim_input
-    dim_input, dim_output = 100, 20
+    dim_input, dim_output = 20, 5 
     # seed = 12
     # np.random.seed(seed)
 
-    # initial_cov = np.diag(np.sort(np.random.rand(dim_input))[::-1] + 0.5)
-    initial_cov = np.eye(dim_input)
+    initial_cov = np.diag(np.sort(np.random.rand(dim_input))[::-1] + 0.5)
+    # initial_cov = np.eye(dim_input)  # will cause spectrum of updated covariance to contain repeated eigenvalues
 
     plt.figure(figsize=(10, 10))
     initial_mean = np.zeros(dim_input).reshape(-1, 1)
@@ -557,10 +557,9 @@ def main_meas(args):
 
     sigma  = 1E-1
     # np.random.seed(21)
-    Ns = np.arange(10, 2001, 50).tolist()
-    # Ns = [10, 50, 100, 500, 1000, 5000, 10000]
+    # Ns = np.arange(10, 2001, 50).tolist()
+    Ns = [10, 100, 1000, 10000]
 
-    num_trials = 10
     # for _ in range(num_trials):
 
     operator_list, data_list, _ = models.createRandomLinearProblem(
@@ -572,32 +571,31 @@ def main_meas(args):
         repeated=True,
         )
 
-    MUD = np.zeros((dim_input, len(Ns), num_trials))
-    UP = np.zeros((dim_input, len(Ns), num_trials))
-    noise_draw = [np.random.randn(dim_output, max(Ns)) * sigma for _ in range(num_trials)]
+    MUD = np.zeros((dim_input, len(Ns)))
+    UP = np.zeros((dim_input, len(Ns)))
+    noise_draw = np.random.randn(dim_output, max(Ns)) * sigma
 
-    for i in range(num_trials):
-        for j, N in enumerate(Ns):
-            A, b, _ = transform_measurements(operator_list, data_list, N, sigma, noise_draw[i])
-            MUD[:, j, i] = mud_sol(A, b, cov=initial_cov)
-            up_cov = updated_cov(A, initial_cov)
-            up_sdvals = sp.linalg.svdvals(up_cov)
-            # print(up_sdvals.shape, dim_input, up_cov.shape)
-            UP[:, j, i] = up_sdvals
+    for j, N in enumerate(Ns):
+        A, b, _ = transform_measurements(operator_list, data_list, N, sigma, noise_draw)
+        MUD[:, j] = mud_sol(A, b, cov=initial_cov)
+        up_cov = updated_cov(A, initial_cov)
+        up_sdvals = sp.linalg.svdvals(up_cov)
+        # print(up_sdvals.shape, dim_input, up_cov.shape)
+        UP[:, j] = up_sdvals
 
-    mud_var = MUD.var(axis=2).mean(axis=0)
-    lines = [':', '-', '--']
-    up_cov = UP.mean(axis=2)  # they're all the same - no dependence on data.
-    
+    # mud_var = MUD.var(axis=2)
+    lines = ['solid', 'dashed', 'dashdot', 'dotted']
+
     for p in range(dim_input):
-        plt.plot(Ns, up_cov[p, :], label=f"SV {p}", alpha=0.4, lw=5, ls=lines[p%len(lines)])
-    # up_cov = UP
-    # for i in range(num_trials):
-    #     for p in range(dim_input):
-    #         plt.plot(Ns, up_cov[p, :, i], label=f"SV {p}", alpha=0.4, lw=5, ls=lines[p%len(lines)])
+        plt.plot(
+            Ns, UP[p, :],
+            label=f"SV {p}",
+            alpha=0.4,
+            lw=5,
+            ls=lines[p % len(lines)],
+            )
 
-    plt.plot(Ns, mud_var, label='MUD', c='k', lw=10)
-    print(mud_var)
+    # plt.plot(Ns, mud_var, label='MUD', c='k', lw=10)
     # plt.title("Precision of MUD Estimates", fontsize=1.25 * fsize)
     plt.yscale('log')
     plt.xscale('log')
@@ -610,6 +608,40 @@ def main_meas(args):
     else:
         plt.show()
         plt.close()
+
+    plt.figure(figsize=(10, 10))
+    plt.yscale('log')
+    for i, N in enumerate(Ns):
+        plt.scatter(
+            np.arange(dim_input), UP[:, i],
+            marker='o',
+            s=200,
+            facecolors='none',
+            edgecolors='k',
+            )
+
+        plt.plot(
+            np.arange(dim_input), UP[:, i],
+            label=f"$N={N:1.0E}$",
+            alpha=0.4,
+            lw=3,
+            ls=lines[i % len(lines)],
+            c='k',
+            )
+    plt.xticks(np.arange(dim_input) + 1, rotation=90)
+    plt.xlabel('Index', fontsize=fsize)
+    plt.ylabel('Singular Value', fontsize=fsize)
+
+    plt.legend()
+
+    if save:
+        plt.savefig(f'{fdir}/{prefix}-sd-convergence.png', bbox_inches='tight')
+        plt.close()
+    else:
+        plt.show()
+        plt.close()
+
+
 
 
 def main_meas_var(args):
@@ -710,6 +742,7 @@ def main_meas_var(args):
             MUD[:, j, i] = mud_sol(A, b, cov=initial_cov)
 
     mud_var = MUD.var(axis=2).mean(axis=0)
+    plt.plot(Ns, mud_var, label='MUD', c='k', lw=10)
 
     # plt.title("Precision of MUD Estimates", fontsize=1.25 * fsize)
     plt.yscale('log')
@@ -725,6 +758,7 @@ def main_meas_var(args):
     else:
         plt.show()
         plt.close()
+
 
 def main(args):
     """
