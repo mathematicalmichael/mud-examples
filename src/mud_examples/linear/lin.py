@@ -623,7 +623,7 @@ def main_meas(args):
         plt.plot(
             np.arange(dim_input), UP[:, i],
             label=f"$N={N:1.0E}$",
-            alpha=0.4,
+            alpha=1,
             lw=3,
             ls=lines[i % len(lines)],
             c='k',
