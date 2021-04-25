@@ -1,14 +1,15 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#!/usr/env/bin python
 
 import logging
 
 import matplotlib.gridspec as gridspec
 import numpy as np
 from matplotlib import pyplot as plt
-from mud_examples.helpers import check_dir
+from mud_examples.utils import check_dir
+from scipy.linalg import null_space
 
-plt.rcParams['figure.figsize'] = 10,10
+plt.rcParams['figure.figsize'] = 10, 10
 plt.rcParams['font.size'] = 16
 # import matplotlib
 # matplotlib.rcParams['mathtext.fontset'] = 'stix'
@@ -16,21 +17,9 @@ plt.rcParams['font.size'] = 16
 # matplotlib.backend = 'Agg'
 
 
-_logger = logging.getLogger(__name__) # TODO: make use of this instead of print
+_logger = logging.getLogger(__name__)  # TODO: make use of this instead of print
 _mpl_logger = logging.getLogger('matplotlib')
 _mpl_logger.setLevel(logging.WARNING)
-
-
-def fit_log_linear_regression(input_values, output_values):
-    if len(np.unique(output_values)) == 1:
-        _logger.info("Log Linear Regression: All values identical.")
-        return np.array(output_values), 0
-    x, y = np.log10(input_values), np.log10(output_values)
-    X, Y = np.vander(x, 2), np.array(y).reshape(-1, 1)
-    slope, intercept = (np.linalg.pinv(X) @ Y).ravel()
-    regression_line = 10**(slope * x + intercept)
-    return regression_line, slope
-
 
 
 def plot_decay_solution(solutions, model_generator, sigma, prefix,
@@ -38,7 +27,8 @@ def plot_decay_solution(solutions, model_generator, sigma, prefix,
     alpha_signal = 0.2
     alpha_points = 0.6
 #     num_meas_plot_list = [25, 50, 400]
-
+    fdir = '/'.join(prefix.split('/')[:-1])
+    check_dir(fdir)
     print("Plotting decay solution.")
     for num_meas_plot in solutions:
         filename = f'{prefix}_{num_meas_plot}_reference_solution.png'
@@ -98,129 +88,44 @@ def plot_decay_solution(solutions, model_generator, sigma, prefix,
         plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order], fontsize=fsize, loc='upper right')
         plt.tight_layout()
         if save:
-            fdir = filename.split('/')[0]
-            check_dir(fdir)
             plt.savefig(filename, bbox_inches='tight')
         # plt.show()
 
 
-def plot_experiment_equipment(tolerances, res, prefix, fsize=32, linewidth=5,
-                              title="Variance of MUD Error", save=True):
-    print("Plotting experiments involving equipment differences...")
-    plt.figure(figsize=(10, 10))
-    for _res in res:
-        _prefix, _in, _rm, _re = _res
-        regression_err_mean, slope_err_mean, regression_err_vars, slope_err_vars, sd_means, sd_vars, num_sensors = _re
-        plt.plot(tolerances, regression_err_mean, label=f"{_prefix:10s} slope: {slope_err_mean:1.4f}", lw=linewidth)
-        plt.scatter(tolerances, sd_means, marker='x', lw=20)
-
-    plt.yscale('log')
-    plt.xscale('log')
-    plt.Axes.set_aspect(plt.gca(), 1)
-    plt.ylim(2E-3, 2E-2)
-    # plt.ylabel("Absolute Error", fontsize=fsize)
-    plt.xlabel('Tolerance', fontsize=fsize)
-    plt.legend()
-    plt.title(f"Mean of MUD Error for N={num_sensors}", fontsize=1.25 * fsize)
-    if save:
-        plt.savefig(f'{prefix}_convergence_mud_std_mean.png', bbox_inches='tight')
-    # plt.show()
-
-    plt.figure(figsize=(10, 10))
-    for _res in res:
-        _prefix, _in, _rm, _re = _res
-        regression_err_mean, slope_err_mean, regression_err_vars, slope_err_vars, sd_means, sd_vars, num_sensors = _re
-        plt.plot(tolerances, regression_err_vars, label=f"{_prefix:10s} slope: {slope_err_vars:1.4f}", lw=linewidth)
-        plt.scatter(tolerances, sd_vars, marker='x', lw=20)
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.ylim(2E-5, 2E-4)
-    plt.Axes.set_aspect(plt.gca(), 1)
-    # plt.ylabel("Absolute Error", fontsize=fsize)
-    plt.xlabel('Tolerance', fontsize=fsize)
-    plt.legend()
-    plt.title(title, fontsize=1.25 * fsize)
-    if save:
-        plt.savefig(f'{prefix}_convergence_mud_std_var.png', bbox_inches='tight')
-    # plt.show()
-
-
-def plot_experiment_measurements(measurements, res, prefix, fsize=32, linewidth=5, xlabel='Number of Measurements', save=True, legend=False):
-    print("Plotting experiments involving increasing # of measurements.")
-    plt.figure(figsize=(10, 10))
-    for _res in res:
-        _prefix, _in, _rm, _re = _res
-        regression_mean, slope_mean, regression_vars, slope_vars, means, variances = _rm
-        plt.plot(measurements[:len(regression_mean)], regression_mean, label=f"{_prefix:10s} slope: {slope_mean:1.4f}", lw=linewidth)
-        plt.scatter(measurements[:len(means)], means, marker='x', lw=20)
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.Axes.set_aspect(plt.gca(), 1)
-    plt.ylim(0.9 * min(means), 1.3 * max(means))
-    plt.ylim(2E-3, 2E-1)
-    plt.xlabel(xlabel, fontsize=fsize)
-    if legend:
-        plt.legend(fontsize=fsize * 0.8)
-    # plt.ylabel('Absolute Error in MUD', fontsize=fsize)
-    plt.title("$\\mathrm{\\mathbb{E}}(|\\lambda^\\mathrm{MUD} - \\lambda^\\dagger|)$", fontsize=1.25 * fsize)
-    if save:
-        plt.savefig(f'{prefix}_convergence_obs_mean.png', bbox_inches='tight')
-    # plt.show()
-
-    plt.figure(figsize=(10, 10))
-    for _res in res:
-        _prefix, _in, _rm, _re = _res
-        regression_mean, slope_mean, regression_vars, slope_vars, means, variances = _rm
-        plt.plot(measurements[:len(regression_vars)], regression_vars, label=f"{_prefix:10s} slope: {slope_vars:1.4f}", lw=linewidth)
-        plt.scatter(measurements[:len(variances)], variances, marker='x', lw=20)
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.Axes.set_aspect(plt.gca(), 1)
-#     if not len(np.unique(variances)) == 1:
-#         plt.ylim(0.9 * min(variances), 1.3 * max(variances))
-    plt.ylim(1E-5, 1E-3)
-    plt.xlabel(xlabel, fontsize=fsize)
-    if legend:
-        plt.legend(fontsize=fsize * 0.8)
-    # plt.ylabel('Absolute Error in MUD', fontsize=fsize)
-    plt.title("$\\mathrm{Var}(|\\lambda^\\mathrm{MUD} - \\lambda^\\dagger|)$", fontsize=1.25 * fsize)
-    if save:
-        _logger.info("Saving measurement experiments.")
-        plt.savefig(f'{prefix}_convergence_obs_var.png', bbox_inches='tight')
-    else:
-        plt.show()
-
-
 def plot_scalar_poisson_summary(res, measurements, prefix, lam_true, fsize=32, save=False):
     from fenics import plot as _plot
-    from mud_examples.poisson import poissonModel # function evaluation (full response surface)
+    from mud_examples.poisson import poissonModel  # function evaluation (full response surface)
 
     _logger.info("Fenics plotting for 1D example: Plotting surface...")
     for _res in res:
-        _prefix, _in, _rm, _re = _res
+        _example, _in, _rm, _re, _fname = _res
         lam, qoi, sensors, qoi_true, experiments, solutions = _in
         gamma = lam
         plot_num_measure = min(100, max(measurements))
-        raveled_input = np.repeat(gamma, qoi.shape[1])
-        raveled_output = qoi.reshape(-1)
-        x = raveled_input
-        y = raveled_output
+        # raveled_input = np.repeat(gamma, qoi.shape[1])
+        # raveled_output = qoi.reshape(-1)
+        # x = raveled_input
+        # y = raveled_output
 
-        fig = plt.figure(figsize=(10,8))
         gs = gridspec.GridSpec(3, 3)
-        ax_main = plt.subplot(gs[1:3, :2])
-        # ax_xDist = plt.subplot(gs[0, :2],sharex=ax_main)
-        ax_yDist = plt.subplot(gs[1:3, 2],sharey=ax_main)
+        ax_main = plt.subplot(gs[1:3, :2], figsize=(10, 8))
+        # ax_xDist = plt.subplot(gs[0, :2], sharex=ax_main)
+        ax_yDist = plt.subplot(gs[1:3, 2], sharey=ax_main)
 
         a = np.argsort(gamma)
         slopes = []
 
         # ax_main.plot(x,y,marker='.')
         for idx in range(plot_num_measure):
-            ax_main.plot(gamma[a], qoi[a,idx], c='k',
-                     label=f'sensor {idx}: (%.2f, %.2f)'%(sensors[idx,0], sensors[idx,1]),
-                     lw=1, alpha=0.1)
-            slopes.append(qoi[a[-1],idx] - qoi[a[0],idx])
+            ax_main.plot(
+                gamma[a],
+                qoi[a, idx],
+                c='k',
+                label=f'sensor {idx}: ({sensors[idx, 0]:1.2f}, {sensors[idx, 1]:1.2f})',
+                lw=1,
+                alpha=0.1,
+                )
+            slopes.append(qoi[a[-1], idx] - qoi[a[0], idx])
         sa = np.argsort(slopes)
         slopes = np.array(slopes)
         ranked_slopes = slopes[sa]
@@ -230,43 +135,43 @@ def plot_scalar_poisson_summary(res, measurements, prefix, lam_true, fsize=32, s
         ylabel_text = "Measurement\nResponse"
         ax_main.axes.set_xlabel(xlabel_text, fontsize=fsize)
         ax_main.axes.set_ylabel(ylabel_text, fontsize=fsize)
-        ax_main.axes.set_ylim((-1.25,0.5))
+        ax_main.axes.set_ylim((-1.25, 0.5))
         # ax_main.axes.set_title('Sensitivity of Measurements', fontsize=1.25*fsize)
         ax_main.axvline(3)
 
-        ax_yDist.hist(qoi_true, bins=np.linspace(-1.25,0.5,35), orientation='horizontal', align='mid')
+        ax_yDist.hist(qoi_true, bins=np.linspace(-1.25, 0.5, 35), orientation='horizontal', align='mid')
         # ax_yDist.set(xlabel='count')
         ax_yDist.tick_params(labelleft=False, labelbottom=False)
         if save:
-            plt.savefig(f'{_prefix}_qoi_response.png', bbox_inches='tight')
-        #plt.show()
+            plt.savefig(f'{_example}_qoi_response.png', bbox_inches='tight')
+        # plt.show()
 
-        plt.figure(figsize=(10,10))
-        plt.title("Sensitivity of\nMeasurement Locations", fontsize=1.25*fsize)
-        plt.hist(ranked_slopes, bins=np.linspace(-1.25,0,25), density=True)
+        plt.figure(figsize=(10, 10))
+        plt.title("Sensitivity of\nMeasurement Locations", fontsize=1.25 * fsize)
+        plt.hist(ranked_slopes, bins=np.linspace(-1.25, 0, 25), density=True)
         plt.xlabel("Slope", fontsize=fsize)
         if save:
-            plt.savefig(f'{_prefix}_sensitivity_qoi.png', bbox_inches='tight')
+            plt.savefig(f'{_example}_sensitivity_qoi.png', bbox_inches='tight')
         else:
             plt.show()
 
         ##########
 
-        plt.figure(figsize=(10,10))
+        plt.figure(figsize=(10, 10))
         num_sensitive  = 20
         most_sensitive = sa[sa < 100][0:num_sensitive]
         _logger.info(f"{num_sensitive} most sensitive sensors in first 100: {most_sensitive}")
         _plot(poissonModel(lam_true))
         for i in range(min(100, max(measurements))):
-            plt.scatter(sensors[i,0], sensors[i,1], c='w', s=200)
+            plt.scatter(sensors[i, 0], sensors[i, 1], c='w', s=200)
             if i in most_sensitive:
-                plt.scatter(sensors[i,0], sensors[i,1], c='y', s=100)
-        #     plt.annotate(f"{i+1:02d}", (sensors[i,0]-0.0125, sensors[i,1]-0.01), alpha=1, fontsize=0.35*fsize)
-        # plt.title('Reference solution', fontsize=1.25*fsize)
+                plt.scatter(sensors[i, 0], sensors[i, 1], c='y', s=100)
+        #     plt.annotate(f"{i + 1:02d}", (sensors[i, 0] - 0.0125, sensors[i, 1] - 0.01), alpha=1, fontsize=0.35*fsize)
+        # plt.title('Reference solution', fontsize=1.25 * fsize)
         plt.xlabel('$x_1$', fontsize=fsize)
         plt.ylabel('$x_2$', fontsize=fsize)
         if save:
-            plt.savefig(f'{_prefix}_reference_solution.png', bbox_inches='tight')
+            plt.savefig(f'{_example}_reference_solution.png', bbox_inches='tight')
         else:
             plt.show()
 
@@ -299,4 +204,3 @@ def plot_contours(A, ref_param, subset=None,
         yloc = [ref_param[0] - w * AA[i, 1], ref_param[1] + w * AA[i, 1]]
         plt.plot(xloc, yloc, c=color, ls=ls, lw=lw, **kwds)
         plt.annotate('%d' % (contour + 1), (xloc[0], yloc[0]), fontsize=fs)
-

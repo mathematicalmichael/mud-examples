@@ -12,7 +12,7 @@ Authors: Troy Butler & Michael Pilosov
 # Installation
 
 ```sh
-pip install mud_examples
+pip install mud-examples
 ```
 
 # Quickstart
@@ -25,7 +25,6 @@ The above is equivalent to running all of the examples sequentially:
 
 ```sh
 mud_run_inv
-mud_run_con
 mud_run_lin
 mud_run_ode
 mud_run_pde
