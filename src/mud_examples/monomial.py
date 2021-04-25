@@ -78,7 +78,7 @@ def main(args):
 
     # Compute more observations for use in BIP
     tick_fsize = 28
-    leg_fsize = 24
+    legend_fsize = 24
     for num_data in [1, 5, 10, 20]:
         np.random.seed(123456)  # Just for reproducibility, you can comment out if you want.
         data = norm.rvs(loc=mu, scale=sigma**2, size=num_data)
@@ -121,13 +121,13 @@ def main(args):
                              linewidth=4, label='Posterior')
         plt.xlim([-1, 1])
         if num_data > 1:
-            plt.annotate(f'$N={num_data}$', (-0.75, 5), fontsize=leg_fsize)
+            plt.annotate(f'$N={num_data}$', (-0.75, 5), fontsize=legend_fsize)
             plt.ylim([0, 28])  # fix axis height for comparisons
 
         plt.xticks(fontsize=tick_fsize)
         plt.yticks(fontsize=tick_fsize)
         plt.xlabel("$\\Lambda$", fontsize=1.25*tick_fsize)
-        plt.legend(fontsize=leg_fsize, loc='upper left')
+        plt.legend(fontsize=legend_fsize, loc='upper left')
         if save:
             plt.savefig(f'{fdir}/bip-vs-sip-{num_data}.png',
                         bbox_inches='tight')
@@ -149,12 +149,12 @@ def main(args):
 
         plt.xlim([-1, 1])
         if num_data > 1:
-            plt.annotate(f'$N={num_data}$', (-0.75, 5), fontsize=leg_fsize)
+            plt.annotate(f'$N={num_data}$', (-0.75, 5), fontsize=legend_fsize)
             plt.ylim([0, 20])  # fix axis height for comparisons
         plt.xticks(fontsize=tick_fsize)
         plt.yticks(fontsize=tick_fsize)
         plt.xlabel("$\\mathcal{D}$", fontsize=1.25*tick_fsize)
-        plt.legend(fontsize=leg_fsize, loc='upper left')
+        plt.legend(fontsize=legend_fsize, loc='upper left')
         if save:
             plt.savefig(f'{fdir}/bip-vs-sip-pf-{num_data}.png',
                         bbox_inches='tight')
