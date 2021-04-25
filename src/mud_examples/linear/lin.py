@@ -1067,4 +1067,4 @@ def compare_linear_sols(transform, lam_ref, A, b,
 
 
 if __name__ == "__main__":
-    run_meas()
+    run()

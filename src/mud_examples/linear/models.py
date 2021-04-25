@@ -16,8 +16,6 @@ def createRandomLinearMap(dim_input, dim_output,
     else:
         M     = np.random.rand(dim_output, dim_input)   # noqa: E221
     if repeated:  # just use first row
-        # M     = np.array(list(M[0, :]) * dim_output)    # noqa: E221
-        # M     = M.reshape(dim_output, dim_input)        # noqa: E221
         M     = M[0, :].reshape(1, dim_input)
 
     return M
