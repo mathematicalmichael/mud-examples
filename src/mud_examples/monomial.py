@@ -158,7 +158,7 @@ def main(args):
         if save:
             plt.savefig(f'{fdir}/bip-vs-sip-pf-{num_data}.png',
                         bbox_inches='tight')
-            plt.close()
+            plt.close('all')
         # plt.show()
 
 
