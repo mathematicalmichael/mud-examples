@@ -5,13 +5,15 @@ import logging
 # import os
 import sys
 
+import scipy as sp
 # from mud_examples.runner import setup_logging
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import cm
 # from mud import __version__ as __mud_version__
-from mud.funs import map_sol, mud_sol
+from mud.funs import map_sol, mud_sol, updated_cov
 from mud.norm import full_functional, norm_data, norm_input, norm_predicted
+from mud.util import transform_linear_setup
 from scipy.linalg import null_space
 
 # from mud_examples import __version__
@@ -139,9 +141,9 @@ def main_dim(args):
         _err_map = err_map_list[idx]
         _err_pin = err_pin_list[idx]
 
-        plt.plot(x, _err_mud[:-1], label='mud', c='k', lw=10)
-        plt.plot(x, _err_map[:-1], label='map', c='r', ls='--', lw=5)
-        plt.plot(x, _err_pin[:-1], label='lsq', c='xkcd:light blue', ls='-', lw=5)
+        plt.plot(x, _err_mud[:-1], label='MUD', c='k', lw=10)
+        plt.plot(x, _err_map[:-1], label='MAP', c='r', ls='--', lw=5)
+        plt.plot(x, _err_pin[:-1], label='LSQ', c='xkcd:light blue', ls='-', lw=5)
 
     # plt.plot(x, regression, c='g', ls='-')
     # plt.xlim(0,dim_output)
@@ -156,7 +158,7 @@ def main_dim(args):
     # plt.ylabel("$\\frac{||\\lambda^\\dagger - \\lambda||}{||\\lambda^\\dagger||}$", fontsize=fsize*1.25)
     plt.ylabel("Relative Error", fontsize=fsize * 1.25)
     plt.xlabel('Dimension of Output Space', fontsize=fsize)
-    plt.legend(['mud', 'map', 'least squares'], fontsize=fsize)
+    plt.legend(['MUD', 'MAP', 'Least Squares'], fontsize=fsize)
     # plt.annotate(f'Slope={slope:1.4f}', (4,4/7), fontsize=32)
     plt.savefig(f'{fdir}/{prefix}-convergence.png', bbox_inches='tight')
     plt.close()
@@ -320,7 +322,8 @@ def main_rank(args):
     # plt.xscale('log')
     plt.ylim(0, 1.0)
     # plt.ylim(1E-4, 5E-2)
-    plt.ylabel("$\\frac{||\\lambda^\\dagger - \\lambda||}{||\\lambda^\\dagger||}$", fontsize=fsize*1.25)
+    # plt.ylabel("$\\frac{||\\lambda^\\dagger - \\lambda||}{||\\lambda^\\dagger||}$", fontsize=fsize*1.25)
+    plt.ylabel("Relative Error", fontsize=fsize*1.25)
     plt.xlabel('Rank(A)', fontsize=fsize)
     plt.legend(['MUD', 'MAP', 'Least Squares'], fontsize=fsize)
     # plt.annotate(f'Slope={slope:1.4f}', (4,4/7), fontsize=32)
@@ -498,6 +501,266 @@ def main_contours(args):
                         figname=out_file)
 
 
+def main_meas(args):
+    """
+    Main entrypoint for High-Dim Linear Measurement Example
+    """
+    args = parse_args(args)
+    setup_logging(args.loglevel)
+    np.random.seed(args.seed)
+#     example       = args.example
+#     num_trials   = args.num_trials
+#     fsize        = args.fsize
+#     linewidth    = args.linewidth
+#     seed         = args.seed
+    # dim_input     = args.input_dim
+    # save         = args.save
+#     alt          = args.alt
+#     bayes        = args.bayes
+#     prefix       = args.prefix
+#     dist         = args.dist
+
+    presentation = False
+    save = True
+
+    if not presentation:
+        plt.rcParams['mathtext.fontset'] = 'stix'
+        plt.rcParams['font.family'] = 'STIXGeneral'
+    fdir = 'figures/lin'
+    check_dir(fdir)
+
+    fsize = 42
+
+    def numnonzero(x, tol=1E-4):
+        return len(x[abs(x) < tol])
+
+    # # Impact of Number of Measurements for Various Choices of $\\Sigma_\text{init}$
+
+    # dim_output = dim_input
+    dim_input, dim_output = 20, 5 
+    # seed = 12
+    # np.random.seed(seed)
+
+    initial_cov = np.diag(np.sort(np.random.rand(dim_input))[::-1] + 0.5)
+    # initial_cov = np.eye(dim_input)  # will cause spectrum of updated covariance to contain repeated eigenvalues
+
+    plt.figure(figsize=(10, 10))
+    initial_mean = np.zeros(dim_input).reshape(-1, 1)
+    # initial_mean = np.random.randn(dim_input).reshape(-1,1)
+    # num_obs_list = np.arange(1, 101).tolist()
+
+    lam_ref = np.random.randn(dim_input).reshape(-1, 1)
+
+    prefix = 'lin-meas-cov'
+
+    # Ns = [10, 50, 100, 500, 1000]
+
+    sigma  = 1E-1
+    # np.random.seed(21)
+    # Ns = np.arange(10, 2001, 50).tolist()
+    Ns = [10, 100, 1000, 10000]
+
+    # for _ in range(num_trials):
+
+    operator_list, data_list, _ = models.createRandomLinearProblem(
+        lam_ref,
+        dim_output,
+        [max(Ns)] * dim_output,  # want to iterate over increasing measurements
+        [0] * dim_output,  # noiseless data bc we want to simulate multiple trials
+        dist='norm',
+        repeated=True,
+        )
+
+    MUD = np.zeros((dim_input, len(Ns)))
+    UP = np.zeros((dim_input, len(Ns)))
+    noise_draw = np.random.randn(dim_output, max(Ns)) * sigma
+
+    for j, N in enumerate(Ns):
+        A, b, _ = transform_measurements(operator_list, data_list, N, sigma, noise_draw)
+        MUD[:, j] = mud_sol(A, b, cov=initial_cov)
+        up_cov = updated_cov(A, initial_cov)
+        up_sdvals = sp.linalg.svdvals(up_cov)
+        # print(up_sdvals.shape, dim_input, up_cov.shape)
+        UP[:, j] = up_sdvals
+
+    # mud_var = MUD.var(axis=2)
+    lines = ['solid', 'dashed', 'dashdot', 'dotted']
+
+    for p in range(dim_input):
+        plt.plot(
+            Ns, UP[p, :],
+            label=f"SV {p}",
+            alpha=0.4,
+            lw=5,
+            ls=lines[p % len(lines)],
+            )
+
+    # plt.plot(Ns, mud_var, label='MUD', c='k', lw=10)
+    # plt.title("Precision of MUD Estimates", fontsize=1.25 * fsize)
+    plt.yscale('log')
+    plt.xscale('log')
+    plt.ylabel("Singular Values of $\\Sigma_{up}$", fontsize=fsize * 1.25)
+    plt.xlabel('Number of Measurements', fontsize=fsize)
+    # plt.legend()
+    if save:
+        plt.savefig(f'{fdir}/{prefix}-convergence.png', bbox_inches='tight')
+        plt.close()
+    else:
+        plt.show()
+        plt.close()
+
+    plt.figure(figsize=(10, 10))
+    plt.yscale('log')
+    for i, N in enumerate(Ns):
+        plt.scatter(
+            np.arange(dim_input), UP[:, i],
+            marker='o',
+            s=200,
+            facecolors='none',
+            edgecolors='k',
+            )
+
+        plt.plot(
+            np.arange(dim_input), UP[:, i],
+            label=f"$N={N:1.0E}$",
+            alpha=1,
+            lw=3,
+            ls=lines[i % len(lines)],
+            c='k',
+            )
+    plt.xticks(np.arange(dim_input) + 1, rotation=90)
+    plt.xlabel('Index', fontsize=fsize)
+    plt.ylabel('Singular Value', fontsize=fsize)
+
+    plt.legend()
+
+    if save:
+        plt.savefig(f'{fdir}/{prefix}-sd-convergence.png', bbox_inches='tight')
+        plt.close()
+    else:
+        plt.show()
+        plt.close()
+
+
+
+
+def main_meas_var(args):
+    """
+    Main entrypoint for High-Dim Linear Measurement Example
+    """
+    args = parse_args(args)
+    setup_logging(args.loglevel)
+    np.random.seed(args.seed)
+#     example       = args.example
+#     num_trials   = args.num_trials
+#     fsize        = args.fsize
+#     linewidth    = args.linewidth
+#     seed         = args.seed
+    # dim_input     = args.input_dim
+    # save         = args.save
+#     alt          = args.alt
+#     bayes        = args.bayes
+#     prefix       = args.prefix
+#     dist         = args.dist
+
+    presentation = False
+    save = True
+
+    if not presentation:
+        plt.rcParams['mathtext.fontset'] = 'stix'
+        plt.rcParams['font.family'] = 'STIXGeneral'
+    fdir = 'figures/lin'
+    check_dir(fdir)
+
+    fsize = 42
+
+    def numnonzero(x, tol=1E-4):
+        return len(x[abs(x) < tol])
+
+    # # Impact of Number of Measurements for Various Choices of $\\Sigma_\text{init}$
+
+    # dim_output = dim_input
+    dim_input, dim_output = 4, 2
+    # seed = 12
+    # np.random.seed(seed)
+
+    # initial_cov = np.diag(np.sort(np.random.rand(dim_input))[::-1] + 0.5)
+    initial_cov = np.eye(dim_input)
+
+    plt.figure(figsize=(10, 10))
+    initial_mean = np.zeros(dim_input).reshape(-1, 1)
+    # initial_mean = np.random.randn(dim_input).reshape(-1,1)
+    # num_obs_list = np.arange(1, 101).tolist()
+
+    lam_ref = np.random.randn(dim_input).reshape(-1, 1)
+
+    prefix = 'lin-meas-cov'
+
+    # Ns = [10, 50, 100, 500, 1000]
+
+    sigma  = 1E-1
+    # np.random.seed(21)
+    Ns = np.arange(10, 2001, 50).tolist()
+    # Ns = [10, 50, 100, 500, 1000, 5000, 10000]
+
+    num_trials = 50
+    # for _ in range(num_trials):
+
+    def A_N(M, N, sigma):
+        A = np.sqrt(N) / sigma * M
+        return A
+
+    def d_N(M, lam, n):
+        d = M @ lam + n
+        assert len(d.ravel()) == len(n.ravel()), \
+            f"Shape mismatch noise={n.shape}, data={d.shape}"
+        return d
+
+    def b_N(N, d, sigma):
+        b = -1 / np.sqrt(N) * np.sum(np.divide(d, sigma), axis=1)
+        return b
+
+    # M = np.random.normal(size=(dim_output, dim_input))
+    operator_list, data_list, _ = models.createRandomLinearProblem(
+        lam_ref,
+        dim_output,
+        [max(Ns)] * dim_output,  # want to iterate over increasing measurements
+        [0] * dim_output,  # noiseless data bc we want to simulate multiple trials
+        dist='norm',
+        repeated=True,
+        )
+
+    # operator list has dim_output 1xdim_input matrices
+    MUD = np.zeros((dim_input, len(Ns), num_trials))
+    # M = np.array(operator_list).reshape(dim_output, dim_input)
+    noise_draw = [np.random.randn(dim_output, max(Ns)) * sigma for _ in range(num_trials)]
+    for j, N in enumerate(Ns):
+        # _A = A_N(M, N, sigma)
+        for i in range(num_trials):
+            # _b = b_N(N, d_N(M, lam_ref, noise_draw[i][:, 0:N]), sigma)
+            # A, b = transform_linear_setup(operator_list, data_list, sigma)
+            A, b, _ = transform_measurements(operator_list, data_list, N, sigma, noise_draw[i])
+            MUD[:, j, i] = mud_sol(A, b, cov=initial_cov)
+
+    mud_var = MUD.var(axis=2).mean(axis=0)
+    plt.plot(Ns, mud_var, label='MUD', c='k', lw=10)
+
+    # plt.title("Precision of MUD Estimates", fontsize=1.25 * fsize)
+    plt.yscale('log')
+    plt.xscale('log')
+    plt.ylabel("Singular Values of $\\Sigma_{up}$", fontsize=fsize * 1.25)
+    # plt.ylabel("Average Variance", fontsize=fsize * 1.25)
+    plt.xlabel('Number of Measurements', fontsize=fsize)
+    plt.legend()
+    # plt.legend(['MUD', 'Least Squares'], fontsize=fsize)
+    if save:
+        plt.savefig(f'{fdir}/{prefix}-convergence.png', bbox_inches='tight')
+        plt.close()
+    else:
+        plt.show()
+        plt.close()
+
+
 def main(args):
     """
     Main entrypoint for example-generation
@@ -505,6 +768,7 @@ def main(args):
     main_contours(args)
     main_rank(args)
     main_dim(args)
+    main_meas(args)
 
 
 def run():
@@ -512,9 +776,14 @@ def run():
     """
     main(sys.argv[1:])
 
+
+def run_meas():
+    """Entry point for console_scripts
+    """
+    main_meas(sys.argv[1:])
+
+
 ############################################################
-
-
 
 
 def contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C901
@@ -700,10 +969,10 @@ def contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C901
     # plt.show()
 
 
-def compare_mud_map_pin(A, b, d, mean, cov):
-    mud_pt = mud_sol(A, b, d, mean, cov)
-    map_pt = map_sol(A, b, d, mean, cov)
-    pin_pt = (np.linalg.pinv(A)@(d-b)).reshape(-1,1)
+def compare_mud_map_pin(A, b, y, mean, cov):
+    mud_pt = mud_sol(A, b, y, mean, cov)
+    map_pt = map_sol(A, b, y, mean, cov)
+    pin_pt = (np.linalg.pinv(A) @ (y - b)).reshape(-1, 1)
     return mud_pt, map_pt, pin_pt
 
 
@@ -714,7 +983,7 @@ def transform_rank_list(lam_ref, A, b, rank):
     """
     _A = sum(A[0:rank])
     _b = b
-    _d = _A@lam_ref + _b
+    _d = _A @ lam_ref + _b
     assert np.linalg.matrix_rank(_A) == rank, "Unexpected rank mismatch"
     return _A, _b, _d
 
@@ -725,16 +994,27 @@ def transform_dim_out(lam_ref, A, b, dim):
 
     _A = A[:dim, :]
     _b = b[:dim, :]
-    _d = _A@lam_ref + _b
+    _d = _A @ lam_ref + _b
     return _A, _b, _d
 
 
+def transform_measurements(operator_list, data_list, measurements, std_list, noise):
+    dim_output = len(operator_list)
+    N = measurements
+    _oper_list = [M[0:N,:] for M in operator_list]
+    _d = np.array([y[0:N] for y in data_list]) + noise[:, 0:N]
+    _data_list = _d.tolist()
+    A, b = transform_linear_setup(_oper_list, _data_list, std_list)
+    d = np.zeros(dim_output).reshape(-1, 1)
+    return A, b, d
+
+
 def compare_linear_sols_rank_list(lam_ref, A, b,
-                             alpha=1, mean=None, cov=None):
+                                  alpha=1, mean=None, cov=None):
     """
     Input and output dimensions fixed, varying rank 1..dim_output.
     """
-    
+
     return compare_linear_sols(transform_rank_list, lam_ref, A, b, alpha, mean, cov)
 
 
@@ -747,34 +1027,41 @@ def compare_linear_sols_dim(lam_ref, A, b,
 
 
 def compare_linear_sols(transform, lam_ref, A, b,
-                            alpha=1, mean=None, cov=None):
+                        alpha=1, mean=None, cov=None):
     """
     Input dimension fixed, varying according to the output
     of the anonymous function `transform`'s return.
     """
     sols = {}
-    if isinstance(alpha, list) or isinstance(alpha, tuple):
+    if isinstance(alpha, (list, tuple)):
         alpha_list = alpha
     else:
         alpha_list = [alpha]
 
+    if isinstance(A, np.ndarray):
+        dim_in = A.shape[1]
+    else:
+        dim_in = len(A)
+
     if mean is None:
-        mean = np.zeros(A.shape[1])
-    
+        mean = np.zeros(dim_in)
+
     if cov is None:
-        cov = np.eye(A.shape[1])
+        cov = np.eye(dim_in)
 
     _logger.info("alpha = {}".format(alpha_list))
-    if isinstance(A, list):  # svd approach returns list
-        dim_output = A[0].shape[0]
+    if isinstance(A, list):  # svd approach returns list (max dim output), so does measurement study (max meas)
+        max_iteration = A[0].shape[0]
+        if max_iteration == 1:
+            max_iteration = 100  # repeated measurement map is 1xp, this is a dirty override.
     else:
-        dim_output = A.shape[0]
+        max_iteration = A.shape[0]
 
     for alpha in alpha_list:
         sols[alpha] = []
-        for _out in range(1, dim_output+1, 1):
-            _A, _b, _d = transform(lam_ref, A, b, _out)
-            _mud, _map, _pin = compare_mud_map_pin(_A, _b, _d, mean, alpha*cov)
+        for _out in range(1, max_iteration + 1, 1):
+            _A, _b, _y = transform(lam_ref, A, b, _out)
+            _mud, _map, _pin = compare_mud_map_pin(_A, _b, _y, mean, alpha * cov)
             sols[alpha].append((_mud, _map, _pin))
 
     return sols
