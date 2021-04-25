@@ -108,7 +108,7 @@ def randA_list_svd(dim_output, dim_input=None, seed=None) -> List:
     _A = randA_gauss(dim_output, dim_input, seed=seed)
     u, s, v = np.linalg.svd(_A)
     for i in range(dim_output):
-        _a = s[i]*(u[:, i].reshape(-1, 1))@v[:, i].reshape(1, -1)
+        _a = s[i] * (u[:, i].reshape(-1, 1)) @ v[:, i].reshape(1, -1)
         A.append(_a)
     return A
 

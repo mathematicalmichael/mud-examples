@@ -811,7 +811,7 @@ def evaluate_and_save_poisson(sample, save_prefix):
 
     # define fixed mesh to avoid re-instantiation on each call to model (how it handles mesh=None)
     nx, ny = 36, 36
-    mesh = fin.RectangleMesh(fin.Point(0,0), fin.Point(1,1), nx, ny)
+    mesh = fin.RectangleMesh(fin.Point(0,0), fin.Point(1, 1), nx, ny)
     u = poissonModel(gamma=g, mesh=mesh, nx=nx, ny=ny)
 
     # Save solution as XML mesh
