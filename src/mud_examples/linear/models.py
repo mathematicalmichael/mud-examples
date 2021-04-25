@@ -27,12 +27,15 @@ def createNoisyReferenceData(M, reference_point, std, num_data=None):
     dim_input  = len(reference_point)                            # noqa: E221
     if num_data is None:
         num_data = M.shape[0]
-    assert M.shape[1] == dim_input, "Operator/Data dimension mismatch"
-    assert M.shape[0] == 1 or M.shape[0] == num_data, "Operator/Data dimension mismatch"
+    assert M.shape[1] == dim_input, \
+        f"Operator/Reference dimension mismatch. op: {M.shape}, input dim: {dim_input}"
+    assert M.shape[0] == 1 or M.shape[0] == num_data, \
+        f"Operator/Data dimension mismatch. op: {M.shape}, observations: {num_data}"
     if isinstance(std, (int, float)):  # support for std per measurement
         std    = np.array([std] * num_data)                      # noqa: E221
     else:
-        assert len(std.ravel()) == num_data
+        assert len(std.ravel()) == num_data, \
+            f"St. Dev / Data mismatch. data: {num_data}, std: {len(std.ravel())}
 
     ref_input  = np.array(list(reference_point)).reshape(-1, 1)  # noqa: E221
     ref_data   = M @ ref_input                                   # noqa: E221
