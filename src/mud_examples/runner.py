@@ -191,6 +191,7 @@ def run_pde():
 def run_ode():
     """Recreates Poisson figures in MUD paper.
 
+
     >>> run_ode()
     Will run simulations for %T=[0.125, 0.25, 0.5, 1.0]
     Running example: mud

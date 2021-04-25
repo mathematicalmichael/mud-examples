@@ -78,7 +78,6 @@ def main_dim(args):
         return len(x[abs(x) < tol])
 
     # # Impact of Dimension for Various Choices of $\\Sigma_\text{init}$
-    # We sequentially incorporate $D=1, \dots , P$ dimensions into our QoI map and study the 2-norm between the true value that was used to generate the data and the analytical MUD/MAP points.
 
     # dim_output = dim_input
     dim_input, dim_output = 100, 100
@@ -101,7 +100,7 @@ def main_dim(args):
     # option to fix A and perturb lam_ref
 
     lam_ref = np.random.randn(dim_input).reshape(-1, 1)
-    d = A@lam_ref + b
+    # d = A @ lam_ref + b
 
     # %%time
     sols = compare_linear_sols_dim(lam_ref, A, b, alpha_list, initial_mean, initial_cov)
@@ -109,26 +108,25 @@ def main_dim(args):
     # c = np.linalg.cond(A)*np.linalg.norm(lam_ref)
     c = np.linalg.norm(lam_ref)
     # c = 1
-    err_mud_list = [[np.linalg.norm(_m[0] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]  # output_dim+1 values of _m
-    err_map_list = [[np.linalg.norm(_m[1] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]
-    err_pin_list = [[np.linalg.norm(_m[2] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]
+    err_mud_list = [[np.linalg.norm(_m[0] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list]
+    err_map_list = [[np.linalg.norm(_m[1] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list]
+    err_pin_list = [[np.linalg.norm(_m[2] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list]
 
     # c = np.linalg.cond(A)
     c = np.linalg.norm(A)
-    err_Amud_list = [[np.linalg.norm(A @ (_m[0] - lam_ref)) / c for _m in sols[alpha]] for alpha in alpha_list ]
-    err_Amap_list = [[np.linalg.norm(A @ (_m[1] - lam_ref)) / c for _m in sols[alpha]] for alpha in alpha_list ]
-    err_Apin_list = [[np.linalg.norm(A @ (_m[2] - lam_ref)) / c for _m in sols[alpha]] for alpha in alpha_list ]
+    # err_Amud_list = [[np.linalg.norm(A @ (_m[0] - lam_ref)) / c for _m in sols[alpha]] for alpha in alpha_list]
+    # err_Amap_list = [[np.linalg.norm(A @ (_m[1] - lam_ref)) / c for _m in sols[alpha]] for alpha in alpha_list]
+    # err_Apin_list = [[np.linalg.norm(A @ (_m[2] - lam_ref)) / c for _m in sols[alpha]] for alpha in alpha_list]
 
     # measure # of components that agree
-    # err_mud_list = [[numnonzero(_m[0] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list ]
-    # err_map_list = [[numnonzero(_m[1] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list ]
-    # err_pin_list = [[numnonzero(_m[2] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list ]
+    # err_mud_list = [[numnonzero(_m[0] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list]
+    # err_map_list = [[numnonzero(_m[1] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list]
+    # err_pin_list = [[numnonzero(_m[2] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list]
 
     x, y = np.arange(1, dim_output, 1), err_mud_list[0][0:-1]
 
-    slope, intercept = (np.linalg.pinv(np.vander(x, 2))@np.array(y).reshape(-1, 1)).ravel()
+    slope, intercept = (np.linalg.pinv(np.vander(x, 2)) @ np.array(y).reshape(-1, 1)).ravel()
     regression = slope * x + intercept
-
 
     # ---
 
@@ -150,7 +148,8 @@ def main_dim(args):
     if 'id' in prefix:
         plt.title("Convergence for Various $\\Sigma_{init} = \\alpha I$", fontsize=1.25 * fsize)
     else:
-        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \\Sigma$", fontsize=1.25 * fsize)# plt.yscale('log')
+        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \\Sigma$", fontsize=1.25 * fsize)
+        # plt.yscale('log')
     # plt.yscale('log')
     # plt.xscale('log')
     plt.ylim(0, 1.0)
@@ -185,9 +184,7 @@ def main_dim(args):
     # plt.close()
     # # plt.show()
 
-
     # # # Convergence in Predictions
-
 
     # for idx, alpha in enumerate(alpha_list):
     #     _err_mud = err_Amud_list[idx]
@@ -249,7 +246,9 @@ def main_rank(args):
     # ---
 
     # # Impact of Rank(A) for Various Choices of $\\Sigma_\text{init}$
-    # We sequentially incorporate $D=1, \dots , P$ dimensions into our QoI map and study the 2-norm between the true value that was used to generate the data and the analytical MUD/MAP points. 
+    # We sequentially incorporate $D=1, \dots , P$ dimensions into our QoI map and study
+    # the 2-norm between the true value that was used to generate
+    # the data and the analytical MUD/MAP points.
 
     dim_input, dim_output = 100, 100
     seed = 12
@@ -272,38 +271,38 @@ def main_rank(args):
 
     # d = A@lam_ref + b
 
-
     # %%time
     sols = compare_linear_sols_rank_list(lam_ref, A_list, b, alpha_list, initial_mean, initial_cov)
 
     # c = np.linalg.cond(A)*np.linalg.norm(lam_ref)
     c = np.linalg.norm(lam_ref)
-    err_mud_list = [[np.linalg.norm(_m[0] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ] # output_dim+1 values of _m
-    err_map_list = [[np.linalg.norm(_m[1] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]
-    err_pin_list = [[np.linalg.norm(_m[2] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list ]
+    err_mud_list = [[np.linalg.norm(_m[0] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list]
+    err_map_list = [[np.linalg.norm(_m[1] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list]
+    err_pin_list = [[np.linalg.norm(_m[2] - lam_ref) / c for _m in sols[alpha]] for alpha in alpha_list]
 
 
-    err_Amud_list = [[np.linalg.norm(sum(A_list[0:i+1])@(_m[0] - lam_ref)) / np.linalg.norm(sum(A_list[0:i+1])) for i, _m in enumerate(sols[alpha])] for alpha in alpha_list ]
-    err_Amap_list = [[np.linalg.norm(sum(A_list[0:i+1])@(_m[1] - lam_ref)) / np.linalg.norm(sum(A_list[0:i+1])) for i, _m in enumerate(sols[alpha])] for alpha in alpha_list ]
-    err_Apin_list = [[np.linalg.norm(sum(A_list[0:i+1])@(_m[2] - lam_ref)) / np.linalg.norm(sum(A_list[0:i+1])) for i, _m in enumerate(sols[alpha])] for alpha in alpha_list ]
+    err_Amud_list = [[np.linalg.norm(sum(A_list[0:i + 1]) @ (_m[0] - lam_ref)) / np.linalg.norm(sum(A_list[0:i + 1])) for i, _m in enumerate(sols[alpha])] for alpha in alpha_list]  # noqa E551
+    err_Amap_list = [[np.linalg.norm(sum(A_list[0:i + 1]) @ (_m[1] - lam_ref)) / np.linalg.norm(sum(A_list[0:i + 1])) for i, _m in enumerate(sols[alpha])] for alpha in alpha_list]  # noqa E551
+    err_Apin_list = [[np.linalg.norm(sum(A_list[0:i + 1]) @ (_m[2] - lam_ref)) / np.linalg.norm(sum(A_list[0:i + 1])) for i, _m in enumerate(sols[alpha])] for alpha in alpha_list]  # noqa E551
 
     # measure # of components that agree
-    # err_mud_list = [[numnonzero(_m[0] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list ]
-    # err_map_list = [[numnonzero(_m[1] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list ]
-    # err_pin_list = [[numnonzero(_m[2] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list ]
+    # err_mud_list = [[numnonzero(_m[0] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list]
+    # err_map_list = [[numnonzero(_m[1] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list]
+    # err_pin_list = [[numnonzero(_m[2] - lam_ref) for _m in sols[alpha]] for alpha in alpha_list]
 
     # len(err_mud_list[0])
-    x, y = np.arange(1, 1+dim_output, 1), err_mud_list[0]
+    x, y = np.arange(1, 1 + dim_output, 1), err_mud_list[0]
 
-    slope, intercept = (np.linalg.pinv(np.vander(x, 2))@np.array(y).reshape(-1,1)).ravel()
-    regression = slope*x + intercept
-
+    slope, intercept = (np.linalg.pinv(np.vander(x, 2)) @ np.array(y).reshape(-1, 1)).ravel()
+    # regression = slope * x + intercept
 
     # # Convergence Plot
 
     for idx, alpha in enumerate(alpha_list):
-        if (1+idx)%2 and alpha<=10:
-            plt.annotate(f"$\\alpha$={alpha:1.2E}", (100, max(err_map_list[idx][-1], 0.01)), fontsize=24)
+        if (1 +idx) % 2 and alpha <= 10:
+            plt.annotate(f"$\\alpha$={alpha:1.2E}",
+                         (100, max(err_map_list[idx][-1], 0.01)),
+                         fontsize=24)
         _err_mud = err_mud_list[idx]
         _err_map = err_map_list[idx]
         _err_pin = err_pin_list[idx]
@@ -315,15 +314,15 @@ def main_rank(args):
     # plt.plot(x, regression, c='g', ls='-')
     # plt.xlim(0,dim_output)
     if 'id' in prefix:
-        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha I$", fontsize=1.25*fsize)
+        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha I$", fontsize=1.25 * fsize)
     else:
-        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \\Sigma$", fontsize=1.25*fsize)
+        plt.title("Convergence for Various $\\Sigma_{init} = \\alpha \\Sigma$", fontsize=1.25 * fsize)
     # plt.yscale('log')
     # plt.xscale('log')
     plt.ylim(0, 1.0)
     # plt.ylim(1E-4, 5E-2)
-    # plt.ylabel("$\\frac{||\\lambda^\\dagger - \\lambda||}{||\\lambda^\\dagger||}$", fontsize=fsize*1.25)
-    plt.ylabel("Relative Error", fontsize=fsize*1.25)
+    # plt.ylabel("$\\frac{||\\lambda^\\dagger - \\lambda||}{||\\lambda^\\dagger||}$", fontsize=fsize * 1.25)
+    plt.ylabel("Relative Error", fontsize=fsize * 1.25)
     plt.xlabel('Rank(A)', fontsize=fsize)
     plt.legend(['MUD', 'MAP', 'Least Squares'], fontsize=fsize)
     # plt.annotate(f'Slope={slope:1.4f}', (4,4/7), fontsize=32)
@@ -333,7 +332,6 @@ def main_rank(args):
 
     # plt.imshow(initial_cov)
 
-
     # ---
 
     # ## Surface Plot
@@ -342,7 +340,6 @@ def main_rank(args):
     # ZU = np.array(err_mud_list)
     # ZA = np.array(err_map_list)
     # ZI = np.array(err_pin_list)
-
 
     # # import matplotlib.pyplot as plt
     # from mpl_toolkits.mplot3d import Axes3D
@@ -357,7 +354,6 @@ def main_rank(args):
     # plt.show()
 
     # # print(c, slope)
-
 
     # # # Convergence in Predictions
 
@@ -418,10 +414,10 @@ def main_contours(args):
     lam_true = np.array([0.7, 0.3])
     initial_mean = np.array([0.25, 0.25])
     A = np.array([[1, 1]])
-    b = np.zeros((1,1))
+    b = np.zeros((1, 1))
 
     experiments = {}
-    
+
     # data mismatch
     experiments['data_mismatch'] = {}
     experiments['data_mismatch']['out_file'] = f'{fdir}/data_mismatch_contour.png'
@@ -429,7 +425,7 @@ def main_contours(args):
     experiments['data_mismatch']['full_check'] = False
     experiments['data_mismatch']['tk_reg'] = 0
     experiments['data_mismatch']['pr_reg'] = 0
-    
+
     # tikonov regularization
     experiments['tikonov'] = {}
     experiments['tikonov']['out_file'] = f'{fdir}/tikonov_contour.png'
@@ -437,7 +433,7 @@ def main_contours(args):
     experiments['tikonov']['pr_reg'] = 0
     experiments['tikonov']['data_check'] = False
     experiments['tikonov']['full_check'] = False
-    
+
     # modified regularization
     experiments['modified'] = {}
     experiments['modified']['out_file'] = f'{fdir}/consistent_contour.png'
@@ -445,7 +441,7 @@ def main_contours(args):
     experiments['modified']['pr_reg'] = 1
     experiments['modified']['data_check'] = False
     experiments['modified']['full_check'] = False
-    
+
     # map point
     experiments['classical'] = {}
     experiments['classical']['out_file'] = f'{fdir}/classical_solution.png'
@@ -453,7 +449,7 @@ def main_contours(args):
     experiments['classical']['pr_reg'] = 0
     experiments['classical']['data_check'] = True
     experiments['classical']['full_check'] = True
-    
+
     # mud point
     experiments['consistent'] = {}
     experiments['consistent']['out_file'] = f'{fdir}/consistent_solution.png'
@@ -490,14 +486,14 @@ def main_contours(args):
                         param_ref=lam_true,
                         compare=comparison,
                         cov_01=cov_01,
-                        cov_11=cov_11, 
+                        cov_11=cov_11,
                         initial_mean=initial_mean,
                         alpha=tk_reg,
                         omega=pr_reg,
                         show_full=full_check,
                         show_data=data_check,
                         show_est=numr_check,
-                        obs_std = obs_std,
+                        obs_std=obs_std,
                         figname=out_file)
 
 
@@ -537,7 +533,7 @@ def main_meas(args):
     # # Impact of Number of Measurements for Various Choices of $\\Sigma_\text{init}$
 
     # dim_output = dim_input
-    dim_input, dim_output = 20, 5 
+    dim_input, dim_output = 20, 5
     # seed = 12
     # np.random.seed(seed)
 
@@ -545,7 +541,7 @@ def main_meas(args):
     # initial_cov = np.eye(dim_input)  # will cause spectrum of updated covariance to contain repeated eigenvalues
 
     plt.figure(figsize=(10, 10))
-    initial_mean = np.zeros(dim_input).reshape(-1, 1)
+    # initial_mean = np.zeros(dim_input).reshape(-1, 1)
     # initial_mean = np.random.randn(dim_input).reshape(-1,1)
     # num_obs_list = np.arange(1, 101).tolist()
 
@@ -642,8 +638,6 @@ def main_meas(args):
         plt.close()
 
 
-
-
 def main_meas_var(args):
     """
     Main entrypoint for High-Dim Linear Measurement Example
@@ -688,7 +682,7 @@ def main_meas_var(args):
     initial_cov = np.eye(dim_input)
 
     plt.figure(figsize=(10, 10))
-    initial_mean = np.zeros(dim_input).reshape(-1, 1)
+    # initial_mean = np.zeros(dim_input).reshape(-1, 1)
     # initial_mean = np.random.randn(dim_input).reshape(-1,1)
     # num_obs_list = np.arange(1, 101).tolist()
 
@@ -786,14 +780,15 @@ def run_meas():
 ############################################################
 
 
-def contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C901
-                            cov_11=0.5, cov_01=-0.25,
-                            initial_mean=np.array([0.25, 0.25]),
-                            alpha=1, omega=1, obs_std=1,
-                            show_full=True, show_data=True,
-                            show_est=False, param_ref=None, compare=False,
-                            fsize=42, figname='latest_figure.png', save=False,
-                            ):
+def contour_example(
+        A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C901
+        cov_11=0.5, cov_01=-0.25,
+        initial_mean=np.array([0.25, 0.25]),
+        alpha=1, omega=1, obs_std=1,
+        show_full=True, show_data=True,
+        show_est=False, param_ref=None, compare=False,
+        fsize=42, figname='latest_figure.png', save=False,
+        ):
     """
     alpha: float in [0, 1], weight of Tikhonov regularization
     omega: float in [0, 1], weight of Modified regularization
@@ -859,7 +854,6 @@ def contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C901
                     cmap=cm.viridis, alpha=0.25)
     plt.axis('equal')
 
-
     if alpha + omega > 0:
         plt.scatter(initial_mean[0], initial_mean[1],
                     label='Initial Mean',
@@ -871,12 +865,12 @@ def contour_example(A=np.array([[1, 1]]), b=np.zeros([1, 1]),  # noqa: C901
         else:
             if compare:
                 plt.scatter(param_ref[0], param_ref[1],
-                    label='$\\lambda^\\dagger$',
-                    color='k', s=msize, marker='s')
+                            label='$\\lambda^\\dagger$',
+                            color='k', s=msize, marker='s')
 
                 plt.annotate('Truth',
-                         (param_ref[0] + 0.00075 * fsize, param_ref[1] + 0.00075 * fsize),
-                         fontsize=fsize, backgroundcolor="w")
+                             (param_ref[0] + 0.00075 * fsize, param_ref[1] + 0.00075 * fsize),
+                             fontsize=fsize, backgroundcolor="w")
 
         show_mud = omega > 0 or compare
 
@@ -1001,7 +995,7 @@ def transform_dim_out(lam_ref, A, b, dim):
 def transform_measurements(operator_list, data_list, measurements, std_list, noise):
     dim_output = len(operator_list)
     N = measurements
-    _oper_list = [M[0:N,:] for M in operator_list]
+    _oper_list = [M[0:N, :] for M in operator_list]
     _d = np.array([y[0:N] for y in data_list]) + noise[:, 0:N]
     _data_list = _d.tolist()
     A, b = transform_linear_setup(_oper_list, _data_list, std_list)

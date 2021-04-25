@@ -2,19 +2,18 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import os
 
 import matplotlib
 import numpy as np
 from scipy.stats import distributions as ds
 
 import mud_examples.poisson as ps  # lazy loads fenics
-from mud.funs import map_problem, mud_problem
+# from mud.funs import map_problem, mud_problem
 from mud.util import std_from_equipment
 from mud_examples.experiments import (experiment_equipment,
                                       experiment_measurements)
 from mud_examples.summary import extract_statistics, fit_log_linear_regression
-from mud_examples.utils import check_dir
+# from mud_examples.utils import check_dir
 
 _logger = logging.getLogger(__name__)
 
@@ -22,7 +21,7 @@ _logger = logging.getLogger(__name__)
 matplotlib.rcParams['mathtext.fontset'] = 'stix'
 matplotlib.rcParams['font.family'] = 'STIXGeneral'
 matplotlib.backend = 'Agg'
-matplotlib.rcParams['figure.figsize'] = 10,10
+matplotlib.rcParams['figure.figsize'] = 10, 10
 matplotlib.rcParams['font.size'] = 16
 
 
@@ -91,7 +90,7 @@ def main_pde(
     sd_vals     = [std_from_equipment(tolerance=tol, probability=0.99) for tol in tolerances]
     sigma       = sd_vals[-1]  # sorted, pick largest
     _logger.info(f'Using std. dev {sigma}')
-    example_list = [ 'mud' ]
+    example_list = ['mud']
     if alt:
         example_list.append('mud-alt')
     if bayes:
@@ -231,7 +230,8 @@ def main_pde(
                 P.plot_initial()
             if len(measurements) > 1:  # FIXME: make plots reflect level of std.
                 for m in measurements:
-                    P.plot_solutions(solutions, m, example=example)  # assumes keys = num_measurements. broken for tolerance comparison.
+                    # assumes keys = num_measurements. broken for tolerance comparison.
+                    P.plot_solutions(solutions, m, example=example)
     #             P.plot_solutions(solutions, 100, example=example, save=True)
     return res
 

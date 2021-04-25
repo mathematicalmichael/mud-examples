@@ -20,11 +20,10 @@ from mud_examples.plotting import plot_decay_solution
 _logger = logging.getLogger(__name__)
 
 
-
 matplotlib.rcParams['mathtext.fontset'] = 'stix'
 matplotlib.rcParams['font.family'] = 'STIXGeneral'
 matplotlib.backend = 'Agg'
-matplotlib.rcParams['figure.figsize'] = 10,10
+matplotlib.rcParams['figure.figsize'] = 10, 10
 matplotlib.rcParams['font.size'] = 16
 
 
@@ -32,13 +31,13 @@ def main_ode(num_trials=20,
              fsize=32,
              seed=21,
              lam_true=0.5,
-             domain=[[0,1]],
+             domain=[[0, 1]],
              tolerances=[0.1],
              time_ratios=[0.01, 1],
              alt=False, bayes=True):
     """
-    
-    
+
+
     >>> from mud_examples.ode import main_ode
     >>> res = main_ode(num_trials=5, time_ratios=[0.01, 0.1, 1])
     Will run simulations for %T=[0.01, 0.1, 1]
@@ -51,10 +50,10 @@ def main_ode(num_trials=20,
     """
     res = []
     print(f"Will run simulations for %T={time_ratios}")
-    sd_vals      = [ std_from_equipment(tolerance=tol, probability=0.99) for tol in tolerances ]
-    sigma        = sd_vals[-1] # sorted, pick largest
+    sd_vals      = [std_from_equipment(tolerance=tol, probability=0.99) for tol in tolerances]
+    sigma        = sd_vals[-1]  # sorted, pick largest
     t_min, t_max = 1, 3
-    example_list = [ 'mud' ]
+    example_list = ['mud']
     if alt:
         example_list.append('mud-alt')
 
@@ -68,7 +67,7 @@ def main_ode(num_trials=20,
         else:
             sensors = generate_sensors_ode(measurement_hertz=100, start_time=t_min, end_time=t_max)
 
-        measurements = [ int(np.floor(len(sensors)*r)) for r in time_ratios ]
+        measurements = [int(np.floor(len(sensors) * r)) for r in time_ratios]
         print(f"Measurements: {measurements}")
 #         times        = [ sensors[m-1] for m in measurements ]
         num_measure = max(measurements)
@@ -76,7 +75,7 @@ def main_ode(num_trials=20,
         model    = generate_decay_model(sensors, lam_true)
         qoi_true = model()  # no args evaluates true param
         np.random.seed(seed)
-        lam = np.random.rand(int(1E3)).reshape(-1,1)
+        lam = np.random.rand(int(1E3)).reshape(-1, 1)
         qoi = model(lam)
 
         if example == 'map':

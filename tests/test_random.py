@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-import mud_examples.random as mdr
+import mud_examples.linear.models as mdr
 import numpy as np
 
 __author__ = "Mathematical Michael"

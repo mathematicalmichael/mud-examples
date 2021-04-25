@@ -17,7 +17,7 @@ plt.rcParams['font.size'] = 16
 # matplotlib.backend = 'Agg'
 
 
-_logger = logging.getLogger(__name__) # TODO: make use of this instead of print
+_logger = logging.getLogger(__name__)  # TODO: make use of this instead of print
 _mpl_logger = logging.getLogger('matplotlib')
 _mpl_logger.setLevel(logging.WARNING)
 
@@ -92,10 +92,9 @@ def plot_decay_solution(solutions, model_generator, sigma, prefix,
         # plt.show()
 
 
-
 def plot_scalar_poisson_summary(res, measurements, prefix, lam_true, fsize=32, save=False):
     from fenics import plot as _plot
-    from mud_examples.poisson import poissonModel # function evaluation (full response surface)
+    from mud_examples.poisson import poissonModel  # function evaluation (full response surface)
 
     _logger.info("Fenics plotting for 1D example: Plotting surface...")
     for _res in res:
@@ -103,26 +102,30 @@ def plot_scalar_poisson_summary(res, measurements, prefix, lam_true, fsize=32, s
         lam, qoi, sensors, qoi_true, experiments, solutions = _in
         gamma = lam
         plot_num_measure = min(100, max(measurements))
-        raveled_input = np.repeat(gamma, qoi.shape[1])
-        raveled_output = qoi.reshape(-1)
-        x = raveled_input
-        y = raveled_output
+        # raveled_input = np.repeat(gamma, qoi.shape[1])
+        # raveled_output = qoi.reshape(-1)
+        # x = raveled_input
+        # y = raveled_output
 
-        fig = plt.figure(figsize=(10,8))
         gs = gridspec.GridSpec(3, 3)
-        ax_main = plt.subplot(gs[1:3, :2])
-        # ax_xDist = plt.subplot(gs[0, :2],sharex=ax_main)
-        ax_yDist = plt.subplot(gs[1:3, 2],sharey=ax_main)
+        ax_main = plt.subplot(gs[1:3, :2], figsize=(10, 8))
+        # ax_xDist = plt.subplot(gs[0, :2], sharex=ax_main)
+        ax_yDist = plt.subplot(gs[1:3, 2], sharey=ax_main)
 
         a = np.argsort(gamma)
         slopes = []
 
         # ax_main.plot(x,y,marker='.')
         for idx in range(plot_num_measure):
-            ax_main.plot(gamma[a], qoi[a,idx], c='k',
-                     label=f'sensor {idx}: (%.2f, %.2f)'%(sensors[idx,0], sensors[idx,1]),
-                     lw=1, alpha=0.1)
-            slopes.append(qoi[a[-1],idx] - qoi[a[0],idx])
+            ax_main.plot(
+                gamma[a],
+                qoi[a, idx],
+                c='k',
+                label=f'sensor {idx}: ({sensors[idx, 0]:1.2f}, {sensors[idx, 1]:1.2f})',
+                lw=1,
+                alpha=0.1,
+                )
+            slopes.append(qoi[a[-1], idx] - qoi[a[0], idx])
         sa = np.argsort(slopes)
         slopes = np.array(slopes)
         ranked_slopes = slopes[sa]
@@ -132,20 +135,20 @@ def plot_scalar_poisson_summary(res, measurements, prefix, lam_true, fsize=32, s
         ylabel_text = "Measurement\nResponse"
         ax_main.axes.set_xlabel(xlabel_text, fontsize=fsize)
         ax_main.axes.set_ylabel(ylabel_text, fontsize=fsize)
-        ax_main.axes.set_ylim((-1.25,0.5))
+        ax_main.axes.set_ylim((-1.25, 0.5))
         # ax_main.axes.set_title('Sensitivity of Measurements', fontsize=1.25*fsize)
         ax_main.axvline(3)
 
-        ax_yDist.hist(qoi_true, bins=np.linspace(-1.25,0.5,35), orientation='horizontal', align='mid')
+        ax_yDist.hist(qoi_true, bins=np.linspace(-1.25, 0.5, 35), orientation='horizontal', align='mid')
         # ax_yDist.set(xlabel='count')
         ax_yDist.tick_params(labelleft=False, labelbottom=False)
         if save:
             plt.savefig(f'{_example}_qoi_response.png', bbox_inches='tight')
-        #plt.show()
+        # plt.show()
 
-        plt.figure(figsize=(10,10))
-        plt.title("Sensitivity of\nMeasurement Locations", fontsize=1.25*fsize)
-        plt.hist(ranked_slopes, bins=np.linspace(-1.25,0,25), density=True)
+        plt.figure(figsize=(10, 10))
+        plt.title("Sensitivity of\nMeasurement Locations", fontsize=1.25 * fsize)
+        plt.hist(ranked_slopes, bins=np.linspace(-1.25, 0, 25), density=True)
         plt.xlabel("Slope", fontsize=fsize)
         if save:
             plt.savefig(f'{_example}_sensitivity_qoi.png', bbox_inches='tight')
@@ -154,17 +157,17 @@ def plot_scalar_poisson_summary(res, measurements, prefix, lam_true, fsize=32, s
 
         ##########
 
-        plt.figure(figsize=(10,10))
+        plt.figure(figsize=(10, 10))
         num_sensitive  = 20
         most_sensitive = sa[sa < 100][0:num_sensitive]
         _logger.info(f"{num_sensitive} most sensitive sensors in first 100: {most_sensitive}")
         _plot(poissonModel(lam_true))
         for i in range(min(100, max(measurements))):
-            plt.scatter(sensors[i,0], sensors[i,1], c='w', s=200)
+            plt.scatter(sensors[i, 0], sensors[i, 1], c='w', s=200)
             if i in most_sensitive:
-                plt.scatter(sensors[i,0], sensors[i,1], c='y', s=100)
-        #     plt.annotate(f"{i+1:02d}", (sensors[i,0]-0.0125, sensors[i,1]-0.01), alpha=1, fontsize=0.35*fsize)
-        # plt.title('Reference solution', fontsize=1.25*fsize)
+                plt.scatter(sensors[i, 0], sensors[i, 1], c='y', s=100)
+        #     plt.annotate(f"{i + 1:02d}", (sensors[i, 0] - 0.0125, sensors[i, 1] - 0.01), alpha=1, fontsize=0.35*fsize)
+        # plt.title('Reference solution', fontsize=1.25 * fsize)
         plt.xlabel('$x_1$', fontsize=fsize)
         plt.ylabel('$x_2$', fontsize=fsize)
         if save:
@@ -201,4 +204,3 @@ def plot_contours(A, ref_param, subset=None,
         yloc = [ref_param[0] - w * AA[i, 1], ref_param[1] + w * AA[i, 1]]
         plt.plot(xloc, yloc, c=color, ls=ls, lw=lw, **kwds)
         plt.annotate('%d' % (contour + 1), (xloc[0], yloc[0]), fontsize=fs)
-

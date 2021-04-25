@@ -9,12 +9,12 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 # from matplotlib import cm
-from mud import __version__ as __mud_version__
+# from mud import __version__ as __mud_version__
 from scipy.stats import \
     gaussian_kde as kde  # A standard kernel density estimator
 from scipy.stats import norm, uniform  # The standard Normal distribution
 
-from mud_examples import __version__
+# from mud_examples import __version__
 from mud_examples.parsers import parse_args
 from mud_examples.utils import check_dir
 
@@ -104,34 +104,34 @@ def main(args):
 
         # compute normalizing constants
         C_nonlinear = np.mean(likelihood_vals)
-        data_like_normalized = likelihood_vals/C_nonlinear
+        data_like_normalized = likelihood_vals / C_nonlinear
 
         posterior_kde = kde(lam, weights=data_like_normalized)
 
         # Construct push-forward of statistical Bayesian posterior
         pf_posterior_kde = kde(qvals_predict, weights=data_like_normalized)
 
-        fig = plt.figure()  # Plot the initial and posterior
+        fig, ax = plt.subplots(figsize=(10, 10))  # Plot the initial and posterior
         lam_plot = np.linspace(-1, 1, num=1000)
-        plt.plot(lam_plot, uniform.pdf(lam_plot, loc=-1, scale=2), 'b--',
-                 linewidth=4, label="Initial/Prior")
-        plt.plot(lam_plot, update_kde(lam_plot), 'k-.',
-                 linewidth=4, label="Update")
-        plt.plot(lam_plot, posterior_kde(lam_plot), 'g:',
-                             linewidth=4, label='Posterior')
-        plt.xlim([-1, 1])
+        ax.plot(lam_plot, uniform.pdf(lam_plot, loc=-1, scale=2), 'b--',
+                linewidth=4, label="Initial/Prior")
+        ax.plot(lam_plot, update_kde(lam_plot), 'k-.',
+                linewidth=4, label="Update")
+        ax.plot(lam_plot, posterior_kde(lam_plot), 'g:',
+                linewidth=4, label='Posterior')
+        ax.set_xlim([-1, 1])
         if num_data > 1:
             plt.annotate(f'$N={num_data}$', (-0.75, 5), fontsize=legend_fsize)
-            plt.ylim([0, 28])  # fix axis height for comparisons
+            ax.set_ylim([0, 28])  # fix axis height for comparisons
 
-        plt.xticks(fontsize=tick_fsize)
-        plt.yticks(fontsize=tick_fsize)
-        plt.xlabel("$\\Lambda$", fontsize=1.25*tick_fsize)
+        ax.set_xticklabels(ax.get_xticklabels(), fontsize=tick_fsize)
+        ax.set_yticklabels(ax.get_yticklabels(), fontsize=tick_fsize)
+        ax.set_xlabel("$\\Lambda$", fontsize=1.25 * tick_fsize)
         plt.legend(fontsize=legend_fsize, loc='upper left')
         if save:
-            plt.savefig(f'{fdir}/bip-vs-sip-{num_data}.png',
+            fig.savefig(f'{fdir}/bip-vs-sip-{num_data}.png',
                         bbox_inches='tight')
-            plt.close()
+            plt.close(fig)
         # plt.show()
 
         # Plot the push-forward of the initial, observed density,
@@ -153,7 +153,7 @@ def main(args):
             plt.ylim([0, 20])  # fix axis height for comparisons
         plt.xticks(fontsize=tick_fsize)
         plt.yticks(fontsize=tick_fsize)
-        plt.xlabel("$\\mathcal{D}$", fontsize=1.25*tick_fsize)
+        plt.xlabel("$\\mathcal{D}$", fontsize=1.25 * tick_fsize)
         plt.legend(fontsize=legend_fsize, loc='upper left')
         if save:
             plt.savefig(f'{fdir}/bip-vs-sip-pf-{num_data}.png',
@@ -180,7 +180,7 @@ def QoI(lam, p):
 def data_likelihood(qvals, data, num_data, sigma):
     v = 1.0
     for i in range(num_data):
-        v *= norm.pdf(qvals-data[i], loc=0, scale=sigma)
+        v *= norm.pdf(qvals - data[i], loc=0, scale=sigma)
     return v
 
 

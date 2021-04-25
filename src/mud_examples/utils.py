@@ -65,7 +65,7 @@ class LazyLoader(types.ModuleType):
         self._module_name = '{}{}'.format(
             module_name,
             submod_name and '.{}'.format(submod_name) or ''
-        )
+            )
         self._mod = None
         super(LazyLoader, self).__init__(self._module_name)
 
