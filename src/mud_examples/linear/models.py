@@ -33,7 +33,7 @@ def createNoisyReferenceData(M, reference_point, std, num_data=None):
         std    = np.array([std] * num_data)                      # noqa: E221
     else:
         assert len(std.ravel()) == num_data, \
-            f"St. Dev / Data mismatch. data: {num_data}, std: {len(std.ravel())}
+            f"St. Dev / Data mismatch. data: {num_data}, std: {len(std.ravel())}"
 
     ref_input  = np.array(list(reference_point)).reshape(-1, 1)  # noqa: E221
     ref_data   = M @ ref_input                                   # noqa: E221

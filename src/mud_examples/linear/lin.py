@@ -712,7 +712,8 @@ def main_meas_var(args):
 
     def d_N(M, lam, n):
         d = M @ lam + n
-        assert len(d.ravel()) == len(n.ravel()), f"Shape mismatch noise={n.shape}, data={d.shape}"
+        assert len(d.ravel()) == len(n.ravel()), \
+            f"Shape mismatch noise={n.shape}, data={d.shape}"
         return d
 
     def b_N(N, d, sigma):
