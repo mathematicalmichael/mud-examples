@@ -124,8 +124,8 @@ def main(args):
             plt.annotate(f'$N={num_data}$', (-0.75, 5), fontsize=legend_fsize)
             ax.set_ylim([0, 28])  # fix axis height for comparisons
 
-        ax.set_xticklabels(ax.get_xticklabels(), fontsize=tick_fsize)
-        ax.set_yticklabels(ax.get_yticklabels(), fontsize=tick_fsize)
+        ax.tick_params(axis='x', labelsize=tick_fsize)
+        ax.tick_params(axis='y', labelsize=tick_fsize)
         ax.set_xlabel("$\\Lambda$", fontsize=1.25 * tick_fsize)
         plt.legend(fontsize=legend_fsize, loc='upper left')
         if save:
