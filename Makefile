@@ -2,8 +2,8 @@ run: tag
 	mkdir -p mud_figures/
 	docker run --rm -ti -v $(shell pwd)/mud_figures:/work mud
 
-build: Dockerfile
-	docker build -t mud -f Dockerfile \
+build: bin/Dockerfile
+	docker build -t mud -f bin/Dockerfile \
 	  --build-arg USER_ID=$(shell id -u) \
 	  --build-arg GROUP_ID=$(shell id -g) .
 
