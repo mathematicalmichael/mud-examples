@@ -26,7 +26,7 @@ jobs:
           context: .
           file: ./bin/Dockerfile
           push: true
-          tags: mathematicalmichael/mudex:latest
+          tags: mathematicalmichael/mudex:latest,mudex
           build-args: |
             USER_ID=1000
             GROUP_ID=1000
