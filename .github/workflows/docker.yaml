@@ -54,7 +54,7 @@ jobs:
             GROUP_ID=1000
 
       - name: Version Check
-		run: |
+        run: |
           ./bin/dmud.sh mud_examples --version
 
       - name: Image digest
