@@ -17,7 +17,7 @@ push: tag
 
 version:
 	./bin/dmud.sh mud_examples --version
-	
+
 clean:
 	rm -rf src/mud_examples/.ipynb_checkpoints
 	rm -rf mud_figures/
