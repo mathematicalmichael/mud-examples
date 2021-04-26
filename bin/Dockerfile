@@ -1,6 +1,14 @@
 FROM continuumio/miniconda3
 RUN conda install -c conda-forge fenics
-COPY . /tmp/mud-examples
+#COPY . /tmp/mud-examples
+RUN pip install -U setuptools setuptools_scm wheel
+COPY .git /tmp/mud-examples
+COPY src/ /tmp/mud-examples/src
+COPY README.md /tmp/mud-examples
+COPY MANIFEST.in /tmp/mud-examples
+COPY setup.py /tmp/mud-examples
+COPY setup.cfg /tmp/mud-examples
+
 RUN cd /tmp/mud-examples && \
   pip install .
 
@@ -23,4 +31,4 @@ RUN adduser \
 WORKDIR /work
 RUN chown -R $USER_NAME:$USER_NAME /work
 USER $USER_NAME
-CMD mud_run_all
+CMD mud_run_all --help

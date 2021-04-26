@@ -1,5 +1,5 @@
-run: tag
-	mkdir -p mud_figures/
+run:
+	mkdir -p mud_figures/ && \
 	docker run --rm -ti -v $(shell pwd)/mud_figures:/work mud
 
 build: bin/Dockerfile
