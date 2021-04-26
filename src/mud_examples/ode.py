@@ -14,7 +14,7 @@ from mud_examples.summary import extract_statistics
 from mud_examples.models import generate_decay_model
 from mud_examples.models import \
     generate_temporal_measurements as generate_sensors_ode
-from mud_examples.summary import fit_log_linear_regression
+from mud_examples.summary import maybe_fit_log_linear_regression
 from mud_examples.plotting import plot_decay_solution
 
 _logger = logging.getLogger(__name__)
@@ -99,8 +99,8 @@ def main_ode(num_trials=20,
             )
 
         means, variances = extract_statistics(solutions, lam_true)
-        regression_mean, slope_mean = fit_log_linear_regression(measurements, means)
-        regression_vars, slope_vars = fit_log_linear_regression(measurements, variances)
+        regression_mean, slope_mean = maybe_fit_log_linear_regression(measurements, means)
+        regression_vars, slope_vars = maybe_fit_log_linear_regression(measurements, variances)
 
         ##########
 
@@ -116,8 +116,8 @@ def main_ode(num_trials=20,
                 )
 
             sd_means, sd_vars = extract_statistics(solutions, lam_true)
-            regression_err_mean, slope_err_mean = fit_log_linear_regression(tolerances, sd_means)
-            regression_err_vars, slope_err_vars = fit_log_linear_regression(tolerances, sd_vars)
+            regression_err_mean, slope_err_mean = maybe_fit_log_linear_regression(tolerances, sd_means)
+            regression_err_vars, slope_err_vars = maybe_fit_log_linear_regression(tolerances, sd_vars)
             _re = (regression_err_mean, slope_err_mean,
                    regression_err_vars, slope_err_vars,
                    sd_means, sd_vars, num_sensors)

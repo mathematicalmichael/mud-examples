@@ -160,7 +160,7 @@ def main_dim(args):
     plt.legend(['MUD', 'MAP', 'Least Squares'], fontsize=fsize)
     # plt.annotate(f'Slope={slope:1.4f}', (4,4/7), fontsize=32)
     plt.savefig(f'{fdir}/{prefix}-convergence.png', bbox_inches='tight')
-    plt.close()
+    plt.close('all')
     # plt.show()
 
     # plt.imshow(initial_cov)
@@ -181,7 +181,7 @@ def main_dim(args):
     # # ax.set(yscale='log')
     # ax.view_init(15, 15)
     # plt.savefig(f'lin/{prefix}-surface-error.png', bbox_inches='tight')
-    # plt.close()
+    # plt.close('all')
     # # plt.show()
 
     # # # Convergence in Predictions
@@ -209,7 +209,7 @@ def main_dim(args):
     # plt.legend(['mud', 'map', 'least squares'], fontsize=fsize, loc='lower left')
     # # plt.annotate(f'Slope={slope:1.4f}', (4,4), fontsize=24)
     # plt.savefig(f'lin/{prefix}-convergence-dimension-out.png', bbox_inches='tight')
-    # plt.close()
+    # plt.close('all')
     # # plt.show()
 
 
@@ -327,7 +327,7 @@ def main_rank(args):
     plt.legend(['MUD', 'MAP', 'Least Squares'], fontsize=fsize)
     # plt.annotate(f'Slope={slope:1.4f}', (4,4/7), fontsize=32)
     plt.savefig(f'{fdir}/{prefix}-convergence.png', bbox_inches='tight')
-    plt.close()
+    plt.close('all')
     # plt.show()
 
     # plt.imshow(initial_cov)
@@ -600,10 +600,10 @@ def main_meas(args):
     # plt.legend()
     if save:
         plt.savefig(f'{fdir}/{prefix}-convergence.png', bbox_inches='tight')
-        plt.close()
+        plt.close('all')
     else:
         plt.show()
-        plt.close()
+        plt.close('all')
 
     plt.figure(figsize=(10, 10))
     plt.yscale('log')
@@ -632,10 +632,10 @@ def main_meas(args):
 
     if save:
         plt.savefig(f'{fdir}/{prefix}-sd-convergence.png', bbox_inches='tight')
-        plt.close()
+        plt.close('all')
     else:
         plt.show()
-        plt.close()
+        plt.close('all')
 
 
 def main_meas_var(args):
@@ -749,10 +749,10 @@ def main_meas_var(args):
     # plt.legend(['MUD', 'Least Squares'], fontsize=fsize)
     if save:
         plt.savefig(f'{fdir}/{prefix}-convergence.png', bbox_inches='tight')
-        plt.close()
+        plt.close('all')
     else:
         plt.show()
-        plt.close()
+        plt.close('all')
 
 
 def main(args):
@@ -957,7 +957,7 @@ def contour_example(
             fdir = '/'.join(figname.split('/')[:-1])
             check_dir(fdir)
         plt.savefig(figname, dpi=300)
-        plt.close()
+        plt.close('all')
 
 #     plt.title('Predicted Covariance: {}'.format((A@initial_cov@A.T).ravel() ))
     # plt.show()
