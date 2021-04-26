@@ -4,6 +4,8 @@ on:
   push:
     branches: [ main ]
   pull_request:
+    branches: 
+       - '*'
     branches-ignore: 'feature/docker'
   schedule:
       - cron: "0 0 */7 * *"
@@ -62,11 +64,17 @@ jobs:
       - name: Conda information
         run: conda list
 
-      - name: Generate Figures
+      - name: Test that command-line scripts installed
+        run: |
+          cd /tmp
+          mud_run_all
+
+      - name: Generate Figures using Makefile
         run: |
           cd scripts
           make clean
           make pde-examples
+          make examples
 
       - name: Tests
         run: |
