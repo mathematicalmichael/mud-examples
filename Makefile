@@ -1,19 +1,19 @@
 run: tag
 	mkdir -p mud_figures/
-	docker run --rm -ti -v $(shell pwd)/mud_figures:/work mud
+	docker run --rm -ti -v $(shell pwd)/mud_figures:/work mudex
 
 build: bin/Dockerfile
-	docker build -t mud -f bin/Dockerfile \
+	docker build -t mudex -f bin/Dockerfile \
 	  --build-arg USER_ID=$(shell id -u) \
 	  --build-arg GROUP_ID=$(shell id -g) .
 
 tag: build
-	docker tag mud mathematicalmichael/mud:$(shell date +"%Y%m%d")
-	docker tag mud mathematicalmichael/mud:latest
+	docker tag mudex mathematicalmichael/mudex:$(shell date +"%Y%m%d")
+	docker tag mudex mathematicalmichael/mudex:latest
 
 push: tag
-	docker push mathematicalmichael/mud:$(shell date +"%Y%m%d")
-	docker push mathematicalmichael/mud:latest
+	docker push mathematicalmichael/mudex:$(shell date +"%Y%m%d")
+	docker push mathematicalmichael/mudex:latest
 
 clean:
 	rm -rf src/mud_examples/.ipynb_checkpoints
