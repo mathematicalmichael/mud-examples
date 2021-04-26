@@ -25,15 +25,14 @@ jobs:
         with:
           context: .
           file: ./bin/Dockerfile
-          push: true
+          push: false
           tags: mathematicalmichael/mudex:latest,mudex
           build-args: |
             USER_ID=1000
             GROUP_ID=1000
 
       - name: Version Check
-        run: |
-          ./bin/dmud.sh mud_examples --version
+        run: make version
 
       - name: Image digest
         run: echo ${{ steps.push_to_dockerhub.outputs.digest }}
