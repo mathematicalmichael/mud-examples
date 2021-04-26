@@ -799,7 +799,7 @@ class pdeProblem(object):
             _fname = f"{prefix}.{ftype}"
             plt.savefig(_fname, bbox_inches='tight')
             _logger.info(f"Saved {_fname}")
-            plt.close()
+            plt.close('all')
     #     plt.show()
 
 def evaluate_and_save_poisson(sample, save_prefix):
