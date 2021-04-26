@@ -37,7 +37,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          file: ./Dockerfile
+          file: ./bin/Dockerfile
           push: true
           tags: mathematicalmichael/mudex:latest
           build-args: 'USER_ID=1000 GROUP_ID=1000'
