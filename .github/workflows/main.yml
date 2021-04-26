@@ -45,7 +45,7 @@ jobs:
         run: |
           pip uninstall -y mud_examples
           pip install --upgrade wheel setuptools
-          pip install .
+          pip install . --use-feature=in-tree-build
 
       - name: Test command-line scripts
         run: |
