@@ -10,7 +10,9 @@ COPY setup.py /tmp/mud-examples
 COPY setup.cfg /tmp/mud-examples
 
 RUN cd /tmp/mud-examples && \
-  pip install .
+  pip install . && \
+  cd /tmp && \
+  rm -rf /tmp/*
 
 # RUN cd /tmp && pip install mud_examples
 RUN rm -rf /tmp/*
