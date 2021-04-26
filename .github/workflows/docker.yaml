@@ -31,5 +31,9 @@ jobs:
             USER_ID=1000
             GROUP_ID=1000
 
+      - name: Version Check
+        run: |
+          ./bin/dmud.sh mud_examples --version
+
       - name: Image digest
         run: echo ${{ steps.push_to_dockerhub.outputs.digest }}
