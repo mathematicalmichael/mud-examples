@@ -15,6 +15,9 @@ push: tag
 	docker push mathematicalmichael/mudex:$(shell date +"%Y%m%d")
 	docker push mathematicalmichael/mudex:latest
 
+version:
+	./bin/dmud.sh mud_examples --version
+	
 clean:
 	rm -rf src/mud_examples/.ipynb_checkpoints
 	rm -rf mud_figures/
