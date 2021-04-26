@@ -4,8 +4,6 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: 
-      - '*'
     branches-ignore: 'feature/docker'
   schedule:
       - cron: "0 0 */7 * *"
