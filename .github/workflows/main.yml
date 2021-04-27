@@ -1,7 +1,5 @@
-name: Unit Tests
+name: tests
 
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the master branch
 on:
   push:
     branches: [ main ]
@@ -12,7 +10,6 @@ on:
   release:
     types: [released]
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   test:
     name: Run unit tests
@@ -62,11 +59,6 @@ jobs:
 
       - name: Test pip install syntax (without wheels)
         run: pip install .
-
-      - name: Test command-line scripts
-        run: |
-          cd /tmp
-          mud_run_all
 
       - name: Install dependencies
         run: |
