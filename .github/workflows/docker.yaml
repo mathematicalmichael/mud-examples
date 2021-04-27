@@ -4,7 +4,7 @@ on:
   release:
     types: [published, created, edited]
   push:
-    branches: 'feature/docker'
+    branches: '*docker*'
 
 jobs:
   push_to_dockerhub:
