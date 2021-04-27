@@ -41,6 +41,11 @@ jobs:
           pip install -e .[test]
           pytest
 
+      - name: Debug
+        run: | 
+          python setup.py --version
+          git describe --dirty --tags --long --match "*[0-9]*"
+
       - name: Test install with wheels
         run: |
           pip uninstall -y mud_examples
