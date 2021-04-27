@@ -14,14 +14,37 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
+  test:
+    name: Run unit tests
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8]
     runs-on: ubuntu-latest
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e .[test]
+
+      - name: Run unit tests
+        run: pytest
+
+  build:
+    name: Test build process
+    strategy:
+      matrix:
+        python-version: [3.7]
+    runs-on: ubuntu-latest
+    steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -32,27 +55,30 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-
-      - name: Run unit tests
-        run: |
-          pip install -e .[test]
-          pytest
-
-      - name: Debug
+      - name: Inspect version info
         run: | 
           python setup.py --version
           git describe --dirty --tags --long --match "*[0-9]*"
 
-      - name: Test install with wheels
-        run: |
-          pip uninstall -y mud_examples
-          pip install --upgrade wheel setuptools
-          pip install . --use-feature=in-tree-build
+      - name: Test pip install syntax (without wheels)
+        run: pip install .
 
       - name: Test command-line scripts
         run: |
           cd /tmp
           mud_run_all
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install --upgrade wheel setuptools
+
+      - name: Test install with wheels
+        run: |
+          python setup.py sdist bdist_wheel
+
+      - name: Test install with other syntax
+        run: |
+          pip install . --use-feature=in-tree-build
+          python -m build .
+
