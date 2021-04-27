@@ -6,7 +6,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches-ignore: 'feature/docker'
+    branches-ignore: '*docker*'
   schedule:
       - cron: "0 0 */7 * *"
   release:
