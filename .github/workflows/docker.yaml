@@ -1,4 +1,4 @@
-name: DockerHub
+name: docker
 
 on:
   release:
@@ -7,8 +7,8 @@ on:
     branches: '**docker**'
 
 jobs:
-  push_to_dockerhub:
-    name: Push Docker image to Docker Hub
+  build_image:
+    name: Build Docker image from source
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
@@ -31,8 +31,11 @@ jobs:
             USER_ID=1000
             GROUP_ID=1000
 
-      - name: Version Check
+      - name: Version check
         run: make version
+
+      - name: Check functionality
+        run: make run
 
       - name: Image digest
         run: echo ${{ steps.push_to_dockerhub.outputs.digest }}
