@@ -12,7 +12,7 @@ import mud_examples.poisson as ps  # lazy loads fenics
 from mud.util import std_from_equipment
 from mud_examples.experiments import (experiment_equipment,
                                       experiment_measurements)
-from mud_examples.summary import extract_statistics, fit_log_linear_regression
+from mud_examples.summary import extract_statistics, maybe_fit_log_linear_regression
 # from mud_examples.utils import check_dir
 
 _logger = logging.getLogger(__name__)
@@ -196,8 +196,8 @@ def main_pde(
             )
 
         means, variances = extract_statistics(solutions, lam_true)
-        regression_mean, slope_mean = fit_log_linear_regression(measurements, means)
-        regression_vars, slope_vars = fit_log_linear_regression(measurements, variances)
+        regression_mean, slope_mean = maybe_fit_log_linear_regression(measurements, means)
+        regression_vars, slope_vars = maybe_fit_log_linear_regression(measurements, variances)
 
         ##########
 
@@ -213,8 +213,8 @@ def main_pde(
                 )
 
             sd_means, sd_vars = extract_statistics(solutions, lam_true)
-            regression_err_mean, slope_err_mean = fit_log_linear_regression(tolerances, sd_means)
-            regression_err_vars, slope_err_vars = fit_log_linear_regression(tolerances, sd_vars)
+            regression_err_mean, slope_err_mean = maybe_fit_log_linear_regression(tolerances, sd_means)
+            regression_err_vars, slope_err_vars = maybe_fit_log_linear_regression(tolerances, sd_vars)
             _re = (regression_err_mean, slope_err_mean,
                    regression_err_vars, slope_err_vars,
                    sd_means, sd_vars, num_sensors)

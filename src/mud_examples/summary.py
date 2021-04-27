@@ -37,19 +37,26 @@ def extract_statistics(solutions, reference_value):
     return means, variances
 
 
-def fit_log_linear_regression(input_values, output_values):
+def maybe_fit_log_linear_regression(input_values, output_values):
     """Fits a log-linear regression
 
     >>> import numpy as np
     >>> x = np.arange(1,11)
-    >>> np.round(fit_log_linear_regression(x,x)[1], 4)
+    >>> np.round(maybe_fit_log_linear_regression(x,x)[1], 4)
     1.0
     """
-    if len(np.unique(output_values)) == 1:
-        _logger.info("Log Linear Regression: All values identical.")
-        return np.array(output_values), 0
-    x, y = np.log10(input_values), np.log10(output_values)
+    if 0 in output_values:
+        x, y = np.array(input_values), np.array(output_values)
+        _logger.warning("0 in output_values, performing regular regression.")
+        log = False
+    else:
+        x, y = np.log10(input_values), np.log10(output_values)
+        log = True
     X, Y = np.vander(x, 2), np.array(y).reshape(-1, 1)
     slope, intercept = (np.linalg.pinv(X) @ Y).ravel()
-    regression_line = 10**(slope * x + intercept)
+    if log:
+        regression_line = 10**(slope * x + intercept)
+    else:
+        regression_line = slope * x + intercept
+
     return regression_line, slope
