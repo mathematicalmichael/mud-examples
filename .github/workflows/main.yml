@@ -72,5 +72,4 @@ jobs:
       - name: Test install with other syntax
         run: |
           pip install . --use-feature=in-tree-build
-          python -m build .
-
+          # python -m build .  # for future inclusion of pyproject.toml with pyscaffold v5+
