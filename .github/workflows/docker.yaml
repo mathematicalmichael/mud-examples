@@ -33,9 +33,6 @@ jobs:
             USER_ID=1000
             GROUP_ID=1000
 
-      - name: Version check
-        run: make version
-
       - name: Test functionality
         run: |
           make help
