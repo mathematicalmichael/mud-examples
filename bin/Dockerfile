@@ -1,7 +1,7 @@
 FROM continuumio/miniconda3
 RUN conda install -c conda-forge fenics
 RUN pip install -U setuptools setuptools_scm wheel
-COPY .git /tmp/mud-examples
+COPY .git/ /tmp/mud-examples/.git
 COPY src/ /tmp/mud-examples/src
 COPY README.md /tmp/mud-examples
 COPY MANIFEST.in /tmp/mud-examples
