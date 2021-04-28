@@ -1,4 +1,5 @@
 help:
+	docker run --rm -i mudex mud_examples --version
 	docker run --rm -i mudex mud_examples --help
 
 test:
@@ -20,9 +21,6 @@ tag: build
 push: tag
 	docker push mathematicalmichael/mudex:$(shell date +"%Y%m%d")
 	docker push mathematicalmichael/mudex:latest
-
-version:
-	./bin/dmud.sh mud_examples --version
 
 clean:
 	rm -rf src/mud_examples/.ipynb_checkpoints
