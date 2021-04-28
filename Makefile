@@ -1,6 +1,10 @@
-run:
+help:
 	mkdir -p mud_figures/
 	./bin/dmud.sh mud_examples --help
+
+run:
+	mkdir -p mud_figures/
+	./bin/dmud.sh
 
 build: bin/Dockerfile
 	docker build -t mudex -f bin/Dockerfile \
