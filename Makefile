@@ -1,4 +1,4 @@
-run: tag
+run:
 	mkdir -p mud_figures/
 	docker run --rm -ti -v $(shell pwd)/mud_figures:/work mudex
 
