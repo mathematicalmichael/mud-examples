@@ -33,4 +33,4 @@ RUN adduser \
 WORKDIR /work
 RUN chown -R $USER_NAME:$USER_NAME /work
 USER $USER_NAME
-CMD mud_run_all --version
+CMD mud_run_all

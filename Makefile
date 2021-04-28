@@ -1,6 +1,6 @@
 run:
 	mkdir -p mud_figures/
-	docker run --rm -ti -v $(shell pwd)/mud_figures:/work mudex
+	./bin/dmud.sh mud_examples --help
 
 build: bin/Dockerfile
 	docker build -t mudex -f bin/Dockerfile \
