@@ -35,7 +35,9 @@ jobs:
         run: make version
 
       - name: Check functionality
-        run: make run
+        run: |
+          make help
+          make run
 
       - name: Image digest
         run: echo ${{ steps.push_to_dockerhub.outputs.digest }}
