@@ -1,4 +1,4 @@
 #!/bin/sh
-mkdir -p mud_figures/
+mkdir -p /tmp/mud_figures/
 echo "Running all examples using default docker entry-point"
-docker run --rm -i -v $(pwd)/mud_figures:/work mudex $@
+docker run --rm -i -v /tmp/mud_figures:/work mudex $@
