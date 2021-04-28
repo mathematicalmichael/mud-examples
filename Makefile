@@ -1,7 +1,11 @@
 help:
-	./bin/dmud.sh mud_examples --help
+	docker run --rm -i mudex mud_examples --help
 
-run:
+test:
+	docker run --rm -i mudex
+
+all:
+	@echo "Running all examples with default entrypoint"
 	./bin/dmud.sh
 
 build: bin/Dockerfile
