@@ -1,11 +1,17 @@
 FROM continuumio/miniconda3
 RUN conda install -c conda-forge fenics
-COPY . /tmp/mud-examples
+COPY .git/ /tmp/mud-examples/.git
+COPY src/ /tmp/mud-examples/src
+COPY README.md /tmp/mud-examples
+COPY MANIFEST.in /tmp/mud-examples
+COPY setup.py /tmp/mud-examples
+COPY setup.cfg /tmp/mud-examples
+
 RUN cd /tmp/mud-examples && \
-  pip install .
+  pip install . && \
+  rm -rf /tmp/*
 
 # RUN cd /tmp && pip install mud_examples
-RUN rm -rf /tmp/*
 ARG USER_ID=1000
 ARG GROUP_ID=1000
 ARG USER_NAME=user
