@@ -32,7 +32,7 @@ jobs:
 
       - name: Build dist
         run: |
-          python -m build
+          python setup.py sdist bdist_wheel
 
       - name: Publish release ${{ github.ref }}
         uses: pypa/gh-action-pypi-publish@master
@@ -59,7 +59,7 @@ jobs:
           context: .
           file: ./bin/Dockerfile
           push: true
-          tags: mathematicalmichael/mudex:latest,mudex
+          tags: mathematicalmichael/mudex:latest,mathematicalmichael/mudex:${{ github.ref }}
           build-args: |
             USER_ID=1000
             GROUP_ID=1000
