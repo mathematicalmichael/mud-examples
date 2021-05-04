@@ -59,7 +59,7 @@ jobs:
           context: .
           file: ./bin/Dockerfile
           push: true
-          tags: mathematicalmichael/mudex:latest,mathematicalmichael/mudex:${{ github.ref }}
+          tags: mathematicalmichael/mudex:latest
           build-args: |
             USER_ID=1000
             GROUP_ID=1000
