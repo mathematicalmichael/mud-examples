@@ -2,7 +2,7 @@
 [![PyPI version](https://badge.fury.io/py/mud-examples.svg)](https://badge.fury.io/py/mud-examples)
 ![unit testing workflow](https://github.com/mathematicalmichael/mud-examples/actions/workflows/main.yml/badge.svg)
 ![example workflow](https://github.com/mathematicalmichael/mud-examples/actions/workflows/examples.yml/badge.svg)
-![publish workflow](https://github.com/mathematicalmichael/mud-examples/actions/workflows/publish-pypi.yml/badge.svg)
+![publish workflow](https://github.com/mathematicalmichael/mud-examples/actions/workflows/publish.yml/badge.svg)
 
 # MUD-Examples
 ## Examples for _Existence, Uniqueness, and Convergence of Parameter Estimates with Maximal Updated Densities_
