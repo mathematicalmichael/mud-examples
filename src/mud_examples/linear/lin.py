@@ -13,8 +13,7 @@ from matplotlib import cm
 # from mud import __version__ as __mud_version__
 from mud.funs import map_sol, mud_sol, updated_cov
 from mud.norm import full_functional, norm_data, norm_input, norm_predicted
-from mud.util import transform_linear_setup
-from scipy.linalg import null_space
+from mud.util import transform_linear_setup, null_space
 
 # from mud_examples import __version__
 from mud_examples.utils import make_2d_unit_mesh
