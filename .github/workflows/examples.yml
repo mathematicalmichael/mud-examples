@@ -3,11 +3,9 @@ name: examples
 on:
   push:
     branches: [ main ]
+    paths: '**.py'
   pull_request:
-    paths-ignore:
-      - '.github/**'
-      - 'docs/**'
-      - '**.md'
+    paths: '**.py'
   schedule:
       - cron: "0 0 1 * *"
 
