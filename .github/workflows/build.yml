@@ -1,12 +1,10 @@
-name: tests
+name: builds
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches-ignore: '**docker**'
-  schedule:
-      - cron: "0 0 */7 * *"
 
 jobs:
   build:
