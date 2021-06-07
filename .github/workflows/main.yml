@@ -3,8 +3,10 @@ name: tests
 on:
   push:
     branches: [ main ]
+    paths: '**.py'
   pull_request:
     branches-ignore: '**docker**'
+    paths: '**.py'
   schedule:
       - cron: "0 0 */7 * *"
 
