@@ -8,6 +8,9 @@ import sys
 import scipy as sp
 # from mud_examples.runner import setup_logging
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
+
+
 import numpy as np
 from matplotlib import cm
 # from mud import __version__ as __mud_version__
@@ -594,7 +597,7 @@ def main_meas(args):
     # plt.title("Precision of MUD Estimates", fontsize=1.25 * fsize)
     plt.yscale('log')
     plt.xscale('log')
-    plt.ylabel("Singular Values of $\\Sigma_{up}$", fontsize=fsize * 1.25)
+    plt.ylabel("Eigenvalues of $\\Sigma_{up}$", fontsize=fsize * 1.25)
     plt.xlabel('Number of Measurements', fontsize=fsize)
     # plt.legend()
     if save:
@@ -604,30 +607,34 @@ def main_meas(args):
         plt.show()
         plt.close('all')
 
-    plt.figure(figsize=(10, 10))
-    plt.yscale('log')
+    fig, ax = plt.subplots(figsize=(15, 10))
+    ax.set_yscale('log')
+    index_values = np.arange(dim_input) + 1
+
     for i, N in enumerate(Ns):
-        plt.scatter(
-            np.arange(dim_input), UP[:, i],
+        ax.scatter(
+            index_values, UP[:, i],
             marker='o',
             s=200,
             facecolors='none',
             edgecolors='k',
             )
 
-        plt.plot(
-            np.arange(dim_input), UP[:, i],
+        ax.plot(
+            index_values, UP[:, i],
             label=f"$N={N:1.0E}$",
             alpha=1,
             lw=3,
             ls=lines[i % len(lines)],
             c='k',
             )
-    plt.xticks(np.arange(dim_input) + 1, rotation=90)
-    plt.xlabel('Index', fontsize=fsize)
-    plt.ylabel('Singular Value', fontsize=fsize)
+    ax.set_xticks(index_values)
+    ax.set_xticklabels(ax.get_xticks(), rotation=0)
+    ax.set_xlabel('Index', fontsize=fsize)
+    ax.set_ylabel('Eigenvalue', fontsize=fsize)
 
-    plt.legend()
+    ax.xaxis.set_major_formatter(FormatStrFormatter('%2d'))
+    ax.legend(loc='lower left', fontsize=fsize * 0.75)
 
     if save:
         plt.savefig(f'{fdir}/{prefix}-sd-convergence.png', bbox_inches='tight')
@@ -741,7 +748,7 @@ def main_meas_var(args):
     # plt.title("Precision of MUD Estimates", fontsize=1.25 * fsize)
     plt.yscale('log')
     plt.xscale('log')
-    plt.ylabel("Singular Values of $\\Sigma_{up}$", fontsize=fsize * 1.25)
+    plt.ylabel("Eigenvalues of $\\Sigma_{up}$", fontsize=fsize * 1.25)
     # plt.ylabel("Average Variance", fontsize=fsize * 1.25)
     plt.xlabel('Number of Measurements', fontsize=fsize)
     plt.legend()

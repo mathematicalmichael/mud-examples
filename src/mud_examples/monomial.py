@@ -111,7 +111,8 @@ def main(args):
         # Construct push-forward of statistical Bayesian posterior
         pf_posterior_kde = kde(qvals_predict, weights=data_like_normalized)
 
-        fig, ax = plt.subplots(figsize=(10, 10))  # Plot the initial and posterior
+        # Plot the initial, updated, and posterior densities
+        fig, ax = plt.subplots(figsize=(10, 10))
         lam_plot = np.linspace(-1, 1, num=1000)
         ax.plot(lam_plot, uniform.pdf(lam_plot, loc=-1, scale=2), 'b--',
                 linewidth=4, label="Initial/Prior")
@@ -121,13 +122,15 @@ def main(args):
                 linewidth=4, label='Posterior')
         ax.set_xlim([-1, 1])
         if num_data > 1:
-            plt.annotate(f'$N={num_data}$', (-0.75, 5), fontsize=legend_fsize)
+            plt.annotate(f'$N={num_data}$',
+                         (-0.75, 5), fontsize=legend_fsize * 1.5)
             ax.set_ylim([0, 28])  # fix axis height for comparisons
-
+#         else:
+#             ax.set_ylim([0, 5])
         ax.tick_params(axis='x', labelsize=tick_fsize)
         ax.tick_params(axis='y', labelsize=tick_fsize)
         ax.set_xlabel("$\\Lambda$", fontsize=1.25 * tick_fsize)
-        plt.legend(fontsize=legend_fsize, loc='upper left')
+        ax.legend(fontsize=legend_fsize, loc='upper left')
         if save:
             fig.savefig(f'{fdir}/bip-vs-sip-{num_data}.png',
                         bbox_inches='tight')
@@ -136,29 +139,32 @@ def main(args):
 
         # Plot the push-forward of the initial, observed density,
         # and push-forward of pullback and stats posterior
-        plt.figure()
+        fig, ax = plt.subplots(figsize=(10, 10))
         qplot = np.linspace(-1, 1, num=1000)
-        plt.plot(qplot, norm.pdf(qplot, loc=mu, scale=sigma), 'r-',
-                 linewidth=6, label="$N(0.25,0.1^2)$")
-        plt.plot(qplot, pi_predict(qplot), 'b-.',
+        ax.plot(qplot, norm.pdf(qplot, loc=mu, scale=sigma), 'r-',
+                 linewidth=6, label="$N(0.25, 0.1^2)$")
+        ax.plot(qplot, pi_predict(qplot), 'b-.',
                  linewidth=4, label="PF of Initial")
-        plt.plot(qplot, pf_update_kde(qplot), 'k--',
+        ax.plot(qplot, pf_update_kde(qplot), 'k--',
                  linewidth=4, label="PF of Update")
-        plt.plot(qplot, pf_posterior_kde(qplot), 'g:',
+        ax.plot(qplot, pf_posterior_kde(qplot), 'g:',
                  linewidth=4, label="PF of Posterior")
 
-        plt.xlim([-1, 1])
+        ax.set_xlim([-1, 1])
         if num_data > 1:
-            plt.annotate(f'$N={num_data}$', (-0.75, 5), fontsize=legend_fsize)
-            plt.ylim([0, 20])  # fix axis height for comparisons
-        plt.xticks(fontsize=tick_fsize)
-        plt.yticks(fontsize=tick_fsize)
-        plt.xlabel("$\\mathcal{D}$", fontsize=1.25 * tick_fsize)
-        plt.legend(fontsize=legend_fsize, loc='upper left')
+            plt.annotate(f'$N={num_data}$',
+                         (-0.75, 5), fontsize=legend_fsize * 1.5)
+            ax.set_ylim([0, 28])  # fix axis height for comparisons
+#         else:
+#             ax.set_ylim([0, 5])
+        ax.tick_params(axis='x', labelsize=tick_fsize)
+        ax.tick_params(axis='y', labelsize=tick_fsize)
+        ax.set_xlabel("$\\mathcal{D}$", fontsize=1.25 * tick_fsize)
+        ax.legend(fontsize=legend_fsize, loc='upper left')
         if save:
-            plt.savefig(f'{fdir}/bip-vs-sip-pf-{num_data}.png',
+            fig.savefig(f'{fdir}/bip-vs-sip-pf-{num_data}.png',
                         bbox_inches='tight')
-            plt.close('all')
+            plt.close(fig)
         # plt.show()
 
 
