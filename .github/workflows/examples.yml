@@ -6,7 +6,7 @@ on:
   pull_request:
     branches-ignore: '**docker**'
   schedule:
-      - cron: "0 0 */7 * *"
+      - cron: "0 0 1 * *"
 
 jobs:
   pip-build:
