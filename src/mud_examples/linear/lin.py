@@ -634,7 +634,7 @@ def main_meas(args):
     ax.set_ylabel('Eigenvalue', fontsize=fsize)
 
     ax.xaxis.set_major_formatter(FormatStrFormatter('%2d'))
-    ax.legend(loc='lower left')
+    ax.legend(loc='lower left', fontsize=fsize * 0.75)
 
     if save:
         plt.savefig(f'{fdir}/{prefix}-sd-convergence.png', bbox_inches='tight')
