@@ -748,8 +748,7 @@ def main_meas_var(args):
     # plt.title("Precision of MUD Estimates", fontsize=1.25 * fsize)
     plt.yscale('log')
     plt.xscale('log')
-    plt.ylabel("Eigenvalues of $\\Sigma_{up}$", fontsize=fsize * 1.25)
-    # plt.ylabel("Average Variance", fontsize=fsize * 1.25)
+    plt.ylabel("Mean Variance of MUD Estimates", fontsize=fsize * 1.25)
     plt.xlabel('Number of Measurements', fontsize=fsize)
     plt.legend()
     # plt.legend(['MUD', 'Least Squares'], fontsize=fsize)
@@ -781,6 +780,12 @@ def run_meas():
     """Entry point for console_scripts
     """
     main_meas(sys.argv[1:])
+
+
+def run_meas_var():
+    """Entry point for console_scripts
+    """
+    main_meas_var(sys.argv[1:])
 
 
 ############################################################
