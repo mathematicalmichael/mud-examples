@@ -4,16 +4,19 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches-ignore: '**docker**'
+    paths-ignore:
+      - '.github/**'
+      - 'docs/**'
+      - '**.md'
   schedule:
-      - cron: "0 0 */7 * *"
+      - cron: "0 0 1 * *"
 
 jobs:
   pip-build:
     name: Default ${{ matrix.python-version }}
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6, 3.9]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
