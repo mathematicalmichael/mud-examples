@@ -91,9 +91,14 @@ jobs:
           rm src/mud_examples/data/pde_2D/*
           pytest
 
-      - name: CodeCov.io Report
+      - name: Upload coverage to codecov.io
         if: ${{ matrix.python-version }} == 3.8
         run: |
-          # coverage run --source=. -m py.test
-          coverage report -m
-          bash <(curl -s https://codecov.io/bash) 
+           export CODECOV_VERSION=${{ secrets.codecov_token }}
+           bash <(curl -s https://codecov.io/bash)
+
+      - name: Upload coverage to coveralls.io
+        if: ${{ matrix.python-version }} == 3.8
+        run: coveralls --service=github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
