@@ -1,6 +1,6 @@
-===
-mud
-===
+============
+MUD Examples
+============
 
 This is the documentation of **mud_examples**.
 
