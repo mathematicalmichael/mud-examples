@@ -3,10 +3,18 @@ name: builds
 on:
   push:
     branches: [ main ]
-    paths: '**.py'
+    paths:
+      - "src/**.py"
+      - "setup.py"
+      - "setup.cfg"
+      - ".github/workflows/build.yml"
   pull_request:
     branches-ignore: '**docker**'
-    paths: '**.py'
+    paths:
+      - "src/**.py"
+      - "setup.py"
+      - "setup.cfg"
+      - ".github/workflows/build.yml"
   schedule:
       - cron: "0 0 1 * *"
 
@@ -41,7 +49,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install --upgrade wheel setuptools
+          pip install --upgrade wheel setuptools setuptools_scm
 
       - name: Test install with wheels
         run: |

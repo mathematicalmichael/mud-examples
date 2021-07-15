@@ -3,10 +3,18 @@ name: tests
 on:
   push:
     branches: [ main ]
-    paths: '**.py'
+    paths:
+      - "src/**.py"
+      - "setup.py"
+      - "setup.cfg"
+      - ".github/workflows/main.yml"
   pull_request:
-    branches-ignore: '**docker**'
-    paths: '**.py'
+    branches-ignore: "**docker**"
+    paths:
+      - "src/**.py"
+      - "setup.py"
+      - "setup.cfg"
+      - ".github/workflows/main.yml"
   schedule:
       - cron: "0 0 */7 * *"
 
@@ -21,6 +29,8 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v1
@@ -30,7 +40,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -e .[test]
+          pip install -e .[dev]
 
       - name: Run unit tests
         run: pytest
+
