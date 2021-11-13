@@ -15,19 +15,19 @@ def generate_decay_model(t, lam_true):
         if response.shape[0] == 1:
             return response.ravel()
         return response
+
     return model
 
 
-def generate_temporal_measurements(measurement_hertz=100,
-                                   start_time=1, end_time=3):
+def generate_temporal_measurements(measurement_hertz=100, start_time=1, end_time=3):
     num_measure = measurement_hertz * (end_time - start_time)
     return np.linspace(start_time, end_time, num_measure)
 
 
-def generate_spatial_measurements(num_measure,
-                                  xmin=0.05, xmax=0.95,
-                                  ymin=0.05, ymax=0.95):
-    sensors      = np.random.rand(num_measure, 2)  # noqa: E221
+def generate_spatial_measurements(
+    num_measure, xmin=0.05, xmax=0.95, ymin=0.05, ymax=0.95
+):
+    sensors = np.random.rand(num_measure, 2)  # noqa: E221
     sensors[:, 0] = xmin + (xmax - xmin) * sensors[:, 0]  # x_0 location
     sensors[:, 1] = ymin + (ymax - ymin) * sensors[:, 1]  # x_1 location
     return sensors

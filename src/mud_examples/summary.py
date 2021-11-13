@@ -24,7 +24,7 @@ def extract_statistics(solutions, reference_value):
     means = []
     variances = []
     for ns in num_sensors_plot_conv:
-        _logger.debug(f'Extracting stats for {ns} measurements.')
+        _logger.debug(f"Extracting stats for {ns} measurements.")
         mud_solutions = solutions[ns]
         num_trials = len(mud_solutions)
         err = [np.linalg.norm(m - reference_value) for m in mud_solutions]
@@ -55,7 +55,7 @@ def maybe_fit_log_linear_regression(input_values, output_values):
     X, Y = np.vander(x, 2), np.array(y).reshape(-1, 1)
     slope, intercept = (np.linalg.pinv(X) @ Y).ravel()
     if log:
-        regression_line = 10**(slope * x + intercept)
+        regression_line = 10 ** (slope * x + intercept)
     else:
         regression_line = slope * x + intercept
 

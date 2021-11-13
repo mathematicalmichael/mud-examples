@@ -6,46 +6,49 @@ from typing import List
 import numpy as np
 
 
-def createRandomLinearMap(dim_input, dim_output,
-                          dist='normal', repeated=False):
+def createRandomLinearMap(dim_input, dim_output, dist="normal", repeated=False):
     """
     Create random linear map from P dimensions to S dimensions.
     """
-    if dist == 'normal':
-        M     = np.random.randn(dim_output, dim_input)  # noqa: E221
+    if dist == "normal":
+        M = np.random.randn(dim_output, dim_input)  # noqa: E221
     else:
-        M     = np.random.rand(dim_output, dim_input)   # noqa: E221
+        M = np.random.rand(dim_output, dim_input)  # noqa: E221
     if repeated:  # just use first row
-        M     = M[0, :].reshape(1, dim_input)
+        M = M[0, :].reshape(1, dim_input)
 
     return M
 
 
 def createNoisyReferenceData(M, reference_point, std, num_data=None):
-    dim_input  = len(reference_point)                            # noqa: E221
+    dim_input = len(reference_point)  # noqa: E221
     if num_data is None:
         num_data = M.shape[0]
-    assert M.shape[1] == dim_input, \
-        f"Operator/Reference dimension mismatch. op: {M.shape}, input dim: {dim_input}"
-    assert M.shape[0] == 1 or M.shape[0] == num_data, \
-        f"Operator/Data dimension mismatch. op: {M.shape}, observations: {num_data}"
+    assert (
+        M.shape[1] == dim_input
+    ), f"Operator/Reference dimension mismatch. op: {M.shape}, input dim: {dim_input}"
+    assert (
+        M.shape[0] == 1 or M.shape[0] == num_data
+    ), f"Operator/Data dimension mismatch. op: {M.shape}, observations: {num_data}"
     if isinstance(std, (int, float)):  # support for std per measurement
-        std    = np.array([std] * num_data)                      # noqa: E221
+        std = np.array([std] * num_data)  # noqa: E221
     else:
-        assert len(std.ravel()) == num_data, \
-            f"St. Dev / Data mismatch. data: {num_data}, std: {len(std.ravel())}"
+        assert (
+            len(std.ravel()) == num_data
+        ), f"St. Dev / Data mismatch. data: {num_data}, std: {len(std.ravel())}"
 
-    ref_input  = np.array(list(reference_point)).reshape(-1, 1)  # noqa: E221
-    ref_data   = M @ ref_input                                   # noqa: E221
-    noise      = np.diag(std) @ np.random.randn(num_data, 1)     # noqa: E221
+    ref_input = np.array(list(reference_point)).reshape(-1, 1)  # noqa: E221
+    ref_data = M @ ref_input  # noqa: E221
+    noise = np.diag(std) @ np.random.randn(num_data, 1)  # noqa: E221
     if ref_data.shape[0] == 1:
         ref_data = float(ref_data)
-    data       = ref_data + noise                                # noqa: E221
+    data = ref_data + noise  # noqa: E221
     return data.ravel()
 
 
-def createRandomLinearPair(reference_point, num_data, std,
-                           dist='normal', repeated=False):
+def createRandomLinearPair(
+    reference_point, num_data, std, dist="normal", repeated=False
+):
     """
     data will come from a normal distribution centered at zero
     with standard deviation given by `std`
@@ -53,14 +56,16 @@ def createRandomLinearPair(reference_point, num_data, std,
     if `repeated` is True, the map will be rank 1.
     """
     dim_input = len(reference_point)
-    M         = createRandomLinearMap(dim_input, num_data, dist, repeated)   # noqa: E221, E501
-    data      = createNoisyReferenceData(M, reference_point, std, num_data)  # noqa: E221, E501
+    M = createRandomLinearMap(dim_input, num_data, dist, repeated)  # noqa: E221, E501
+    data = createNoisyReferenceData(
+        M, reference_point, std, num_data
+    )  # noqa: E221, E501
     return M, data
 
 
-def createRandomLinearProblem(reference_point, num_qoi,
-                              num_observations, std_list,
-                              dist='normal', repeated=False):
+def createRandomLinearProblem(
+    reference_point, num_qoi, num_observations, std_list, dist="normal", repeated=False
+):
     """
     Wrapper around `createRandomLinearQoI` to generalize to multiple QoI maps.
     """
@@ -75,10 +80,12 @@ def createRandomLinearProblem(reference_point, num_qoi,
         assert len(num_observations) == num_qoi
 
     assert len(std_list) == len(num_observations)
-    results = [createRandomLinearPair(reference_point, n, s, dist, repeated)
-               for n, s in zip(num_observations, std_list)]
+    results = [
+        createRandomLinearPair(reference_point, n, s, dist, repeated)
+        for n, s in zip(num_observations, std_list)
+    ]
     operator_list = [r[0] for r in results]  # noqa: E221
-    data_list     = [r[1] for r in results]  # noqa: E221
+    data_list = [r[1] for r in results]  # noqa: E221
     return operator_list, data_list, std_list
 
 
@@ -92,7 +99,7 @@ def randA_outer(dim_output, dim_input=None, seed=None):
     A = []
     for i in range(dim_output):
         _x = randA_gauss(dim_output, 1)
-#         _x = _x / np.linalg.norm(_x) # unit vector
+        #         _x = _x / np.linalg.norm(_x) # unit vector
         _a = np.outer(_x, _x)
         A.append(_a)
     return A
