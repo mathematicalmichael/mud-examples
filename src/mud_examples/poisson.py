@@ -766,6 +766,9 @@ class pdeProblem(object):
         self._sample_dist = dist
 
     def load(self, fname=None):
+        """
+        Loads from filename, e.g., "data/pde_2D/ref_1000_2u.pkl"
+        """
         if fname:
             self.fname = fname
             _logger.info(f"PDE problem loading from {fname}.")

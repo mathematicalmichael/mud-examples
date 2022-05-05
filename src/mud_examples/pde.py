@@ -169,9 +169,10 @@ def main_pde(
                         _logger.critical("Exiting program")
                         raise (e)
 
-            P.dist = dist
-            P.sample_dist = sample_dist
-            fdir = P.fname.replace(".pkl", "")
+            P.dist = dist  # TODO: Hidden knowledge that this needs to be set
+            msg = "`sample_dist` not inferred from filename correctly"
+            assert P.sample_dist == sample_dist, msg
+            fdir = P.fname.replace(".pkl", "")  # track directories that were created
             # plots show only one hundred sensors to avoid clutter
             if example == "mud-alt":
                 wrapper = P.mud_vector_vertical(**kwargs)
