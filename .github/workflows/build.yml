@@ -56,6 +56,6 @@ jobs:
           python setup.py sdist bdist_wheel
           pip uninstall -y mud-examples
 
-      - name: Test install with other syntax
+      - name: Test pip install syntax (latest wheels)
         run: |
-          python -m build .  # for future inclusion of pyproject.toml with pyscaffold v5+
+          pip install .
