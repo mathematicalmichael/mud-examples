@@ -3,9 +3,13 @@ name: examples
 on:
   push:
     branches: [ main ]
-    paths: '**.py'
+    paths:
+      - "**.py"
+      - ".github/workflows/examples.yml"
   pull_request:
-    paths: '**.py'
+    paths: 
+      - "**.py"
+      - ".github/workflows/examples.yml"
   schedule:
       - cron: "0 0 1 * *"
 
