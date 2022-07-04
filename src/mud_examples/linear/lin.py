@@ -646,7 +646,8 @@ def main_meas(args):
 
     for j, N in enumerate(Ns):
         A, b, _ = transform_measurements(operator_list, data_list, N, sigma, noise_draw)
-        MUD[:, j], up_cov = mud_sol(A, b, cov=initial_cov)
+        MUD[:, j] = mud_sol(A, b, cov=initial_cov)
+        up_cov = updated_cov(A, initial_cov)
         up_sdvals = sp.linalg.svdvals(up_cov)
         # print(up_sdvals.shape, dim_input, up_cov.shape)
         UP[:, j] = up_sdvals
@@ -818,7 +819,7 @@ def main_meas_var(args):
             A, b, _ = transform_measurements(
                 operator_list, data_list, N, sigma, noise_draw[i]
             )
-            MUD[:, j, i], _ = mud_sol(A, b, cov=initial_cov)
+            MUD[:, j, i] = mud_sol(A, b, cov=initial_cov)
 
     mud_var = MUD.var(axis=2).mean(axis=0)
     plt.plot(Ns, mud_var, label="MUD", c="k", lw=10)
@@ -1045,7 +1046,7 @@ def contour_example(
                     )
 
             if alpha > 0 and omega != 1:  # analytical MAP point
-                map_pt_eq, _ = map_sol(
+                map_pt_eq = map_sol(
                     A,
                     b,
                     observed_data_mean,
@@ -1082,7 +1083,7 @@ def contour_example(
                     )
 
             if show_mud:  # analytical MUD point
-                mud_pt_eq, _ = mud_sol(A, b, observed_data_mean, initial_mean, initial_cov)
+                mud_pt_eq = mud_sol(A, b, observed_data_mean, initial_mean, initial_cov)
                 plt.scatter(
                     mud_pt_eq[0],
                     mud_pt_eq[1],
@@ -1156,8 +1157,8 @@ def contour_example(
 
 
 def compare_mud_map_pin(A, b, y, mean, cov):
-    mud_pt, _ = mud_sol(A, b, y, mean, cov)
-    map_pt, _ = map_sol(A, b, y, mean, cov)
+    mud_pt = mud_sol(A, b, y, mean, cov)
+    map_pt = map_sol(A, b, y, mean, cov)
     pin_pt = (np.linalg.pinv(A) @ (y - b)).reshape(-1, 1)
     return mud_pt, map_pt, pin_pt
 
