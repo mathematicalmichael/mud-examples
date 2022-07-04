@@ -18,7 +18,7 @@ jobs:
     name: Default ${{ matrix.python-version }}
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -49,7 +49,7 @@ jobs:
     name: Conda ${{ matrix.python-version }}
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: ["3.8"]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -57,14 +57,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+      - uses: conda-incubator/setup-miniconda@v2
         with:
+          auto-update-conda: true
           python-version: ${{ matrix.python-version }}
+          auto-activate-base: true
  
       - name: Fenics install
         run: |
-          echo $CONDA/bin >> $GITHUB_PATH
           conda env update --file environment.yml --name base
 
       - name: Install Dependencies
