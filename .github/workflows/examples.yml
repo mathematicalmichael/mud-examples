@@ -54,7 +54,7 @@ jobs:
         shell: bash -l {0}
     strategy:
       matrix:
-        python-version: ["3.9"]
+        python-version: ["3.7", "3.10"]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -100,14 +100,8 @@ jobs:
           rm src/mud_examples/data/pde_2D/*
           pytest
 
-      - name: Upload coverage to codecov.io
-        if: ${{ matrix.python-version }} == 3.8
-        run: |
-           export CODECOV_VERSION=${{ secrets.codecov_token }}
-           bash <(curl -s https://codecov.io/bash)
-
       - name: Upload coverage to coveralls.io
-        if: ${{ matrix.python-version }} == 3.8
+        if: ${{ matrix.python-version }} == "3.10"
         run: coveralls --service=github
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
