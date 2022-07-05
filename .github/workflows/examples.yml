@@ -3,9 +3,13 @@ name: examples
 on:
   push:
     branches: [ main ]
-    paths: '**.py'
+    paths:
+      - "**.py"
+      - ".github/workflows/examples.yml"
   pull_request:
-    paths: '**.py'
+    paths: 
+      - "**.py"
+      - ".github/workflows/examples.yml"
   schedule:
       - cron: "0 0 1 * *"
 
@@ -14,7 +18,7 @@ jobs:
     name: Default ${{ matrix.python-version }}
     strategy:
       matrix:
-        python-version: [3.6, 3.9]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -32,7 +36,7 @@ jobs:
       - name: Test CLI
         run: |
           cd /tmp
-          mud_run_all
+          mud_run_all -v
   
       - name: Generate figures using makefile
         run: |
@@ -42,9 +46,14 @@ jobs:
 
   conda-build:
     name: Conda ${{ matrix.python-version }}
+    # mamba environment will not activate without this line
+    # see: https://github.com/mamba-org/provision-with-micromamba#IMPORTANT
+    defaults:
+      run:
+        shell: bash -l {0}
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: ["3.7", "3.10"]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -52,19 +61,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+      - name: Install Fenics
+        uses: mamba-org/provision-with-micromamba@main
         with:
-          python-version: ${{ matrix.python-version }}
- 
-      - name: Fenics install
-        run: |
-          echo $CONDA/bin >> $GITHUB_PATH
-          conda env update --file environment.yml --name base
+          environment-file: environment.yml
+          environment-name: test
+          extra-specs: |
+            python=${{ matrix.python-version }}
 
       - name: Install Dependencies
         run: |
           pip install .
+          pip install mud==0.1rc1
 
       - name: Conda information
         run: conda list
@@ -72,7 +80,7 @@ jobs:
       - name: Test that command-line scripts installed
         run: |
           cd /tmp
-          mud_run_all
+          mud_run_all -v
 
       - name: Generate figures using Makefile
         run: |
@@ -91,14 +99,8 @@ jobs:
           rm src/mud_examples/data/pde_2D/*
           pytest
 
-      - name: Upload coverage to codecov.io
-        if: ${{ matrix.python-version }} == 3.8
-        run: |
-           export CODECOV_VERSION=${{ secrets.codecov_token }}
-           bash <(curl -s https://codecov.io/bash)
-
       - name: Upload coverage to coveralls.io
-        if: ${{ matrix.python-version }} == 3.8
+        if: ${{ matrix.python-version }} == "3.10"
         run: coveralls --service=github
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
