@@ -47,6 +47,11 @@ jobs:
 
   conda-build:
     name: Conda ${{ matrix.python-version }}
+    # mamba environment will not activate without this line
+    # see: https://github.com/mamba-org/provision-with-micromamba#IMPORTANT
+    defaults:
+      run:
+        shell: bash -l {0}
     strategy:
       matrix:
         python-version: ["3.9"]
@@ -64,10 +69,6 @@ jobs:
           environment-name: test
           extra-specs: |
             python=${{ matrix.python-version }}
- 
-      #- name: Fenics install
-      #  run: |
-      #    conda env update --file environment.yml --name test
 
       - name: Install Dependencies
         run: |
