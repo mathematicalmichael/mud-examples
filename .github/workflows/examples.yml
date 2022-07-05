@@ -61,7 +61,7 @@ jobs:
         uses: mamba-org/provision-with-micromamba@main
         with:
           environment-file: environment.yml
-          environment-name: base
+          environment-name: test
           extra-specs: |
             python=${{ matrix.python-version }}
  
