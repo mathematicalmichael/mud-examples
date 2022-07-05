@@ -57,13 +57,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: conda-incubator/setup-miniconda@v2
+      - name: Install Fenics
+        uses: mamba-org/provision-with-micromamba@main
         with:
-          auto-update-conda: true
-          activate-environment: test
-          python-version: ${{ matrix.python-version }}
-          auto-activate-base: false
-          environment-file: environment.yml
+          environment-file: environment.yaml
+          environment-name: base
+          extra-specs: |
+            python=${{ matrix.python-version }}
  
       #- name: Fenics install
       #  run: |
