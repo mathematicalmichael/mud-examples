@@ -276,10 +276,10 @@ def plot_scalar_poisson_summary(
 
 def plotChain(mud_chain, ref_param, color="k", s=100):
     num_steps = len(mud_chain)
-    current_point = mud_chain[0]
+    current_point = mud_chain[0].reshape(-1,1)
     plt.scatter(current_point[0], current_point[1], c="b", s=s)
     for i in range(0, num_steps):
-        next_point = mud_chain[i]
+        next_point = mud_chain[i].reshape(-1,1)
         points = np.hstack([current_point, next_point])
         plt.plot(points[0, :], points[1, :], c=color)
         current_point = next_point
