@@ -11,6 +11,7 @@
 Authors: Troy Butler & Michael Pilosov
 
 # Installation
+For Python 3.7-3.12:
 
 ```sh
 pip install mud-examples
