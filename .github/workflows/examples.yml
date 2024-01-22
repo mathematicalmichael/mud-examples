@@ -93,7 +93,7 @@ jobs:
         run: |
           pip install .
           # known good version: 0.1rc1
-          # pip install mud==0.1.1rc2
+          pip install mud==0.1.1rc2
 
       - name: Conda information
         run: conda list
