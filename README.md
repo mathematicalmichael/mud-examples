@@ -1,9 +1,13 @@
-[![PyPI version](https://badge.fury.io/py/mud-examples.svg)](https://badge.fury.io/py/mud-examples)
+[![PyPI version](https://img.shields.io/pypi/v/mud-examples)](https://pypi.org/project/mud-examples/)
 ![unit testing workflow](https://github.com/mathematicalmichael/mud-examples/actions/workflows/main.yml/badge.svg)
 ![example workflow](https://github.com/mathematicalmichael/mud-examples/actions/workflows/examples.yml/badge.svg)
+![build workflow](https://github.com/mathematicalmichael/mud-examples/actions/workflows/build.yml/badge.svg)
 ![publish workflow](https://github.com/mathematicalmichael/mud-examples/actions/workflows/publish.yml/badge.svg)
-[![codecov](https://codecov.io/gh/mathematicalmichael/mud-examples/branch/main/graph/badge.svg?token=JQZao81BSp)](https://codecov.io/gh/mathematicalmichael/mud-examples)
+![docker workflow](https://github.com/mathematicalmichael/mud-examples/actions/workflows/docker.yml/badge.svg)
+[![docs](https://readthedocs.org/projects/mud-examples/badge/?version=stable)](https://mud-examples.readthedocs.io/en/stable/?badge=stable)
+[![black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![coveralls](https://coveralls.io/repos/github/mathematicalmichael/mud-examples/badge.svg?branch=main)](https://coveralls.io/github/mathematicalmichael/mud-examples?branch=main)
+[![downloads](https://static.pepy.tech/personalized-badge/mud-examples?period=total&units=abbreviation&left_color=gray&right_color=blue&left_text=downloads)](https://pepy.tech/project/mud-examples)
 
 # MUD-Examples
 ## Examples for _Existence, Uniqueness, and Convergence of Parameter Estimates with Maximal Updated Densities_
