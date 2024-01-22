@@ -2,21 +2,21 @@ name: builds
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
       - "src/**.py"
       - "setup.py"
       - "setup.cfg"
       - ".github/workflows/build.yml"
   pull_request:
-    branches-ignore: '**docker**'
+    branches-ignore: ["**docker**"]
     paths:
       - "src/**.py"
       - "setup.py"
       - "setup.cfg"
       - ".github/workflows/build.yml"
   schedule:
-      - cron: "0 0 1 * *"
+    - cron: "0 0 1 * *"
 
 jobs:
   build:
@@ -27,12 +27,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -42,7 +42,7 @@ jobs:
           pip install --upgrade wheel setuptools setuptools_scm
 
       - name: Inspect version info
-        run: | 
+        run: |
           python setup.py --version
           git describe --dirty --tags --long --match "*[0-9]*"
 
