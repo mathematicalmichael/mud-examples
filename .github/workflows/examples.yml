@@ -32,7 +32,8 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install .
-          pip install mud==0.1.1rc3
+          # pip install mud==0.1.1
+          pip install -U mud
 
       - name: Test CLI (no TeX)
         continue-on-error: true
@@ -92,8 +93,8 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install .
-          # known good version: 0.1rc1
-          pip install mud==0.1.1rc2
+          # pip install mud==0.1.1
+          pip install -U mud
 
       - name: Conda information
         run: conda list
