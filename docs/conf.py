@@ -86,8 +86,8 @@ extensions = [
 templates_path = ["_templates"]
 
 # The suffix of source filenames.
-#source_suffix = ".rst"
-source_suffix = ['.rst', '.md']
+# source_suffix = ".rst"
+source_suffix = [".rst", ".md"]
 
 # The encoding of source files.
 # source_encoding = 'utf-8-sig'
@@ -149,9 +149,9 @@ pygments_dark_style = "monokai"
 
 # -- Options for HTML output -------------------------------------------------
 
-#html_theme = "alabaster"
+# html_theme = "alabaster"
 
-#html_theme_options = {"sidebar_width": "300px", "page_width": "1200px"}
+# html_theme_options = {"sidebar_width": "300px", "page_width": "1200px"}
 
 
 html_theme = "furo"
@@ -205,8 +205,8 @@ html_static_path = ["_static"]
 
 
 html_css_files = [
-     "custom.css",
- ]
+    "custom.css",
+]
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -267,7 +267,13 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ("index", "user_guide.tex", "mud-examples Documentation", "Mathematical Michael", "manual")
+    (
+        "index",
+        "user_guide.tex",
+        "mud-examples Documentation",
+        "Mathematical Michael",
+        "manual",
+    )
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

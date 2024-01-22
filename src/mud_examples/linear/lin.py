@@ -927,7 +927,7 @@ def contour_example(
             inputs[:, 1].reshape(N, N),
             (zd).reshape(N, N),
             25,
-            cmap=cm.viridis,
+            cmap="viridis",
             alpha=0.5,
             vmin=0,
             vmax=4,
@@ -957,7 +957,7 @@ def contour_example(
             inputs[:, 1].reshape(N, N),
             z.reshape(N, N),
             50,
-            cmap=cm.viridis,
+            cmap="viridis",
             alpha=1.0,
         )
     elif alpha + omega > 0:
@@ -966,7 +966,7 @@ def contour_example(
             inputs[:, 1].reshape(N, N),
             (alpha * zi - omega * zp).reshape(N, N),
             100,
-            cmap=cm.viridis,
+            cmap="viridis",
             alpha=0.25,
         )
     plt.axis("equal")
@@ -1124,7 +1124,7 @@ def contour_example(
                     new_line[0, mn:mx],
                     new_line[1, mn:mx],
                     lw=1,
-                    label="projection line",
+                    label="Projection Line",
                     c="k",
                 )
         elif show_full:

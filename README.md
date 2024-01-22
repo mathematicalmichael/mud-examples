@@ -11,10 +11,30 @@
 Authors: Troy Butler & Michael Pilosov
 
 # Installation
+For Python 3.7-3.12:
 
 ```sh
 pip install mud-examples
 ```
+
+To reproduce the results in Michael's thesis, use `mud-examples==0.1`. However, this comes with `mud==0.0.28`.
+Newer versions should still produce the same figures.
+
+TeX is recommended (but not required):
+
+```
+apt-get install -yqq \
+    texlive-base \
+    texlive-latex-base \
+    texlive-latex-extra \
+    texlive-fonts-recommended \
+    texlive-fonts-extra \
+    texlive-science \
+    latexmk \
+    dvipng \
+    cm-super
+```
+
 
 # Quickstart
 

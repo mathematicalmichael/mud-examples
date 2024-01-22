@@ -85,7 +85,7 @@ def main(args):
         np.random.seed(
             123456
         )  # Just for reproducibility, you can comment out if you want.
-        data = norm.rvs(loc=mu, scale=sigma ** 2, size=num_data)
+        data = norm.rvs(loc=mu, scale=sigma**2, size=num_data)
 
         # We will estimate the observed distribution using a parametric estimate to keep
         # the assumptions involved as similar as possible between the BIP and the SIP
@@ -189,7 +189,7 @@ def QoI(lam, p):
     """
     Defines a QoI mapping function as monomials to some power p
     """
-    q = lam ** p
+    q = lam**p
     return q
 
 
