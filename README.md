@@ -17,6 +17,25 @@ For Python 3.7-3.12:
 pip install mud-examples
 ```
 
+To reproduce the results in Michael's thesis, use `mud-examples==0.1`. However, this comes with `mud==0.0.28`.
+Newer versions should still produce the same figures.
+
+TeX is recommended (but not required):
+
+```
+apt-get install -yqq \
+    texlive-base \
+    texlive-latex-base \
+    texlive-latex-extra \
+    texlive-fonts-recommended \
+    texlive-fonts-extra \
+    texlive-science \
+    latexmk \
+    dvipng \
+    cm-super
+```
+
+
 # Quickstart
 
 Generate all of the figures the way they are referenced in the paper:

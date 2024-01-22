@@ -32,8 +32,28 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install .
+          pip install mud==0.1.1rc2
 
-      - name: Test CLI
+      - name: Test CLI (no TeX)
+        continue-on-error: true
+        run: |
+          cd /tmp
+          mud_run_all -v
+
+      - name: Install apt dependencies
+        run: |
+          sudo apt-get install -yqq \
+            texlive-base \
+            texlive-latex-base \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            texlive-fonts-extra \
+            texlive-science \
+            latexmk \
+            dvipng \
+            cm-super
+
+      - name: Test CLI (w TeX)
         run: |
           cd /tmp
           mud_run_all -v
@@ -72,7 +92,8 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install .
-          pip install mud==0.1rc1
+          # known good version: 0.1rc1
+          # pip install mud==0.1.1rc2
 
       - name: Conda information
         run: conda list
