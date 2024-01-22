@@ -1124,7 +1124,7 @@ def contour_example(
                     new_line[0, mn:mx],
                     new_line[1, mn:mx],
                     lw=1,
-                    label="projection line",
+                    label="Projection Line",
                     c="k",
                 )
         elif show_full:
